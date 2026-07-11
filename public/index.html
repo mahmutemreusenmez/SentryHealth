@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SentryHealth — Klinik Yönetim Paneli</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+
+  <div class="lang-switcher" id="lang-switcher" aria-label="Dil seçici / Language selector">
+    <button type="button" data-lang="tr" class="active">TR</button>
+    <button type="button" data-lang="en">EN</button>
+    <button type="button" data-lang="ar">AR</button>
+  </div>
+
+  <section class="login-screen" id="login-screen">
+    <div class="login-card">
+      <div class="login-logo">
+        <svg viewBox="0 0 72 72" aria-label="T.C. Sağlık Bakanlığı Logosu">
+          <circle cx="36" cy="36" r="34" fill="none" stroke="#2563eb" stroke-width="2"/>
+          <path d="M24 44c2 6 8 10 12 10s12-4 12-10c0-7-7-8-12-12-5-4-5-8 0-12 5-4 10-3 12 0" fill="none" stroke="#dc2626" stroke-width="3" stroke-linecap="round"/>
+          <polygon points="52,22 54,28 60,28 55,32 57,38 52,34 47,38 49,32 44,28 50,28" fill="#dc2626"/>
+        </svg>
+        <div>
+          <strong data-i18n="login.brandTitle">T.C. SAĞLIK BAKANLIĞI</strong>
+          <span data-i18n="login.brandSub">SentryHealth Klinik Giriş</span>
+        </div>
+      </div>
+      <h1 data-i18n="login.title">SentryHealth</h1>
+      <p class="login-sub" data-i18n="login.subtitle">Yapay Zeka Destekli Uzaktan Hasta İzleme ve Klinik Yönetim</p>
+      <form id="login-form" class="login-form" autocomplete="off">
+        <label class="field">
+          <span data-i18n="login.username">Kullanıcı Adı</span>
+          <input type="text" name="username" data-i18n-placeholder="login.username" placeholder="doktor veya yönetici" required minlength="3" />
+        </label>
+        <label class="field">
+          <span data-i18n="login.password">Şifre</span>
+          <input type="password" name="password" data-i18n-placeholder="login.password" placeholder="••••••" required minlength="3" />
+        </label>
+        <p class="form-error hidden" id="login-error"></p>
+        <button type="submit" class="btn btn-primary btn-block" data-i18n="login.submit">Giriş Yap</button>
+      </form>
+      <div class="login-hint">
+        <p class="login-warning" data-i18n="login.forgotPassword">Şifrenizi unuttuysanız lütfen bilgi işleme başvurunuz.</p>
+      </div>
+      <p class="kvkk-note" data-i18n="login.kvkkNote" style="margin-top:14px;margin-bottom:0">
+        🔒 Tüm hasta kimlikleri HMAC-SHA256 ile anonimleştirilir; KVKK/GDPR uyumlu depolama.
+      </p>
+    </div>
+  </section>
+
+  <div class="app-shell hidden" id="app-shell">
+    <div class="gov-strip" data-i18n="app.govStrip">
+      T.C. SAĞLIK BAKANLIĞI – ULUSAL KRONİK HASTALIK TAKİP AĞI // SENTRYHEALTH VIP SHOWCASE
+    </div>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <div class="brand-icon">✚</div>
+          <div>
+            <span class="brand-name" data-i18n="app.brandName">MediTakip</span>
+            <span class="brand-sub" data-i18n="app.brandSub">Klinik Yönetim</span>
+          </div>
+        </div>
+
+        <nav class="sidebar-nav">
+          <span class="nav-section" data-i18n="nav.clinic">Klinik Yönetim</span>
+          <a href="#" class="nav-item active" data-view="dashboard"><span class="nav-icon">▦</span> <span data-i18n="nav.dashboard">Ana Panel</span></a>
+          <a href="#" class="nav-item" data-view="patients"><span class="nav-icon">🧑‍⚕️</span> <span data-i18n="nav.patients">Hastalar</span></a>
+          <a href="#" class="nav-item" data-view="telemedicine"><span class="nav-icon">📡</span> <span data-i18n="nav.telemedicine">Tele-Tıp (Canlı)</span></a>
+          <a href="#" class="nav-item" data-view="voice"><span class="nav-icon">🎙️</span> <span data-i18n="nav.aiAssistant">YZ Sesli Asistan</span></a>
+          <a href="#" class="nav-item" data-view="dashboard"><span class="nav-icon">🔔</span> <span data-i18n="nav.alarms">Alarmlar</span> <span class="nav-badge" id="nav-alarm-count">0</span></a>
+          <span class="nav-section" data-i18n="nav.management">Yönetim</span>
+          <a href="#" class="nav-item hidden" data-view="admin" id="nav-admin"><span class="nav-icon">⚙</span> <span data-i18n="nav.admin">Yönetici Paneli</span></a>
+          <a href="#" class="nav-item" data-view="settings"><span class="nav-icon">🔧</span> <span data-i18n="nav.settings">Ayarlar</span></a>
+          <span class="nav-section" data-i18n="nav.future">Geleceğin Teknolojileri</span>
+          <a href="#" class="nav-item" data-view="future" data-future="genomic"><span class="nav-icon">🧬</span> <span data-i18n="future.genomicTitle">🧬 Biyometrik İkiz &amp; Genomik</span></a>
+          <a href="#" class="nav-item" data-view="future" data-future="scribe"><span class="nav-icon">🎙️</span> <span data-i18n="future.scribeTitle">🎙️ AI Ambient Scribe</span></a>
+          <a href="#" class="nav-item future-link" data-view="future" data-future="immortality"><span class="nav-icon">♾</span> <span data-i18n="technology.immortalityTitle">Ölümsüzlük Protokolü</span></a>
+          <a href="#" class="nav-item future-link" data-view="future" data-future="dna"><span class="nav-icon">🧪</span> <span data-i18n="technology.dnaTitle">DNA Hack &amp; Splicing</span></a>
+          <a href="#" class="nav-item future-link" data-view="future" data-future="nanobot"><span class="nav-icon">🤖</span> <span data-i18n="technology.nanobotTitle">Kuantum Nanobot Sürüsü</span></a>
+          <a href="#" class="nav-item future-link" data-view="future" data-future="organ"><span class="nav-icon">🫀</span> <span data-i18n="technology.organTitle">3D Organ Yazıcısı</span></a>
+          <a href="#" class="nav-item future-link" data-view="future" data-future="memory"><span class="nav-icon">🧠</span> <span data-i18n="technology.memoryTitle">Hafıza Yedekleme</span></a>
+          <span class="nav-section" data-i18n="analytics.title">Analitik &amp; Raporlar</span>
+          <a href="#" class="nav-item" data-view="analytics"><span class="nav-icon">📊</span> <span data-i18n="nav.analytics">Analitik</span></a>
+          <a href="#" class="nav-item" data-view="reports"><span class="nav-icon">📄</span> <span data-i18n="nav.reports">Raporlar</span></a>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="kvkk-box" title="Hasta kimlikleri HMAC-SHA256 ile anonimleştirilmiştir">
+            <span class="kvkk-icon">🔒</span>
+            <div>
+              <strong data-i18n="app.kvkkSecurityTitle">KVKK Güvenlik Katmanı</strong>
+              <small data-i18n="app.kvkkSecuritySub">HMAC-SHA256 · Lokal İşleme · Aktif</small>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <div class="content">
+        <header class="topbar">
+          <div>
+            <h1 id="page-title">Ana Panel</h1>
+            <p class="subtitle" data-i18n="app.subtitle">Yapay Zeka Destekli Uzaktan Hasta İzleme · Gerçek Zamanlı Klinik Görünüm</p>
+          </div>
+          <div class="topbar-right">
+            <div class="user-info" id="user-info"></div>
+            <button class="btn btn-ghost" id="logout-btn" data-i18n="app.logout">Çıkış</button>
+            <div class="status-pill" id="connection-status">
+              <span class="dot"></span><span id="connection-text" data-i18n="status.connecting">Bağlanıyor…</span>
+            </div>
+          </div>
+        </header>
+
+        <main>
+          <div id="view-dashboard" class="view">
+            <section class="summary" id="summary">
+              <div class="summary-card">
+                <div class="summary-icon blue">👥</div>
+                <div>
+                  <span class="summary-label" data-i18n="summary.total">Toplam Hasta</span>
+                  <span class="summary-value" id="stat-total">—</span>
+                </div>
+              </div>
+              <div class="summary-card">
+                <div class="summary-icon amber">🔔</div>
+                <div>
+                  <span class="summary-label" data-i18n="summary.openAlarms">Açık Alarm</span>
+                  <span class="summary-value" id="stat-open-alarm">—</span>
+                </div>
+              </div>
+              <div class="summary-card">
+                <div class="summary-icon green">✉️</div>
+                <div>
+                  <span class="summary-label" data-i18n="summary.todayResponse">Bugünkü Yanıt</span>
+                  <span class="summary-value" id="stat-response">—</span>
+                </div>
+              </div>
+              <div class="summary-card">
+                <div class="summary-icon indigo">📱</div>
+                <div>
+                  <span class="summary-label" data-i18n="summary.activeSms">Aktif SMS Takibi</span>
+                  <span class="summary-value" id="stat-sms">—</span>
+                </div>
+              </div>
+              <div class="summary-card">
+                <div class="summary-icon blue">📈</div>
+                <div>
+                  <span class="summary-label" data-i18n="summary.totalMeasurements">Toplam Ölçüm</span>
+                  <span class="summary-value" id="stat-measurements">—</span>
+                </div>
+              </div>
+              <div class="summary-card">
+                <div class="summary-icon red">🚨</div>
+                <div>
+                  <span class="summary-label" data-i18n="summary.criticalAlarms">Kritik Alarm</span>
+                  <span class="summary-value" id="stat-critical">—</span>
+                </div>
+              </div>
+            </section>
+
+            <section class="analytics-section" id="analytics-section">
+              <h2 data-i18n="analytics.title">Analitik &amp; İstatistikler</h2>
+              <div class="analytics-grid">
+                <div class="chart-card">
+                  <span class="chart-title" data-i18n="analytics.monthlyTrend">Aylık Yanıt Trendi</span>
+                  <div class="chart-svg" id="chart-trend"></div>
+                </div>
+                <div class="chart-card">
+                  <span class="chart-title" data-i18n="analytics.monthlyAlarms">Aylık Alarm Sayısı</span>
+                  <div class="chart-svg" id="chart-alarms"></div>
+                </div>
+                <div class="chart-card">
+                  <span class="chart-title" data-i18n="analytics.diseaseDistribution">Hastalık Dağılımı</span>
+                  <div class="chart-svg" id="chart-distribution"></div>
+                </div>
+              </div>
+            </section>
+
+            <h2 class="future-title" data-i18n="future.title">Geleceğin Teknolojileri</h2>
+            <section class="future-modules">
+              <div class="future-card genomic">
+                <div class="future-head">
+                  <span class="future-tag" data-i18n="future.genomicTag">V13 FÜTÜRİSTİK MODÜL</span>
+                  <h3 data-i18n="future.genomicTitle">🧬 Biyometrik İkiz &amp; Genomik</h3>
+                  <p data-i18n="future.genomicDesc">Hücresel düzeyde risk ve ilaç uyum haritası.</p>
+                </div>
+                <button class="btn btn-future" id="genomic-btn" data-i18n="future.genomicBtn">Başlat</button>
+                <div class="future-output hidden" id="genomic-output"></div>
+              </div>
+
+              <div class="future-card scribe">
+                <div class="future-head">
+                  <span class="future-tag" data-i18n="future.scribeTag">V13 YZ ORTAM DİNLEME</span>
+                  <h3 data-i18n="future.scribeTitle">🎙️ AI Ambient Scribe</h3>
+                  <p data-i18n="future.scribeDesc">Muayeneyi dinler, epikriz ve ICD'yi yazar.</p>
+                </div>
+                <button class="btn btn-future" id="scribe-btn" data-i18n="future.scribeBtn">🎙 Scribe</button>
+                <div class="future-output hidden" id="scribe-output"></div>
+              </div>
+            </section>
+
+            <section id="alerts" class="alerts"></section>
+
+            <section class="patients-header">
+              <h2 data-i18n="telemedicine.title">Tele-Tıp — Canlı Hasta İzleme</h2>
+              <span class="kvkk-badge" title="Hasta kimlikleri HMAC-SHA256 ile anonimleştirilmiştir" data-i18n="telemedicine.kvkkBadge">🔒 KVKK Uyumlu — Anonimleştirilmiş Veri</span>
+            </section>
+            <section id="patients" class="patients-grid">
+              <div class="empty-state" id="empty-state">
+                <p data-i18n="emptyState.p1">Henüz hasta verisi yok.</p>
+                <p data-i18n="emptyState.p2">“+ Yeni Hasta Ekle” ile hasta kaydedin, ardından Hastalar sekmesinden “Ölçüm Gir” ile vital değerleri girin.</p>
+              </div>
+            </section>
+          </div>
+
+          <div id="view-patients" class="view hidden">
+            <section class="patients-header">
+              <h2 data-i18n="patients.title">Kayıtlı Hastalar</h2>
+              <button id="add-patient-btn-2" class="btn btn-primary" data-i18n="patients.add">+ Yeni Hasta Ekle</button>
+            </section>
+            <section class="table-card">
+              <table class="patients-table">
+                <thead>
+                  <tr>
+                    <th data-i18n="patients.table.code">Hasta Kodu</th>
+                    <th data-i18n="patients.table.pseudonym">Anonim Kimlik (KVKK)</th>
+                    <th data-i18n="patients.table.age">Yaş Grubu</th>
+                    <th data-i18n="patients.table.condition">Kronik Hastalık</th>
+                    <th data-i18n="patients.table.latest">Son Nabız / SpO2</th>
+                    <th data-i18n="patients.table.risk">Risk Durumu</th>
+                  </tr>
+                </thead>
+                <tbody id="patients-table-body">
+                  <tr><td colspan="6" class="table-empty" data-i18n="patients.empty">Kayıtlı hasta bulunamadı.</td></tr>
+                </tbody>
+              </table>
+            </section>
+            <section id="patient-detail" class="patient-detail hidden"></section>
+          </div>
+
+          <div id="view-admin" class="view hidden">
+            <section class="patients-header">
+              <h2 data-i18n="admin.title">Yönetici Paneli — Doktor Yönetimi</h2>
+            </section>
+            <div class="admin-grid">
+              <div class="admin-card">
+                <h3 data-i18n="admin.add">Yeni Doktor Ekle</h3>
+                <form id="admin-doctor-form" class="modal-body" autocomplete="off">
+                  <label class="field">
+                    <span data-i18n="admin.username">Kullanıcı Adı</span>
+                    <input type="text" name="username" data-i18n-placeholder="admin.username" placeholder="dr_ayse" required minlength="3" />
+                  </label>
+                  <label class="field">
+                    <span data-i18n="admin.displayName">Adı Soyadı</span>
+                    <input type="text" name="displayName" data-i18n-placeholder="admin.displayName" placeholder="Dr. Ayşe Yılmaz" required minlength="3" />
+                  </label>
+                  <label class="field">
+                    <span data-i18n="login.password">Şifre</span>
+                    <input type="password" name="password" required minlength="4" />
+                  </label>
+                  <p class="form-error hidden" id="admin-form-error"></p>
+                  <button type="submit" class="btn btn-primary" data-i18n="admin.add">Doktor Ekle</button>
+                </form>
+              </div>
+              <div class="admin-card">
+                <h3 data-i18n="admin.list">Kayıtlı Doktorlar</h3>
+                <table class="patients-table">
+                  <thead>
+                    <tr>
+                      <th data-i18n="admin.username">Kullanıcı Adı</th>
+                      <th data-i18n="admin.displayName">Adı Soyadı</th>
+                      <th class="text-right" data-i18n="admin.action">İşlem</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-doctors-body">
+                    <tr><td colspan="3" class="table-empty" data-i18n="admin.empty">Doktor bulunamadı.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div id="view-settings" class="view hidden">
+            <section class="patients-header">
+              <h2 data-i18n="settings.title">Ayarlar</h2>
+            </section>
+            <div class="settings-grid">
+              <div class="settings-card">
+                <div class="settings-card-head">
+                  <h3 data-i18n="settings.clinic">Klinik Bilgileri</h3>
+                  <p data-i18n="settings.clinicSubtitle">Kurumsal klinik tanımları ve logo yönetimi</p>
+                </div>
+                <form id="settings-clinic-form" class="settings-form" autocomplete="off">
+                  <div class="settings-logo">
+                    <div class="settings-logo-preview" id="settings-logo-preview">
+                      <span data-i18n="settings.logoUpload">Klinik Logosu Yükle</span>
+                    </div>
+                    <label class="btn btn-ghost btn-sm">
+                      <span data-i18n="settings.logoUpload">Klinik Logosu Yükle</span>
+                      <input type="file" id="settings-logo-input" accept="image/*" hidden />
+                    </label>
+                    <small id="settings-logo-status" class="settings-status">—</small>
+                  </div>
+                  <label class="field">
+                    <span data-i18n="settings.clinicName">Klinik Adı</span>
+                    <input type="text" name="clinicName" value="SentryHealth Pilot Klinik" />
+                  </label>
+                  <label class="field">
+                    <span data-i18n="settings.clinicAddress">Adres</span>
+                    <textarea name="clinicAddress" rows="3">T.C. Sağlık Bakanlığı, Ulusal Kronik Hastalık Takip Ağı, pilot sağlık hizmeti birimi.</textarea>
+                  </label>
+                  <button type="submit" class="btn btn-primary" data-i18n="settings.save">Kaydet</button>
+                </form>
+              </div>
+
+              <div class="settings-card">
+                <div class="settings-card-head">
+                  <h3 data-i18n="settings.kvkk">KVKK Şifreleme Anahtarları</h3>
+                  <p data-i18n="settings.kvkkSubtitle">Anonimleştirme katmanı durumu ve anahtar bilgileri</p>
+                </div>
+                <div class="kvkk-flow">
+                  <div class="kvkk-step">
+                    <span class="step-icon">🔐</span>
+                    <div>
+                      <strong data-i18n="settings.hmacKey">HMAC Anahtarı</strong>
+                      <code id="kvkk-key">default-secret-key</code>
+                    </div>
+                  </div>
+                  <div class="kvkk-step">
+                    <span class="step-icon">🛡️</span>
+                    <div>
+                      <strong data-i18n="settings.anonMethod">Anonimleştirme Yöntemi</strong>
+                      <span>HMAC-SHA256</span>
+                    </div>
+                  </div>
+                  <div class="kvkk-step">
+                    <span class="step-icon">📊</span>
+                    <div>
+                      <strong data-i18n="settings.kAnonymity">k-Anonimlik</strong>
+                      <span data-i18n="settings.kAnonymityValue">Yaş grubu genelleştirme aktif</span>
+                    </div>
+                  </div>
+                  <div class="kvkk-step">
+                    <span class="step-icon">✅</span>
+                    <div>
+                      <strong data-i18n="settings.kvkkStatus">Anahtar Durumu</strong>
+                      <span class="status-ok" data-i18n="settings.kvkkActive">Aktif / Güncel</span>
+                    </div>
+                  </div>
+                  <div class="kvkk-step">
+                    <span class="step-icon">🕒</span>
+                    <div>
+                      <strong data-i18n="settings.kvkkLastUpdate">Son Güncelleme</strong>
+                      <span id="kvkk-last-update">—</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="settings-card">
+                <div class="settings-card-head">
+                  <h3 data-i18n="settings.notifications">Bildirim / SMS Ayarları</h3>
+                  <p data-i18n="settings.notificationSubtitle">Hasta uyarı ve iletişim kanalı tercihleri</p>
+                </div>
+                <form id="settings-notify-form" class="settings-form" autocomplete="off">
+                  <div class="toggle-list">
+                    <label class="toggle-row">
+                      <span data-i18n="settings.toggleSms">SMS Bildirimleri</span>
+                      <input type="checkbox" name="toggleSms" class="toggle-input" checked />
+                    </label>
+                    <label class="toggle-row">
+                      <span data-i18n="settings.toggleEmail">E-Posta Bildirimleri</span>
+                      <input type="checkbox" name="toggleEmail" class="toggle-input" />
+                    </label>
+                    <label class="toggle-row">
+                      <span data-i18n="settings.togglePush">Push Bildirimleri</span>
+                      <input type="checkbox" name="togglePush" class="toggle-input" />
+                    </label>
+                    <label class="toggle-row">
+                      <span data-i18n="settings.toggleAi">YZ Asistan Önerileri</span>
+                      <input type="checkbox" name="toggleAi" class="toggle-input" checked />
+                    </label>
+                  </div>
+                  <div class="field-row">
+                    <label class="field">
+                      <span data-i18n="settings.smsThreshold">SMS Uyarı Eşiği</span>
+                      <select name="smsThreshold">
+                        <option value="critical" data-i18n="settingsOption.critical">Kritik</option>
+                        <option value="high" selected data-i18n="settingsOption.high">Yüksek</option>
+                        <option value="medium" data-i18n="settingsOption.medium">Orta</option>
+                      </select>
+                    </label>
+                    <label class="field">
+                      <span data-i18n="settings.notifyChannel">Bildirim Kanalı</span>
+                      <select name="notifyChannel">
+                        <option value="sms" selected data-i18n="settingsOption.sms">SMS</option>
+                        <option value="email" data-i18n="settingsOption.email">E-Posta</option>
+                        <option value="both" data-i18n="settingsOption.both">SMS + E-Posta</option>
+                      </select>
+                    </label>
+                  </div>
+                  <button type="submit" class="btn btn-primary" data-i18n="settings.save">Kaydet</button>
+                  <button type="button" class="btn btn-ghost" id="settings-test-sms" data-i18n="settings.testSms">Test SMS Gönder</button>
+                  <span id="settings-test-sms-status" class="settings-status"></span>
+                </form>
+              </div>
+
+              <div class="settings-card">
+                <div class="settings-card-head">
+                  <h3 data-i18n="settings.apiTitle">Gelişmiş API Entegrasyonu</h3>
+                  <p data-i18n="settings.apiSubtitle">Sağlık Bakanlığı ve kurum sistemleri ile entegrasyon için API anahtarı</p>
+                </div>
+                <div class="settings-form">
+                  <label class="field">
+                    <span data-i18n="settings.apiKey">API Anahtarı</span>
+                    <div class="api-key-row">
+                      <input type="text" id="settings-api-key" value="sh_live_••••••••••••••••••••••••••••••••" readonly />
+                      <button type="button" class="btn btn-ghost btn-sm" id="settings-copy-api" data-i18n="settings.apiCopy">Kopyala</button>
+                    </div>
+                  </label>
+                  <button type="button" class="btn btn-primary" id="settings-generate-api" data-i18n="settings.apiGenerate">Yeni API Anahtarı Oluştur</button>
+                  <span id="settings-api-status" class="settings-status"></span>
+                </div>
+              </div>
+
+              <div class="settings-card">
+                <div class="settings-card-head">
+                  <h3 data-i18n="settings.logs">Sistem Logları</h3>
+                </div>
+                <div class="log-box" id="system-logs" data-i18n="settings.logsReady">Sistem hazır.</div>
+                <button type="button" class="btn btn-ghost" id="clear-logs" data-i18n="settings.clearLogs">Logları Temizle</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="view-future" class="view hidden">
+            <section class="patients-header">
+              <h2 data-i18n="nav.future">Geleceğin Teknolojileri</h2>
+            </section>
+            <section class="future-view-grid" id="future-view-grid">
+              <div class="future-card genomic" data-future="genomic">
+                <div class="future-head">
+                  <span class="future-tag" data-i18n="future.genomicTag">V13 FÜTÜRİSTİK MODÜL</span>
+                  <h3 data-i18n="future.genomicTitle">🧬 Biyometrik İkiz &amp; Genomik</h3>
+                  <p data-i18n="future.genomicDesc">Hücresel düzeyde risk ve ilaç uyum haritası.</p>
+                </div>
+                <button class="btn btn-future" data-start="genomic" data-i18n="technology.startBtn">Demo Başlat</button>
+              </div>
+              <div class="future-card scribe" data-future="scribe">
+                <div class="future-head">
+                  <span class="future-tag" data-i18n="future.scribeTag">V13 YZ ORTAM DİNLEME</span>
+                  <h3 data-i18n="future.scribeTitle">🎙️ AI Ambient Scribe</h3>
+                  <p data-i18n="future.scribeDesc">Muayeneyi dinler, epikriz ve ICD'yi yazar.</p>
+                </div>
+                <button class="btn btn-future" data-start="scribe" data-i18n="technology.startBtn">Demo Başlat</button>
+              </div>
+              <div class="future-card" data-future="immortality">
+                <div class="future-head">
+                  <span class="future-tag">V13 FÜTÜRİSTİK MODÜL</span>
+                  <h3 data-i18n="technology.immortalityTitle">♾ Ölümsüzlük Protokolü</h3>
+                  <p data-i18n="technology.immortalityDesc">Biyolojik yaşlanma süreçlerini yavaşlatma ve hücresel onarım protokolleri.</p>
+                </div>
+                <button class="btn btn-future" data-start="immortality" data-i18n="technology.startBtn">Demo Başlat</button>
+              </div>
+              <div class="future-card" data-future="dna">
+                <div class="future-head">
+                  <span class="future-tag">V13 FÜTÜRİSTİK MODÜL</span>
+                  <h3 data-i18n="technology.dnaTitle">🧪 DNA Hack &amp; Splicing</h3>
+                  <p data-i18n="technology.dnaDesc">CRISPR tabanlı gen düzenleme ve kişiselleştirilmiş gen terapi planları.</p>
+                </div>
+                <button class="btn btn-future" data-start="dna" data-i18n="technology.startBtn">Demo Başlat</button>
+              </div>
+              <div class="future-card" data-future="nanobot">
+                <div class="future-head">
+                  <span class="future-tag">V13 FÜTÜRİSTİK MODÜL</span>
+                  <h3 data-i18n="technology.nanobotTitle">🤖 Kuantum Nanobot Sürüsü</h3>
+                  <p data-i18n="technology.nanobotDesc">Hedefe yönelik ilaç dağıtımı ve mikro cerrahi için nanobot orduları.</p>
+                </div>
+                <button class="btn btn-future" data-start="nanobot" data-i18n="technology.startBtn">Demo Başlat</button>
+              </div>
+              <div class="future-card" data-future="organ">
+                <div class="future-head">
+                  <span class="future-tag">V13 FÜTÜRİSTİK MODÜL</span>
+                  <h3 data-i18n="technology.organTitle">🫀 3D Organ Yazıcısı</h3>
+                  <p data-i18n="technology.organDesc">Biyoyatıcı ve doku mühendisliği ile hasta özel organ üretimi.</p>
+                </div>
+                <button class="btn btn-future" data-start="organ" data-i18n="technology.startBtn">Demo Başlat</button>
+              </div>
+              <div class="future-card" data-future="memory">
+                <div class="future-head">
+                  <span class="future-tag">V13 FÜTÜRİSTİK MODÜL</span>
+                  <h3 data-i18n="technology.memoryTitle">🧠 Hafıza Yedekleme</h3>
+                  <p data-i18n="technology.memoryDesc">Nöral veri arşivleme ve bilişsel yedekleme altyapısı.</p>
+                </div>
+                <button class="btn btn-future" data-start="memory" data-i18n="technology.startBtn">Demo Başlat</button>
+              </div>
+            </section>
+          </div>
+
+          <div id="view-analytics" class="view hidden">
+            <section class="patients-header">
+              <h2 data-i18n="analytics.title">Analitik &amp; İstatistikler</h2>
+            </section>
+            <section class="analytics-grid">
+              <div class="chart-card">
+                <span class="chart-title" data-i18n="analytics.monthlyTrend">Aylık Yanıt Trendi</span>
+                <div class="chart-svg" id="chart-trend-view"></div>
+              </div>
+              <div class="chart-card">
+                <span class="chart-title" data-i18n="analytics.monthlyAlarms">Aylık Alarm Sayısı</span>
+                <div class="chart-svg" id="chart-alarms-view"></div>
+              </div>
+              <div class="chart-card">
+                <span class="chart-title" data-i18n="analytics.diseaseDistribution">Hastalık Dağılımı</span>
+                <div class="chart-svg" id="chart-distribution-view"></div>
+              </div>
+            </section>
+          </div>
+
+          <div id="view-reports" class="view hidden">
+            <section class="patients-header">
+              <h2 data-i18n="reports.title">Klinik Raporlar</h2>
+            </section>
+            <section id="reports-content" class="reports-grid">
+              <div class="report-card">
+                <span class="report-date" data-i18n="reports.generated">Oluşturulma</span>: <span id="report-generated">—</span>
+                <p data-i18n="reports.subtitle">Otomatik üretilmiş klinik özet ve trend raporları.</p>
+                <div class="report-summary" id="report-summary"></div>
+                <div class="report-breakdown" id="report-breakdown"></div>
+              </div>
+            </section>
+          </div>
+
+          <div id="view-telemedicine" class="view hidden">
+            <section class="patients-header">
+              <h2 data-i18n="telemedicine.title">Klinik Tavsiye Yayını</h2>
+              <span class="kvkk-badge" data-i18n="telemedicine.kvkkBadge">🔒 KVKK Uyumlu — Anonimleştirilmiş Veri</span>
+            </section>
+            <section class="broadcast-grid" id="broadcast-panel"></section>
+          </div>
+
+          <div id="view-voice" class="view hidden">
+            <section class="patients-header">
+              <h2 data-i18n="chatbot.title">Klinik YZ Canlı Chatbot</h2>
+            </section>
+            <section class="chatbot-grid" id="voice-panel"></section>
+          </div>
+        </main>
+
+        <footer>
+          <p data-i18n="app.footer">SentryHealth © 2026 — Açıklanabilir Yapay Zeka (XAI) destekli risk analizi · Tüm veriler cihaz üzerinde (lokal) işlenir.</p>
+        </footer>
+      </div>
+    </div>
+  </div>
+
+  <div id="future-modal" class="modal-overlay hidden">
+    <div class="modal future-modal">
+      <div class="modal-head">
+        <h3 id="future-modal-title">Rapor</h3>
+        <button class="modal-close" id="future-modal-close" data-i18n="technology.close" aria-label="Kapat">×</button>
+      </div>
+      <div class="modal-body" id="future-modal-body"></div>
+    </div>
+  </div>
+
+  <div id="vitals-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 id="vitals-modal-title">Vital Ölçüm Girişi</h3>
+        <button class="modal-close" id="vitals-close" data-i18n="common.close" aria-label="Kapat">×</button>
+      </div>
+      <form id="vitals-form" class="modal-body" autocomplete="off">
+        <label class="field">
+          <span data-i18n="vitals.pulse">Nabız (bpm)</span>
+          <input type="number" name="heartRate" data-i18n-placeholder="vitals.pulse" placeholder="Örn: 78" required min="20" max="260" />
+        </label>
+        <label class="field">
+          <span data-i18n="vitals.bp">Tansiyon (Sistolik / Diastolik mmHg)</span>
+          <div style="display:flex;gap:10px">
+            <input type="number" name="systolic" placeholder="120" required min="50" max="260" />
+            <input type="number" name="diastolic" placeholder="80" required min="30" max="180" />
+          </div>
+        </label>
+        <label class="field">
+          <span data-i18n="vitals.spo2">Oksijen Satürasyonu (SpO2 %)</span>
+          <input type="number" name="oxygenSaturation" data-i18n-placeholder="vitals.spo2" placeholder="Örn: 97" required min="50" max="100" />
+        </label>
+        <label class="field">
+          <span data-i18n="vitals.temp">Vücut Sıcaklığı (°C)</span>
+          <input type="number" name="bodyTemperature" data-i18n-placeholder="vitals.temp" placeholder="Örn: 36.7" required min="30" max="45" step="0.1" />
+        </label>
+        <p class="form-error hidden" id="vitals-error"></p>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="vitals-cancel" data-i18n="vitals.cancel">Vazgeç</button>
+          <button type="submit" class="btn btn-primary" data-i18n="vitals.save">Kaydet ve Analiz Et</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="patient-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 data-i18n="modal.newPatientTitle">Yeni Hasta Kaydı</h3>
+        <button class="modal-close" id="modal-close" data-i18n="common.close" aria-label="Kapat">×</button>
+      </div>
+
+      <form id="patient-form" class="modal-body" autocomplete="off">
+        <label class="field">
+          <span data-i18n="modal.fullName">Adı Soyadı</span>
+          <input type="text" name="fullName" data-i18n-placeholder="modal.fullName" placeholder="Örn: Ayşe Yılmaz" required minlength="3" />
+        </label>
+        <label class="field">
+          <span data-i18n="modal.nationalId">T.C. Kimlik No</span>
+          <input type="text" name="nationalId" data-i18n-placeholder="modal.nationalId" placeholder="11 haneli" required pattern="\d{11}" maxlength="11" inputmode="numeric" />
+        </label>
+        <label class="field">
+          <span data-i18n="modal.dateOfBirth">Doğum Tarihi</span>
+          <input type="date" name="dateOfBirth" required />
+        </label>
+        <label class="field">
+          <span data-i18n="modal.condition">Kronik Hastalık Grubu</span>
+          <select name="condition" required>
+            <option value="" disabled selected data-i18n="modal.select">Seçiniz…</option>
+            <option value="Diyabet" data-i18n="condition.diabetes">Diyabet</option>
+            <option value="Hipertansiyon" data-i18n="condition.hypertension">Hipertansiyon</option>
+            <option value="KOAH" data-i18n="condition.copd">KOAH</option>
+            <option value="Kalp Yetmezliği" data-i18n="condition.heartFailure">Kalp Yetmezliği</option>
+            <option value="Astım" data-i18n="condition.asthma">Astım</option>
+            <option value="Kronik Böbrek Hastalığı" data-i18n="condition.kidney">Kronik Böbrek Hastalığı</option>
+            <option value="Diğer" data-i18n="condition.other">Diğer</option>
+          </select>
+        </label>
+        <label class="field">
+          <span data-i18n="modal.contactChannel">Hasta İletişim Kanalı</span>
+          <select name="contactChannel" required>
+            <option value="" disabled selected data-i18n="modal.select">Seçiniz…</option>
+            <option value="sms" data-i18n="modal.contactSms">SMS ile İletişim</option>
+            <option value="ai" data-i18n="modal.contactAi">Yapay Zeka ile İletişim</option>
+          </select>
+        </label>
+
+        <p class="form-error hidden" id="form-error"></p>
+
+        <div class="kvkk-note" data-i18n-html="modal.kvkkNote">
+          🔒 Girilen kimlik bilgileri sistemde <strong>saklanmaz</strong>; kayıt anında HMAC-SHA256 ile geri döndürülemez anonim kimliğe dönüştürülür.
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="modal-cancel" data-i18n="modal.cancel">Vazgeç</button>
+          <button type="submit" class="btn btn-primary" id="modal-submit" data-i18n="modal.save">Kaydet</button>
+        </div>
+      </form>
+
+      <div id="kvkk-result" class="modal-body hidden">
+        <div class="kvkk-success" data-i18n="modal.success">✔ Hasta başarıyla kaydedildi ve anonimleştirildi</div>
+        <div class="kvkk-flow" id="kvkk-flow"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-primary" id="kvkk-done" data-i18n="modal.back">Panele Dön</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/i18n.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
