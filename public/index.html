@@ -212,10 +212,10 @@
                 <div class="module-head">
                   <span class="module-tag" data-i18n="modules.twinTag">DİJİTAL İKİZ</span>
                   <h3 data-i18n="modules.twinTitle">Hastanın Dijital İkizi</h3>
-                  <p data-i18n="modules.twinSubtitle">İlaç / doz simülasyonu — Tedavi öncesi analitik öngörü</p>
+                  <p data-i18n="modules.twinSubtitle">İlaç / doz analizi — Tedavi öncesi analitik öngörü</p>
                 </div>
                 <div class="twin-body">
-                  <button type="button" class="btn btn-primary" id="global-twin-simulate" data-twin-simulate="global" data-i18n="modules.twinSimulate">Simüle Et</button>
+                  <button type="button" class="btn btn-primary" id="global-twin-simulate" data-twin-simulate="global" data-i18n="modules.twinSimulate">Analiz Et</button>
                   <div class="twin-output hidden" id="global-twin-output"></div>
                 </div>
               </div>
@@ -442,8 +442,8 @@
                     </label>
                   </div>
                   <button type="submit" class="btn btn-primary" data-i18n="settings.save">Kaydet</button>
-                  <button type="button" class="btn btn-ghost" id="settings-test-sms" data-i18n="settings.sendSms">SMS Gönder</button>
-                  <span id="settings-test-sms-status" class="settings-status"></span>
+                  <button type="button" class="btn btn-ghost" id="settings-send-sms" data-i18n="settings.sendSms">SMS Gönder</button>
+                  <span id="settings-send-sms-status" class="settings-status"></span>
                 </form>
               </div>
 
@@ -477,7 +477,7 @@
 
           <div id="view-future" class="view hidden">
             <section class="patients-header">
-              <h2 data-i18n="nav.future">Geleceğin Teknolojileri</h2>
+              <h2 data-i18n="future.title">İleri Sağlık Modülleri</h2>
             </section>
             <section class="global-modules" id="future-modules">
               <div class="module-card sepsis">
@@ -514,10 +514,10 @@
                 <div class="module-head">
                   <span class="module-tag" data-i18n="modules.twinTag">DİJİTAL İKİZ</span>
                   <h3 data-i18n="modules.twinTitle">Hastanın Dijital İkizi</h3>
-                  <p data-i18n="modules.twinSubtitle">İlaç / doz simülasyonu — Tedavi öncesi analitik öngörü</p>
+                  <p data-i18n="modules.twinSubtitle">İlaç / doz analizi — Tedavi öncesi analitik öngörü</p>
                 </div>
                 <div class="twin-body">
-                  <button type="button" class="btn btn-primary future-twin-simulate" id="future-twin-simulate" data-twin-simulate="future" data-i18n="modules.twinSimulate">Simüle Et</button>
+                  <button type="button" class="btn btn-primary future-twin-simulate" id="future-twin-simulate" data-twin-simulate="future" data-i18n="modules.twinSimulate">Analiz Et</button>
                   <div class="twin-output hidden future-twin-output" id="future-twin-output"></div>
                 </div>
               </div>
@@ -690,7 +690,7 @@
                 <div class="tele-twin-card">
                   <h3 data-i18n="modules.twinTitle">Hastanın Dijital İkizi</h3>
                   <p class="tele-icd-sub" data-i18n="modules.twinSubtitle">Tedavi öncesi analitik öngörü</p>
-                  <button type="button" class="btn btn-primary btn-block" id="tele-twin-simulate" data-twin-simulate="tele" data-i18n="modules.twinSimulate">Simüle Et</button>
+                  <button type="button" class="btn btn-primary btn-block" id="tele-twin-simulate" data-twin-simulate="tele" data-i18n="modules.twinSimulate">Analiz Et</button>
                   <div class="twin-output hidden" id="tele-twin-output"></div>
                 </div>
               </div>
@@ -721,7 +721,7 @@
     <div class="modal future-modal">
       <div class="modal-head">
         <h3 id="future-modal-title">Rapor</h3>
-        <button class="modal-close" id="future-modal-close" data-i18n="technology.close" aria-label="Kapat">×</button>
+        <button class="modal-close" id="future-modal-close" aria-label="Kapat">×</button>
       </div>
       <div class="modal-body" id="future-modal-body"></div>
     </div>

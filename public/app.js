@@ -54,10 +54,6 @@
     vitalsForm: document.getElementById('vitals-form'),
     vitalsError: document.getElementById('vitals-error'),
     vitalsTitle: document.getElementById('vitals-modal-title'),
-    genomicBtn: document.getElementById('genomic-btn'),
-    genomicOutput: document.getElementById('genomic-output'),
-    scribeBtn: document.getElementById('scribe-btn'),
-    scribeOutput: document.getElementById('scribe-output'),
     adminDoctorForm: document.getElementById('admin-doctor-form'),
     adminFormError: document.getElementById('admin-form-error'),
     adminDoctorsBody: document.getElementById('admin-doctors-body'),
@@ -70,8 +66,8 @@
     settingsLogoInput: document.getElementById('settings-logo-input'),
     settingsLogoPreview: document.getElementById('settings-logo-preview'),
     settingsLogoStatus: document.getElementById('settings-logo-status'),
-    settingsTestSms: document.getElementById('settings-test-sms'),
-    settingsTestSmsStatus: document.getElementById('settings-test-sms-status'),
+    settingsSendSms: document.getElementById('settings-send-sms'),
+    settingsSendSmsStatus: document.getElementById('settings-send-sms-status'),
     settingsApiKey: document.getElementById('settings-api-key'),
     settingsGenerateApi: document.getElementById('settings-generate-api'),
     settingsCopyApi: document.getElementById('settings-copy-api'),
@@ -295,11 +291,10 @@
     item.addEventListener('click', (e) => {
       e.preventDefault();
       if (item.dataset.view) switchView(item.dataset.view);
-      if (item.dataset.future) openFutureModal(item.dataset.future);
     });
   });
 
-  /* ---------- Tele-Tıp Canlı Simülasyon ---------- */
+  /* ---------- Tele-Tıp Canlı İzlem ---------- */
   let teleAnimFrame = null;
   let teleInterval = null;
   let teleStartTs = 0;
@@ -584,11 +579,11 @@
     });
   }
 
-  if (els.settingsTestSms) {
-    els.settingsTestSms.addEventListener('click', () => {
-      if (els.settingsTestSmsStatus) {
-        els.settingsTestSmsStatus.textContent = t('settings.sendSmsSent');
-        els.settingsTestSmsStatus.className = 'settings-status status-ok';
+  if (els.settingsSendSms) {
+    els.settingsSendSms.addEventListener('click', () => {
+      if (els.settingsSendSmsStatus) {
+        els.settingsSendSmsStatus.textContent = t('settings.sendSmsSent');
+        els.settingsSendSmsStatus.className = 'settings-status status-ok';
       }
       addLog(t('settings.logSendSms'));
     });
@@ -987,10 +982,10 @@
         <div class="module-head">
           <span class="module-tag" data-i18n="modules.twinTag">DİJİTAL İKİZ</span>
           <h3 data-i18n="modules.twinTitle">Hastanın Dijital İkizi</h3>
-          <p data-i18n="modules.twinSubtitle">İlaç / doz simülasyonu — Tedavi öncesi analitik öngörü</p>
+          <p data-i18n="modules.twinSubtitle">İlaç / doz analizi — Tedavi öncesi analitik öngörü</p>
         </div>
         <div class="twin-body">
-          <button type="button" class="btn btn-primary" id="detail-twin-simulate" data-twin-simulate="detail" data-i18n="modules.twinSimulate">Simüle Et</button>
+          <button type="button" class="btn btn-primary" id="detail-twin-simulate" data-twin-simulate="detail" data-i18n="modules.twinSimulate">Analiz Et</button>
           <div class="twin-output hidden" id="detail-twin-output"></div>
         </div>
       </div>`;
@@ -1724,12 +1719,12 @@
   }
 
   function replaceVoiceVariables(text) {
-    const demo = {
-      tr: { name: 'Mehmet Bey', measurement: 'nabız 72, SpO2 %97', condition: 'Diyabet' },
-      en: { name: 'Mr. John', measurement: 'pulse 72, SpO2 97%', condition: 'Diabetes' },
-      ar: { name: 'السيد أحمد', measurement: 'نبض 72، SpO2 97%', condition: 'السكري' },
+    const placeholders = {
+      tr: { name: 'Hasta', measurement: 'nabız 72, SpO2 %97', condition: 'Diyabet' },
+      en: { name: 'Patient', measurement: 'pulse 72, SpO2 97%', condition: 'Diabetes' },
+      ar: { name: 'المريض', measurement: 'نبض 72، SpO2 97%', condition: 'السكري' },
     };
-    const d = demo[i18n.getCurrentLang()] || demo.tr;
+    const d = placeholders[i18n.getCurrentLang()] || placeholders.tr;
     return text
       .replace(/\[Hasta Adı\]/g, d.name)
       .replace(/\[Patient Name\]/g, d.name)
