@@ -157,6 +157,15 @@
     }
   }
 
+  async function safeJson(res) {
+    try {
+      const text = await res.text();
+      return text ? JSON.parse(text) : {};
+    } catch {
+      return {};
+    }
+  }
+
   async function api(path, options = {}) {
     const headers = {
       'Authorization': `Bearer ${getToken()}`,
@@ -243,8 +252,8 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.error || t('login.error'));
+      const body = await safeJson(res);
+      if (!res.ok || !body.token || !body.user) throw new Error(body.error || t('login.error'));
       localStorage.setItem('token', body.token);
       setStoredUser(body.user);
       addLog(t('log.login', { who: body.user.displayName, role: body.user.role }));
@@ -258,6 +267,19 @@
   els.logoutBtn.addEventListener('click', () => {
     logout();
   });
+
+  const loginDemo = document.getElementById('login-demo');
+  if (loginDemo) {
+    loginDemo.querySelectorAll('button[data-demo-user]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const userInput = els.loginForm.querySelector('input[name="username"]');
+        const passInput = els.loginForm.querySelector('input[name="password"]');
+        if (userInput) userInput.value = btn.dataset.demoUser;
+        if (passInput) passInput.value = btn.dataset.demoPass;
+        els.loginForm.requestSubmit();
+      });
+    });
+  }
 
   /* ---------- Views ---------- */
   function switchView(view) {
@@ -277,7 +299,7 @@
     });
     if (view === 'admin' && currentUser?.role === 'admin') loadDoctors();
     if (view === 'settings') loadSettings();
-    if (view === 'telemedicine') renderTelemedicine(true);
+    if (view === 'telemedicine') { renderTelemedicine(true); startTeleSim(); } else { stopTeleSim(); }
     if (view === 'voice') renderVoice(true);
     if (lastData) render(lastData);
   }
@@ -289,6 +311,131 @@
       if (item.dataset.future) openFutureModal(item.dataset.future);
     });
   });
+
+  /* ---------- Tele-Tıp Canlı Simülasyon ---------- */
+  let teleAnimFrame = null;
+  let teleInterval = null;
+  let teleStartTs = 0;
+  let teleEcgX = 0;
+  let telePhase = 0;
+
+  function drawTeleEcg() {
+    const canvas = document.getElementById('tele-ecg');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const h = canvas.height;
+    const mid = h / 2;
+    ctx.fillStyle = 'rgba(6, 20, 40, 0.18)';
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = '#22c55e';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    const step = 2;
+    const prevX = (teleEcgX - step + w) % w;
+    const yFor = (x) => {
+      const cycle = (x / w) * 4 * Math.PI + telePhase;
+      const beat = Math.pow(Math.max(0, Math.sin(cycle)), 12);
+      return mid - beat * (h * 0.42) + Math.sin(cycle * 3.7) * 2;
+    };
+    ctx.moveTo(prevX, yFor(prevX));
+    ctx.lineTo(teleEcgX, yFor(teleEcgX));
+    ctx.stroke();
+    teleEcgX = (teleEcgX + step) % w;
+    if (teleEcgX === 0) {
+      ctx.clearRect(0, 0, w, h);
+      telePhase = Math.random() * Math.PI;
+    }
+  }
+
+  function drawTeleWaveform() {
+    const canvas = document.getElementById('tele-waveform');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const h = canvas.height;
+    const mid = h / 2;
+    ctx.clearRect(0, 0, w, h);
+    const now = Date.now() / 320;
+    const bars = 96;
+    const barW = w / bars;
+    for (let i = 0; i < bars; i++) {
+      const amp = (Math.sin(now + i * 0.42) * 0.5 + 0.5) * (Math.sin(now * 0.5 + i * 0.11) * 0.5 + 0.5);
+      const barH = 4 + amp * (h * 0.82);
+      const grad = ctx.createLinearGradient(0, mid - barH / 2, 0, mid + barH / 2);
+      grad.addColorStop(0, '#38bdf8');
+      grad.addColorStop(1, '#2563eb');
+      ctx.fillStyle = grad;
+      ctx.fillRect(i * barW + 1, mid - barH / 2, barW - 2, barH);
+    }
+  }
+
+  function teleAnimLoop() {
+    drawTeleEcg();
+    drawTeleWaveform();
+    teleAnimFrame = requestAnimationFrame(teleAnimLoop);
+  }
+
+  function updateTeleReadings() {
+    const rand = (min, max) => Math.round(min + Math.random() * (max - min));
+    const bpmEl = document.getElementById('tele-bpm');
+    const bpEl = document.getElementById('tele-bp');
+    const spo2El = document.getElementById('tele-spo2');
+    const rrEl = document.getElementById('tele-rr');
+    if (bpmEl) bpmEl.textContent = rand(72, 88);
+    if (bpEl) bpEl.textContent = `${rand(116, 132)}/${rand(74, 86)}`;
+    if (spo2El) spo2El.textContent = `%${rand(95, 99)}`;
+    if (rrEl) rrEl.textContent = rand(14, 19);
+
+    const score = rand(8, 34);
+    const fill = document.getElementById('tele-score-fill');
+    const value = document.getElementById('tele-score-value');
+    const label = document.getElementById('tele-risk-label');
+    if (fill) {
+      fill.style.width = `${score}%`;
+      fill.classList.toggle('warn', score >= 25);
+    }
+    if (value) value.textContent = `${score}%`;
+    if (label) label.textContent = score >= 25 ? t('teletip.riskModerate') : t('teletip.riskLow');
+
+    const timerEl = document.getElementById('tele-timer');
+    if (timerEl && teleStartTs) {
+      const total = Math.floor((Date.now() - teleStartTs) / 1000);
+      const mm = String(Math.floor(total / 60)).padStart(2, '0');
+      const ss = String(total % 60).padStart(2, '0');
+      timerEl.textContent = `${mm}:${ss}`;
+    }
+  }
+
+  function startTeleSim() {
+    stopTeleSim();
+    teleStartTs = Date.now();
+    teleEcgX = 0;
+    const ecg = document.getElementById('tele-ecg');
+    if (ecg) {
+      const ctx = ecg.getContext('2d');
+      ctx.clearRect(0, 0, ecg.width, ecg.height);
+    }
+    updateTeleReadings();
+    teleInterval = setInterval(updateTeleReadings, 2000);
+    teleAnimFrame = requestAnimationFrame(teleAnimLoop);
+  }
+
+  function stopTeleSim() {
+    if (teleAnimFrame) cancelAnimationFrame(teleAnimFrame);
+    teleAnimFrame = null;
+    if (teleInterval) clearInterval(teleInterval);
+    teleInterval = null;
+  }
+
+  const teleRxApply = document.getElementById('tele-rx-apply');
+  if (teleRxApply) {
+    teleRxApply.addEventListener('click', () => {
+      const status = document.getElementById('tele-rx-status');
+      if (status) status.classList.remove('hidden');
+      addLog(t('teletip.rxApplied'));
+    });
+  }
 
   /* ---------- Admin ---------- */
   async function loadDoctors() {

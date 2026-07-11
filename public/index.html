@@ -44,6 +44,14 @@
         <p class="form-error hidden" id="login-error"></p>
         <button type="submit" class="btn btn-primary btn-block" data-i18n="login.submit">Giriş Yap</button>
       </form>
+      <div class="login-demo" id="login-demo">
+        <strong data-i18n="login.demoTitle">Değerlendirme (Demo) Erişimi</strong>
+        <div class="login-demo-actions">
+          <button type="button" class="btn btn-ghost" data-demo-user="yönetici" data-demo-pass="mahmut123" data-i18n="login.demoAdmin">Yönetici Girişi</button>
+          <button type="button" class="btn btn-ghost" data-demo-user="doktor" data-demo-pass="doktor123" data-i18n="login.demoDoctor">Hekim Girişi</button>
+        </div>
+        <small data-i18n="login.demoNote">Tek tıkla örnek kimlik bilgileriyle giriş yapabilirsiniz.</small>
+      </div>
       <div class="login-hint">
         <p class="login-warning" data-i18n="login.forgotPassword">Şifrenizi unuttuysanız lütfen bilgi işleme başvurunuz.</p>
       </div>
@@ -55,7 +63,7 @@
 
   <div class="app-shell hidden" id="app-shell">
     <div class="gov-strip" data-i18n="app.govStrip">
-      T.C. SAĞLIK BAKANLIĞI – ULUSAL KRONİK HASTALIK TAKİP AĞI // SENTRYHEALTH VIP SHOWCASE
+      T.C. SAĞLIK BAKANLIĞI — ULUSAL KRONİK HASTALIK TAKİP VE TELE-TIP AĞI
     </div>
 
     <div class="layout">
@@ -81,11 +89,6 @@
           <span class="nav-section" data-i18n="nav.future">Geleceğin Teknolojileri</span>
           <a href="#" class="nav-item" data-view="future" data-future="genomic"><span class="nav-icon">🧬</span> <span data-i18n="future.genomicTitle">🧬 Biyometrik İkiz &amp; Genomik</span></a>
           <a href="#" class="nav-item" data-view="future" data-future="scribe"><span class="nav-icon">🎙️</span> <span data-i18n="future.scribeTitle">🎙️ AI Ambient Scribe</span></a>
-          <a href="#" class="nav-item future-link" data-view="future" data-future="immortality"><span class="nav-icon">♾</span> <span data-i18n="technology.immortalityTitle">Ölümsüzlük Protokolü</span></a>
-          <a href="#" class="nav-item future-link" data-view="future" data-future="dna"><span class="nav-icon">🧪</span> <span data-i18n="technology.dnaTitle">DNA Hack &amp; Splicing</span></a>
-          <a href="#" class="nav-item future-link" data-view="future" data-future="nanobot"><span class="nav-icon">🤖</span> <span data-i18n="technology.nanobotTitle">Kuantum Nanobot Sürüsü</span></a>
-          <a href="#" class="nav-item future-link" data-view="future" data-future="organ"><span class="nav-icon">🫀</span> <span data-i18n="technology.organTitle">3D Organ Yazıcısı</span></a>
-          <a href="#" class="nav-item future-link" data-view="future" data-future="memory"><span class="nav-icon">🧠</span> <span data-i18n="technology.memoryTitle">Hafıza Yedekleme</span></a>
           <span class="nav-section" data-i18n="analytics.title">Analitik &amp; Raporlar</span>
           <a href="#" class="nav-item" data-view="analytics"><span class="nav-icon">📊</span> <span data-i18n="nav.analytics">Analitik</span></a>
           <a href="#" class="nav-item" data-view="reports"><span class="nav-icon">📄</span> <span data-i18n="nav.reports">Raporlar</span></a>
@@ -539,8 +542,76 @@
 
           <div id="view-telemedicine" class="view hidden">
             <section class="patients-header">
-              <h2 data-i18n="telemedicine.title">Klinik Tavsiye Yayını</h2>
+              <h2 data-i18n="teletip.consoleTitle">Tele-Tıp Konsolu — Canlı Konsültasyon</h2>
               <span class="kvkk-badge" data-i18n="telemedicine.kvkkBadge">🔒 KVKK Uyumlu — Anonimleştirilmiş Veri</span>
+            </section>
+
+            <section class="tele-grid">
+              <div class="tele-main">
+                <div class="tele-video-card">
+                  <div class="tele-video-head">
+                    <span class="tele-live-dot"></span>
+                    <span data-i18n="teletip.sessionActive">Canlı Görüşme</span>
+                    <span class="tele-secure" data-i18n="teletip.sessionSecure">Uçtan Uca Şifreli (AES-256)</span>
+                    <span class="tele-timer" id="tele-timer">00:00</span>
+                  </div>
+                  <div class="tele-video-body">
+                    <div class="tele-avatar">
+                      <span>🧑‍⚕️</span>
+                      <small><span data-i18n="teletip.patientLabel">Hasta</span> · <span id="tele-patient-id">PSN-4F2A91</span></small>
+                    </div>
+                    <div class="tele-avatar tele-avatar-small">
+                      <span>👩‍⚕️</span>
+                      <small data-i18n="teletip.physicianLabel">Hekim</small>
+                    </div>
+                  </div>
+                  <div class="tele-compliance">
+                    <div class="compliance-item"><span class="compliance-dot ok"></span><span data-i18n="teletip.biometric">Hekim Biyometrik Onayı</span><em data-i18n="teletip.verified">Doğrulandı</em></div>
+                    <div class="compliance-item"><span class="compliance-dot ok"></span><span data-i18n="teletip.kvkkConsent">KVKK Aydınlatma Metni Onay Durumu</span><em data-i18n="teletip.approved">Onaylandı</em></div>
+                    <div class="compliance-item"><span class="compliance-dot pulse"></span><span data-i18n="teletip.tusebSignal">TÜSEB Sağlık Veri Havuzu Entegrasyon Sinyali</span><em data-i18n="teletip.active">Aktif</em></div>
+                  </div>
+                </div>
+
+                <div class="tele-stetho-card">
+                  <h3 data-i18n="teletip.stethoTitle">YZ Destekli Stetoskop — Akustik Dalga Analizi</h3>
+                  <canvas id="tele-waveform" width="640" height="110"></canvas>
+                  <div class="tele-score-row">
+                    <span data-i18n="teletip.pathologyScore">YZ Destekli Olası Akciğer Patolojisi Skoru</span>
+                    <div class="tele-score-bar"><div class="tele-score-fill" id="tele-score-fill"></div></div>
+                    <strong id="tele-score-value">12%</strong>
+                    <em class="tele-risk-label" id="tele-risk-label" data-i18n="teletip.riskLow">Düşük Risk</em>
+                  </div>
+                </div>
+              </div>
+
+              <div class="tele-side">
+                <div class="tele-vitals-card">
+                  <h3 data-i18n="teletip.vitalsTitle">Canlı Vital İzleme</h3>
+                  <canvas id="tele-ecg" width="320" height="80"></canvas>
+                  <div class="tele-vital-row"><span data-i18n="teletip.bpm">Nabız (BPM)</span><strong id="tele-bpm">78</strong></div>
+                  <div class="tele-vital-row"><span data-i18n="teletip.bp">Kan Basıncı (mmHg)</span><strong id="tele-bp">122/81</strong></div>
+                  <div class="tele-vital-row"><span data-i18n="teletip.spo2">Oksijen Satürasyonu (SpO2)</span><strong id="tele-spo2">%97</strong></div>
+                  <div class="tele-vital-row"><span data-i18n="teletip.rr">Solunum Frekansı (/dk)</span><strong id="tele-rr">16</strong></div>
+                </div>
+
+                <div class="tele-icd-card">
+                  <h3 data-i18n="teletip.icdTitle">Akıllı Tanı Desteği (ICD-10)</h3>
+                  <p class="tele-icd-sub" data-i18n="teletip.icdSubtitle">Semptom analizine göre önerilen tanı kodları</p>
+                  <div class="icd-item"><span data-i18n="teletip.icd1">J44.9 — Kronik Obstrüktif Akciğer Hastalığı</span><em>%91 <span data-i18n="teletip.confidence">Uyum</span></em></div>
+                  <div class="icd-item"><span data-i18n="teletip.icd2">I10 — Esansiyel (Primer) Hipertansiyon</span><em>%74 <span data-i18n="teletip.confidence">Uyum</span></em></div>
+                  <div class="icd-item"><span data-i18n="teletip.icd3">E11.9 — Tip 2 Diabetes Mellitus</span><em>%58 <span data-i18n="teletip.confidence">Uyum</span></em></div>
+                  <h3 style="margin-top:16px" data-i18n="teletip.rxTitle">Akıllı Reçete Önerisi</h3>
+                  <div class="rx-item" data-i18n="teletip.rx1">Tiotropium 18 mcg — günde 1 inhalasyon</div>
+                  <div class="rx-item" data-i18n="teletip.rx2">Ramipril 5 mg — günde 1 tablet</div>
+                  <div class="rx-item" data-i18n="teletip.rx3">Metformin 1000 mg — günde 2 tablet</div>
+                  <button type="button" class="btn btn-primary btn-block" id="tele-rx-apply" data-i18n="teletip.rxApply" style="margin-top:12px">Reçete Taslağına Aktar</button>
+                  <p class="tele-rx-status hidden" id="tele-rx-status" data-i18n="teletip.rxApplied">Reçete taslağına eklendi — hekim onayı bekleniyor.</p>
+                </div>
+              </div>
+            </section>
+
+            <section class="patients-header" style="margin-top:24px">
+              <h2 data-i18n="telemedicine.title">Klinik Tavsiye Yayını</h2>
             </section>
             <section class="broadcast-grid" id="broadcast-panel"></section>
           </div>

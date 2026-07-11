@@ -2216,3 +2216,170 @@ html[dir="rtl"] .chat-msg.user { justify-content: flex-end; }
   .chatbot-controls { flex-wrap: wrap; gap: 10px; }
   .chatbot-messages { max-height: 360px; }
 }
+
+/* ---------- Login demo access ---------- */
+.login-demo {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--blue-soft);
+  text-align: center;
+}
+.login-demo strong {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--blue);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.login-demo-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+.login-demo-actions .btn {
+  flex: 1;
+  border: 1px solid var(--blue);
+  color: var(--blue);
+  background: #ffffff;
+  font-weight: 600;
+}
+.login-demo-actions .btn:hover { background: var(--blue); color: #ffffff; }
+.login-demo small { color: var(--text-muted); font-size: 0.72rem; }
+
+/* ---------- Tele-Tıp console ---------- */
+.tele-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.tele-main, .tele-side { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+
+.tele-video-card, .tele-stetho-card, .tele-vitals-card, .tele-icd-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.tele-stetho-card, .tele-vitals-card, .tele-icd-card { padding: 18px; }
+.tele-stetho-card h3, .tele-vitals-card h3, .tele-icd-card h3 {
+  font-size: 0.92rem;
+  margin-bottom: 12px;
+}
+
+.tele-video-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #0b1e3a;
+  color: #e2e8f0;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.tele-live-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: #ef4444;
+  animation: tele-blink 1.2s infinite;
+}
+@keyframes tele-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+.tele-secure { margin-inline-start: auto; font-weight: 500; color: #86efac; font-size: 0.72rem; }
+.tele-timer { font-variant-numeric: tabular-nums; background: rgba(255,255,255,0.12); padding: 2px 10px; border-radius: 999px; }
+
+.tele-video-body {
+  position: relative;
+  min-height: 240px;
+  background: linear-gradient(160deg, #0f2f6d, #10264d 60%, #0b1e3a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tele-avatar {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  color: #e2e8f0; font-size: 0.78rem;
+}
+.tele-avatar > span { font-size: 4rem; }
+.tele-avatar-small {
+  position: absolute;
+  bottom: 14px; right: 14px;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 12px;
+  padding: 8px 14px;
+}
+.tele-avatar-small > span { font-size: 1.9rem; }
+
+.tele-compliance { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+.compliance-item {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 0.78rem; color: var(--text);
+}
+.compliance-item em {
+  margin-inline-start: auto; font-style: normal; font-weight: 700;
+  color: var(--green); font-size: 0.74rem;
+}
+.compliance-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+.compliance-dot.pulse { background: var(--blue); animation: tele-blink 1.6s infinite; }
+
+#tele-waveform, #tele-ecg {
+  width: 100%;
+  border-radius: 10px;
+  background: #071528;
+  display: block;
+}
+.tele-score-row {
+  display: flex; align-items: center; gap: 12px;
+  margin-top: 12px; font-size: 0.76rem; color: var(--text-muted);
+  flex-wrap: wrap;
+}
+.tele-score-bar {
+  flex: 1; min-width: 120px; height: 8px;
+  background: var(--surface-2); border-radius: 999px; overflow: hidden;
+}
+.tele-score-fill {
+  height: 100%; width: 12%;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  border-radius: 999px;
+  transition: width 0.8s ease;
+}
+.tele-score-fill.warn { background: linear-gradient(90deg, #f59e0b, #d97706); }
+.tele-risk-label { font-style: normal; font-weight: 700; color: var(--green); }
+
+.tele-vital-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 9px 0; border-bottom: 1px solid var(--border);
+  font-size: 0.8rem; color: var(--text-muted);
+}
+.tele-vital-row:last-child { border-bottom: none; }
+.tele-vital-row strong { color: var(--text); font-variant-numeric: tabular-nums; font-size: 0.95rem; }
+.tele-vitals-card canvas { margin-bottom: 10px; }
+
+.tele-icd-sub { font-size: 0.74rem; color: var(--text-muted); margin-bottom: 10px; }
+.icd-item {
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  padding: 9px 12px; margin-bottom: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 0.78rem;
+}
+.icd-item em { font-style: normal; font-weight: 700; color: var(--blue); white-space: nowrap; }
+.rx-item {
+  padding: 8px 12px; margin-bottom: 8px;
+  background: var(--green-soft);
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  font-size: 0.78rem;
+}
+.tele-rx-status { margin-top: 10px; font-size: 0.76rem; color: var(--green); font-weight: 600; }
+
+html[dir="rtl"] .tele-avatar-small { right: auto; left: 14px; }
+
+@media (max-width: 1080px) {
+  .tele-grid { grid-template-columns: 1fr; }
+}
