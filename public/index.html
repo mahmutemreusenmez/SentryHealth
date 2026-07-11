@@ -35,7 +35,7 @@
       <form id="login-form" class="login-form" autocomplete="off">
         <label class="field">
           <span data-i18n="login.username">Kullanıcı Adı</span>
-          <input type="text" name="username" data-i18n-placeholder="login.username" placeholder="doktor veya yönetici" required minlength="3" />
+          <input type="text" name="username" data-i18n-placeholder="login.username" placeholder="Kurumsal kullanıcı adınız" required minlength="3" />
         </label>
         <label class="field">
           <span data-i18n="login.password">Şifre</span>
@@ -44,14 +44,6 @@
         <p class="form-error hidden" id="login-error"></p>
         <button type="submit" class="btn btn-primary btn-block" data-i18n="login.submit">Giriş Yap</button>
       </form>
-      <div class="login-demo" id="login-demo">
-        <strong data-i18n="login.demoTitle">Değerlendirme (Demo) Erişimi</strong>
-        <div class="login-demo-actions">
-          <button type="button" class="btn btn-ghost" data-demo-user="yönetici" data-demo-pass="mahmut123" data-i18n="login.demoAdmin">Yönetici Girişi</button>
-          <button type="button" class="btn btn-ghost" data-demo-user="doktor" data-demo-pass="doktor123" data-i18n="login.demoDoctor">Hekim Girişi</button>
-        </div>
-        <small data-i18n="login.demoNote">Tek tıkla örnek kimlik bilgileriyle giriş yapabilirsiniz.</small>
-      </div>
       <div class="login-hint">
         <p class="login-warning" data-i18n="login.forgotPassword">Şifrenizi unuttuysanız lütfen bilgi işleme başvurunuz.</p>
       </div>
@@ -86,9 +78,8 @@
           <span class="nav-section" data-i18n="nav.management">Yönetim</span>
           <a href="#" class="nav-item hidden" data-view="admin" id="nav-admin"><span class="nav-icon">⚙</span> <span data-i18n="nav.admin">Yönetici Paneli</span></a>
           <a href="#" class="nav-item" data-view="settings"><span class="nav-icon">🔧</span> <span data-i18n="nav.settings">Ayarlar</span></a>
-          <span class="nav-section" data-i18n="nav.future">Geleceğin Teknolojileri</span>
-          <a href="#" class="nav-item" data-view="future" data-future="genomic"><span class="nav-icon">🧬</span> <span data-i18n="future.genomicTitle">🧬 Biyometrik İkiz &amp; Genomik</span></a>
-          <a href="#" class="nav-item" data-view="future" data-future="scribe"><span class="nav-icon">🎙️</span> <span data-i18n="future.scribeTitle">🎙️ AI Ambient Scribe</span></a>
+          <span class="nav-section" data-i18n="nav.future">İleri Modüller</span>
+          <a href="#" class="nav-item" data-view="future"><span class="nav-icon">🌐</span> <span data-i18n="nav.future">İleri Modüller</span></a>
           <span class="nav-section" data-i18n="analytics.title">Analitik &amp; Raporlar</span>
           <a href="#" class="nav-item" data-view="analytics"><span class="nav-icon">📊</span> <span data-i18n="nav.analytics">Analitik</span></a>
           <a href="#" class="nav-item" data-view="reports"><span class="nav-icon">📄</span> <span data-i18n="nav.reports">Raporlar</span></a>
@@ -185,26 +176,68 @@
               </div>
             </section>
 
-            <h2 class="future-title" data-i18n="future.title">Geleceğin Teknolojileri</h2>
-            <section class="future-modules">
-              <div class="future-card genomic">
-                <div class="future-head">
-                  <span class="future-tag" data-i18n="future.genomicTag">V13 FÜTÜRİSTİK MODÜL</span>
-                  <h3 data-i18n="future.genomicTitle">🧬 Biyometrik İkiz &amp; Genomik</h3>
-                  <p data-i18n="future.genomicDesc">Hücresel düzeyde risk ve ilaç uyum haritası.</p>
+            <h2 class="future-title" data-i18n="future.title">İleri Sağlık Modülleri</h2>
+            <section class="global-modules" id="global-modules">
+              <div class="module-card sepsis">
+                <div class="module-head">
+                  <span class="module-tag" data-i18n="modules.sepsisTag">ERKEN UYARI</span>
+                  <h3 data-i18n="modules.sepsisTitle">YZ Destekli Erken Sepsis ve Çoklu Organ Yetmezliği Tahmini</h3>
+                  <p data-i18n="modules.sepsisSubtitle">qSOFA / MEWS Skor Kartı — 48 saat öncesi risk uyarısı</p>
                 </div>
-                <button class="btn btn-future" id="genomic-btn" data-i18n="future.genomicBtn">Başlat</button>
-                <div class="future-output hidden" id="genomic-output"></div>
+                <div class="sepsis-body">
+                  <div class="sepsis-score-row">
+                    <div class="sepsis-score">
+                      <span data-i18n="modules.sepsisRisk">Sepsis Risk Skoru</span>
+                      <strong id="sepsis-score">0</strong>
+                    </div>
+                    <small data-i18n="modules.sepsisRisk48">48 saat öncesi tahmin</small>
+                  </div>
+                  <div class="sepsis-bars">
+                    <div class="sepsis-bar">
+                      <span data-i18n="modules.sepsisQsofa">qSOFA</span>
+                      <div class="sepsis-bar-bg"><div class="sepsis-bar-fill" id="sepsis-qsofa"></div></div>
+                      <em id="sepsis-qsofa-val">0</em>
+                    </div>
+                    <div class="sepsis-bar">
+                      <span data-i18n="modules.sepsisMews">MEWS</span>
+                      <div class="sepsis-bar-bg"><div class="sepsis-bar-fill" id="sepsis-mews"></div></div>
+                      <em id="sepsis-mews-val">0</em>
+                    </div>
+                  </div>
+                  <div class="sepsis-alarm hidden" id="sepsis-alarm" data-i18n="modules.sepsisAlarm">KRİTİK SEPSİS RİSKİ: Erken Müdahale Önerilir</div>
+                </div>
               </div>
 
-              <div class="future-card scribe">
-                <div class="future-head">
-                  <span class="future-tag" data-i18n="future.scribeTag">V13 YZ ORTAM DİNLEME</span>
-                  <h3 data-i18n="future.scribeTitle">🎙️ AI Ambient Scribe</h3>
-                  <p data-i18n="future.scribeDesc">Muayeneyi dinler, epikriz ve ICD'yi yazar.</p>
+              <div class="module-card twin">
+                <div class="module-head">
+                  <span class="module-tag" data-i18n="modules.twinTag">DİJİTAL İKİZ</span>
+                  <h3 data-i18n="modules.twinTitle">Hastanın Dijital İkizi</h3>
+                  <p data-i18n="modules.twinSubtitle">İlaç / doz simülasyonu — Tedavi öncesi analitik öngörü</p>
                 </div>
-                <button class="btn btn-future" id="scribe-btn" data-i18n="future.scribeBtn">🎙 Scribe</button>
-                <div class="future-output hidden" id="scribe-output"></div>
+                <div class="twin-body">
+                  <button type="button" class="btn btn-primary" id="global-twin-simulate" data-twin-simulate="global" data-i18n="modules.twinSimulate">Simüle Et</button>
+                  <div class="twin-output hidden" id="global-twin-output"></div>
+                </div>
+              </div>
+
+              <div class="module-card sdoh">
+                <div class="module-head">
+                  <span class="module-tag" data-i18n="modules.sdohTag">ÇEVRESEL RİSK</span>
+                  <h3 data-i18n="modules.sdohTitle">Sosyal Sağlık Belirleyicileri (SDOH) ve Çevresel Risk Haritası</h3>
+                  <p data-i18n="modules.sdohSubtitle">Coğrafi ve çevresel verilerle klinik risk profili</p>
+                </div>
+                <div class="sdoh-body">
+                  <div class="sdoh-map">
+                    <canvas id="sdoh-map" width="340" height="170"></canvas>
+                  </div>
+                  <div class="sdoh-metrics">
+                    <div class="sdoh-metric"><span data-i18n="modules.sdohAqi">Hava Kalitesi (AQI)</span><strong id="sdoh-aqi">—</strong></div>
+                    <div class="sdoh-metric"><span data-i18n="modules.sdohPollen">Polen Yoğunluğu</span><strong id="sdoh-pollen">—</strong></div>
+                    <div class="sdoh-metric"><span data-i18n="modules.sdohInfluenza">Mevsimsel Influenza</span><strong id="sdoh-influenza">—</strong></div>
+                  </div>
+                  <div class="sdoh-risk" id="sdoh-risk" data-i18n="modules.sdohRisk">Çevresel Risk İndeksi: <strong id="sdoh-risk-value">—</strong></div>
+                  <div class="sdoh-legend" id="sdoh-legend" data-i18n="modules.sdohLegend">Risk haritası: hasta bölgesi ve kronik durum etkisi</div>
+                </div>
               </div>
             </section>
 
@@ -409,7 +442,7 @@
                     </label>
                   </div>
                   <button type="submit" class="btn btn-primary" data-i18n="settings.save">Kaydet</button>
-                  <button type="button" class="btn btn-ghost" id="settings-test-sms" data-i18n="settings.testSms">Test SMS Gönder</button>
+                  <button type="button" class="btn btn-ghost" id="settings-test-sms" data-i18n="settings.sendSms">SMS Gönder</button>
                   <span id="settings-test-sms-status" class="settings-status"></span>
                 </form>
               </div>
@@ -446,62 +479,67 @@
             <section class="patients-header">
               <h2 data-i18n="nav.future">Geleceğin Teknolojileri</h2>
             </section>
-            <section class="future-view-grid" id="future-view-grid">
-              <div class="future-card genomic" data-future="genomic">
-                <div class="future-head">
-                  <span class="future-tag" data-i18n="future.genomicTag">V13 FÜTÜRİSTİK MODÜL</span>
-                  <h3 data-i18n="future.genomicTitle">🧬 Biyometrik İkiz &amp; Genomik</h3>
-                  <p data-i18n="future.genomicDesc">Hücresel düzeyde risk ve ilaç uyum haritası.</p>
+            <section class="global-modules" id="future-modules">
+              <div class="module-card sepsis">
+                <div class="module-head">
+                  <span class="module-tag" data-i18n="modules.sepsisTag">ERKEN UYARI</span>
+                  <h3 data-i18n="modules.sepsisTitle">YZ Destekli Erken Sepsis ve Çoklu Organ Yetmezliği Tahmini</h3>
+                  <p data-i18n="modules.sepsisSubtitle">qSOFA / MEWS Skor Kartı — 48 saat öncesi risk uyarısı</p>
                 </div>
-                <button class="btn btn-future" data-start="genomic" data-i18n="technology.startBtn">Demo Başlat</button>
+                <div class="sepsis-body">
+                  <div class="sepsis-score-row">
+                    <div class="sepsis-score">
+                      <span data-i18n="modules.sepsisRisk">Sepsis Risk Skoru</span>
+                      <strong class="sepsis-score-value">0</strong>
+                    </div>
+                    <small data-i18n="modules.sepsisRisk48">48 saat öncesi tahmin</small>
+                  </div>
+                  <div class="sepsis-bars">
+                    <div class="sepsis-bar">
+                      <span data-i18n="modules.sepsisQsofa">qSOFA</span>
+                      <div class="sepsis-bar-bg"><div class="sepsis-bar-fill sepsis-qsofa"></div></div>
+                      <em class="sepsis-qsofa-val">0</em>
+                    </div>
+                    <div class="sepsis-bar">
+                      <span data-i18n="modules.sepsisMews">MEWS</span>
+                      <div class="sepsis-bar-bg"><div class="sepsis-bar-fill sepsis-mews"></div></div>
+                      <em class="sepsis-mews-val">0</em>
+                    </div>
+                  </div>
+                  <div class="sepsis-alarm hidden" data-i18n="modules.sepsisAlarm">KRİTİK SEPSİS RİSKİ: Erken Müdahale Önerilir</div>
+                </div>
               </div>
-              <div class="future-card scribe" data-future="scribe">
-                <div class="future-head">
-                  <span class="future-tag" data-i18n="future.scribeTag">V13 YZ ORTAM DİNLEME</span>
-                  <h3 data-i18n="future.scribeTitle">🎙️ AI Ambient Scribe</h3>
-                  <p data-i18n="future.scribeDesc">Muayeneyi dinler, epikriz ve ICD'yi yazar.</p>
+
+              <div class="module-card twin">
+                <div class="module-head">
+                  <span class="module-tag" data-i18n="modules.twinTag">DİJİTAL İKİZ</span>
+                  <h3 data-i18n="modules.twinTitle">Hastanın Dijital İkizi</h3>
+                  <p data-i18n="modules.twinSubtitle">İlaç / doz simülasyonu — Tedavi öncesi analitik öngörü</p>
                 </div>
-                <button class="btn btn-future" data-start="scribe" data-i18n="technology.startBtn">Demo Başlat</button>
+                <div class="twin-body">
+                  <button type="button" class="btn btn-primary future-twin-simulate" id="future-twin-simulate" data-twin-simulate="future" data-i18n="modules.twinSimulate">Simüle Et</button>
+                  <div class="twin-output hidden future-twin-output" id="future-twin-output"></div>
+                </div>
               </div>
-              <div class="future-card" data-future="immortality">
-                <div class="future-head">
-                  <span class="future-tag">V13 FÜTÜRİSTİK MODÜL</span>
-                  <h3 data-i18n="technology.immortalityTitle">♾ Ölümsüzlük Protokolü</h3>
-                  <p data-i18n="technology.immortalityDesc">Biyolojik yaşlanma süreçlerini yavaşlatma ve hücresel onarım protokolleri.</p>
+
+              <div class="module-card sdoh">
+                <div class="module-head">
+                  <span class="module-tag" data-i18n="modules.sdohTag">ÇEVRESEL RİSK</span>
+                  <h3 data-i18n="modules.sdohTitle">Sosyal Sağlık Belirleyicileri (SDOH) ve Çevresel Risk Haritası</h3>
+                  <p data-i18n="modules.sdohSubtitle">Coğrafi ve çevresel verilerle klinik risk profili</p>
                 </div>
-                <button class="btn btn-future" data-start="immortality" data-i18n="technology.startBtn">Demo Başlat</button>
-              </div>
-              <div class="future-card" data-future="dna">
-                <div class="future-head">
-                  <span class="future-tag">V13 FÜTÜRİSTİK MODÜL</span>
-                  <h3 data-i18n="technology.dnaTitle">🧪 DNA Hack &amp; Splicing</h3>
-                  <p data-i18n="technology.dnaDesc">CRISPR tabanlı gen düzenleme ve kişiselleştirilmiş gen terapi planları.</p>
+                <div class="sdoh-body">
+                  <div class="sdoh-map">
+                    <canvas class="sdoh-map-canvas" width="340" height="170"></canvas>
+                  </div>
+                  <div class="sdoh-metrics">
+                    <div class="sdoh-metric"><span data-i18n="modules.sdohAqi">Hava Kalitesi (AQI)</span><strong class="sdoh-aqi">—</strong></div>
+                    <div class="sdoh-metric"><span data-i18n="modules.sdohPollen">Polen Yoğunluğu</span><strong class="sdoh-pollen">—</strong></div>
+                    <div class="sdoh-metric"><span data-i18n="modules.sdohInfluenza">Mevsimsel Influenza</span><strong class="sdoh-influenza">—</strong></div>
+                  </div>
+                  <div class="sdoh-risk" data-i18n="modules.sdohRisk">Çevresel Risk İndeksi: <strong class="sdoh-risk-value">—</strong></div>
+                  <div class="sdoh-legend" data-i18n="modules.sdohLegend">Risk haritası: hasta bölgesi ve kronik durum etkisi</div>
                 </div>
-                <button class="btn btn-future" data-start="dna" data-i18n="technology.startBtn">Demo Başlat</button>
-              </div>
-              <div class="future-card" data-future="nanobot">
-                <div class="future-head">
-                  <span class="future-tag">V13 FÜTÜRİSTİK MODÜL</span>
-                  <h3 data-i18n="technology.nanobotTitle">🤖 Kuantum Nanobot Sürüsü</h3>
-                  <p data-i18n="technology.nanobotDesc">Hedefe yönelik ilaç dağıtımı ve mikro cerrahi için nanobot orduları.</p>
-                </div>
-                <button class="btn btn-future" data-start="nanobot" data-i18n="technology.startBtn">Demo Başlat</button>
-              </div>
-              <div class="future-card" data-future="organ">
-                <div class="future-head">
-                  <span class="future-tag">V13 FÜTÜRİSTİK MODÜL</span>
-                  <h3 data-i18n="technology.organTitle">🫀 3D Organ Yazıcısı</h3>
-                  <p data-i18n="technology.organDesc">Biyoyatıcı ve doku mühendisliği ile hasta özel organ üretimi.</p>
-                </div>
-                <button class="btn btn-future" data-start="organ" data-i18n="technology.startBtn">Demo Başlat</button>
-              </div>
-              <div class="future-card" data-future="memory">
-                <div class="future-head">
-                  <span class="future-tag">V13 FÜTÜRİSTİK MODÜL</span>
-                  <h3 data-i18n="technology.memoryTitle">🧠 Hafıza Yedekleme</h3>
-                  <p data-i18n="technology.memoryDesc">Nöral veri arşivleme ve bilişsel yedekleme altyapısı.</p>
-                </div>
-                <button class="btn btn-future" data-start="memory" data-i18n="technology.startBtn">Demo Başlat</button>
               </div>
             </section>
           </div>
@@ -606,6 +644,54 @@
                   <div class="rx-item" data-i18n="teletip.rx3">Metformin 1000 mg — günde 2 tablet</div>
                   <button type="button" class="btn btn-primary btn-block" id="tele-rx-apply" data-i18n="teletip.rxApply" style="margin-top:12px">Reçete Taslağına Aktar</button>
                   <p class="tele-rx-status hidden" id="tele-rx-status" data-i18n="teletip.rxApplied">Reçete taslağına eklendi — hekim onayı bekleniyor.</p>
+                </div>
+
+                <div class="tele-sepsis-card">
+                  <h3 data-i18n="modules.sepsisTitle">YZ Destekli Erken Sepsis Tahmini</h3>
+                  <div class="sepsis-body">
+                    <div class="sepsis-score-row">
+                      <div class="sepsis-score">
+                        <span data-i18n="modules.sepsisRisk">Sepsis Risk Skoru</span>
+                        <strong id="tele-sepsis-score">0</strong>
+                      </div>
+                      <small data-i18n="modules.sepsisRisk48">48 saat öncesi tahmin</small>
+                    </div>
+                    <div class="sepsis-bars">
+                      <div class="sepsis-bar">
+                        <span data-i18n="modules.sepsisQsofa">qSOFA</span>
+                        <div class="sepsis-bar-bg"><div class="sepsis-bar-fill" id="tele-sepsis-qsofa"></div></div>
+                        <em id="tele-sepsis-qsofa-val">0</em>
+                      </div>
+                      <div class="sepsis-bar">
+                        <span data-i18n="modules.sepsisMews">MEWS</span>
+                        <div class="sepsis-bar-bg"><div class="sepsis-bar-fill" id="tele-sepsis-mews"></div></div>
+                        <em id="tele-sepsis-mews-val">0</em>
+                      </div>
+                    </div>
+                    <div class="sepsis-alarm hidden" id="tele-sepsis-alarm" data-i18n="modules.sepsisAlarm">KRİTİK SEPSİS RİSKİ: Erken Müdahale Önerilir</div>
+                  </div>
+                </div>
+
+                <div class="tele-sdoh-card">
+                  <h3 data-i18n="modules.sdohTitle">Çevresel Risk Haritası</h3>
+                  <div class="sdoh-body">
+                    <div class="sdoh-map">
+                      <canvas id="tele-sdoh-map" width="340" height="170"></canvas>
+                    </div>
+                    <div class="sdoh-metrics">
+                      <div class="sdoh-metric"><span data-i18n="modules.sdohAqi">AQI</span><strong id="tele-sdoh-aqi">—</strong></div>
+                      <div class="sdoh-metric"><span data-i18n="modules.sdohPollen">Polen</span><strong id="tele-sdoh-pollen">—</strong></div>
+                      <div class="sdoh-metric"><span data-i18n="modules.sdohInfluenza">Influenza</span><strong id="tele-sdoh-influenza">—</strong></div>
+                    </div>
+                    <div class="sdoh-risk" data-i18n="modules.sdohRisk">Risk İndeksi: <strong id="tele-sdoh-risk">—</strong></div>
+                  </div>
+                </div>
+
+                <div class="tele-twin-card">
+                  <h3 data-i18n="modules.twinTitle">Hastanın Dijital İkizi</h3>
+                  <p class="tele-icd-sub" data-i18n="modules.twinSubtitle">Tedavi öncesi analitik öngörü</p>
+                  <button type="button" class="btn btn-primary btn-block" id="tele-twin-simulate" data-twin-simulate="tele" data-i18n="modules.twinSimulate">Simüle Et</button>
+                  <div class="twin-output hidden" id="tele-twin-output"></div>
                 </div>
               </div>
             </section>

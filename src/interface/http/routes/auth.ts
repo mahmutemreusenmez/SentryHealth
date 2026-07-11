@@ -12,7 +12,7 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
     const { username, password } = req.body as Record<string, unknown>;
     const user = userStore.findByUsername(String(username ?? '').trim().toLowerCase());
     if (!user || user.passwordHash !== hashPassword(String(password ?? ''))) {
-      res.status(401).json({ error: 'Kullanıcı adı veya şifre hatalı' });
+      res.status(401).json({ error: 'Hatalı T.C. Kimlik Numarası veya Şifre girdiniz.' });
       return;
     }
 

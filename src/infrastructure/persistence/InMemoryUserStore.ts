@@ -26,23 +26,13 @@ function toDto(user: User): UserDto {
 export class InMemoryUserStore {
   private users = new Map<string, User>([
     [
-      'doktor',
+      'yönetici06',
       {
         id: 'u-1',
-        username: 'doktor',
-        displayName: 'Dr. Ahmet Yılmaz',
-        role: 'doctor',
-        passwordHash: hashPassword('doktor123'),
-      },
-    ],
-    [
-      'yönetici',
-      {
-        id: 'u-2',
-        username: 'yönetici',
+        username: 'yönetici06',
         displayName: 'Sistem Yöneticisi',
         role: 'admin',
-        passwordHash: hashPassword('mahmut123'),
+        passwordHash: hashPassword('yönetici123'),
       },
     ],
   ]);

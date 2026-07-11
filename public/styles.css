@@ -2217,39 +2217,6 @@ html[dir="rtl"] .chat-msg.user { justify-content: flex-end; }
   .chatbot-messages { max-height: 360px; }
 }
 
-/* ---------- Login demo access ---------- */
-.login-demo {
-  margin-top: 16px;
-  padding: 14px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--blue-soft);
-  text-align: center;
-}
-.login-demo strong {
-  display: block;
-  font-size: 0.8rem;
-  color: var(--blue);
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  margin-bottom: 10px;
-}
-.login-demo-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  margin-bottom: 8px;
-}
-.login-demo-actions .btn {
-  flex: 1;
-  border: 1px solid var(--blue);
-  color: var(--blue);
-  background: #ffffff;
-  font-weight: 600;
-}
-.login-demo-actions .btn:hover { background: var(--blue); color: #ffffff; }
-.login-demo small { color: var(--text-muted); font-size: 0.72rem; }
-
 /* ---------- Tele-Tıp console ---------- */
 .tele-grid {
   display: grid;
@@ -2380,6 +2347,110 @@ html[dir="rtl"] .chat-msg.user { justify-content: flex-end; }
 
 html[dir="rtl"] .tele-avatar-small { right: auto; left: 14px; }
 
+/* ---------- Global health modules and glassmorphism ---------- */
+body {
+  background: linear-gradient(135deg, #eef3fa 0%, #e0e8f0 100%) fixed;
+}
+
+.glass-card, .summary-card, .chart-card, .table-card, .patient-card, .settings-card, .admin-card, .report-card, .alert, .clinical-plan, .module-card, .tele-video-card, .tele-vitals-card, .tele-icd-card, .tele-stetho-card, .tele-sepsis-card, .tele-sdoh-card, .tele-twin-card, .kvkk-step, .modal, .log-box, .empty-state, .broadcast-card, .chat-card, .voice-card, .rx-item, .icd-item {
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.08);
+}
+
+.global-modules {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  margin-bottom: 26px;
+}
+
+.module-card {
+  border-radius: 18px;
+  padding: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.module-head { display: flex; flex-direction: column; gap: 6px; }
+.module-tag {
+  display: inline-block;
+  width: fit-content;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 1.6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--blue-soft);
+  color: var(--blue);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+.module-card h3 { font-size: 1rem; font-weight: 800; line-height: 1.35; }
+.module-card p { font-size: 0.78rem; color: var(--text-muted); line-height: 1.45; }
+
+/* Sepsis */
+.sepsis-body { display: flex; flex-direction: column; gap: 12px; }
+.sepsis-score-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
+.sepsis-score { display: flex; flex-direction: column; gap: 4px; }
+.sepsis-score span { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
+.sepsis-score strong { font-size: 2.2rem; font-weight: 800; line-height: 1; color: var(--green); }
+.sepsis-score strong.moderate { color: var(--amber); }
+.sepsis-score strong.high { color: var(--red); }
+.sepsis-score-row small { font-size: 0.7rem; color: var(--text-muted); }
+.sepsis-bars { display: flex; flex-direction: column; gap: 10px; }
+.sepsis-bar { display: flex; align-items: center; gap: 10px; font-size: 0.78rem; color: var(--text-muted); }
+.sepsis-bar span { width: 50px; font-weight: 600; }
+.sepsis-bar em { width: 24px; text-align: right; font-weight: 700; color: var(--text); font-style: normal; font-variant-numeric: tabular-nums; }
+.sepsis-bar-bg { flex: 1; height: 10px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
+.sepsis-bar-fill { height: 100%; width: 0; background: linear-gradient(90deg, #22c55e, #16a34a); border-radius: 999px; transition: width 0.6s ease; }
+.sepsis-bar-fill.warn { background: linear-gradient(90deg, #f59e0b, #d97706); }
+.sepsis-bar-fill.high { background: linear-gradient(90deg, #ef4444, #dc2626); }
+.sepsis-alarm { padding: 10px 14px; border-radius: 10px; background: var(--red-soft); border: 1px solid #fecaca; color: var(--red); font-weight: 700; font-size: 0.78rem; text-align: center; animation: sepsis-blink 1.2s infinite; }
+@keyframes sepsis-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+
+/* Digital twin */
+.twin-body { display: flex; flex-direction: column; gap: 12px; }
+.twin-result { display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 12px; background: rgba(255, 255, 255, 0.55); border: 1px solid rgba(255, 255, 255, 0.45); }
+.twin-result-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; padding: 6px 0; border-bottom: 1px solid rgba(148, 163, 184, 0.2); }
+.twin-result-row:last-child { border-bottom: none; }
+.twin-result-row span { color: var(--text-muted); }
+.twin-result-row strong { color: var(--text); font-weight: 700; }
+.twin-result-row.high strong { color: var(--red); }
+.twin-result-row.moderate strong { color: var(--amber); }
+.twin-result-row.low strong { color: var(--green); }
+.twin-result-note { font-size: 0.72rem; color: var(--text-muted); margin-top: 6px; }
+
+/* SDOH */
+.sdoh-body { display: flex; flex-direction: column; gap: 12px; }
+.sdoh-map { border-radius: 14px; overflow: hidden; border: 1px solid var(--border); background: rgba(255, 255, 255, 0.5); }
+.sdoh-map canvas { width: 100%; height: auto; display: block; }
+.sdoh-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.sdoh-metric { display: flex; flex-direction: column; gap: 4px; padding: 10px; border-radius: 10px; background: var(--surface-2); }
+.sdoh-metric span { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
+.sdoh-metric strong { font-size: 0.9rem; font-weight: 700; color: var(--text); }
+.sdoh-risk { font-size: 0.8rem; color: var(--text-muted); padding: 8px 12px; border-radius: 10px; background: var(--surface-2); }
+.sdoh-risk strong { color: var(--text); font-weight: 700; margin-left: 6px; }
+.sdoh-risk.low { background: var(--green-soft); color: var(--green); }
+.sdoh-risk.moderate { background: var(--amber-soft); color: var(--amber); }
+.sdoh-risk.high { background: var(--red-soft); color: var(--red); }
+.sdoh-legend { font-size: 0.72rem; color: var(--text-muted); }
+
+/* Tele module cards */
+.tele-sepsis-card, .tele-sdoh-card, .tele-twin-card {
+  border-radius: 18px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+/* Responsive */
 @media (max-width: 1080px) {
   .tele-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 1000px) {
+  .global-modules { grid-template-columns: 1fr; }
 }

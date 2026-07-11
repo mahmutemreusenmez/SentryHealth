@@ -253,13 +253,13 @@
         body: JSON.stringify(payload),
       });
       const body = await safeJson(res);
-      if (!res.ok || !body.token || !body.user) throw new Error(body.error || t('login.error'));
+      if (!res.ok || !body.token || !body.user) throw new Error(body.error || 'auth');
       localStorage.setItem('token', body.token);
       setStoredUser(body.user);
       addLog(t('log.login', { who: body.user.displayName, role: body.user.role }));
       showApp();
-    } catch (err) {
-      els.loginError.textContent = err.message;
+    } catch {
+      els.loginError.textContent = t('login.error');
       els.loginError.classList.remove('hidden');
     }
   });
@@ -267,19 +267,6 @@
   els.logoutBtn.addEventListener('click', () => {
     logout();
   });
-
-  const loginDemo = document.getElementById('login-demo');
-  if (loginDemo) {
-    loginDemo.querySelectorAll('button[data-demo-user]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const userInput = els.loginForm.querySelector('input[name="username"]');
-        const passInput = els.loginForm.querySelector('input[name="password"]');
-        if (userInput) userInput.value = btn.dataset.demoUser;
-        if (passInput) passInput.value = btn.dataset.demoPass;
-        els.loginForm.requestSubmit();
-      });
-    });
-  }
 
   /* ---------- Views ---------- */
   function switchView(view) {
@@ -382,10 +369,23 @@
     const bpEl = document.getElementById('tele-bp');
     const spo2El = document.getElementById('tele-spo2');
     const rrEl = document.getElementById('tele-rr');
-    if (bpmEl) bpmEl.textContent = rand(72, 88);
-    if (bpEl) bpEl.textContent = `${rand(116, 132)}/${rand(74, 86)}`;
-    if (spo2El) spo2El.textContent = `%${rand(95, 99)}`;
-    if (rrEl) rrEl.textContent = rand(14, 19);
+    const bpm = rand(72, 88);
+    const sys = rand(116, 132);
+    const dia = rand(74, 86);
+    const spo2 = rand(95, 99);
+    const rr = rand(14, 19);
+    if (bpmEl) bpmEl.textContent = bpm;
+    if (bpEl) bpEl.textContent = `${sys}/${dia}`;
+    if (spo2El) spo2El.textContent = `%${spo2}`;
+    if (rrEl) rrEl.textContent = rr;
+    teleVitals = {
+      heartRate: bpm,
+      bloodPressureSystolic: sys,
+      bloodPressureDiastolic: dia,
+      oxygenSaturation: spo2,
+      temperature: Number((36.2 + Math.random() * 1.6).toFixed(1)),
+      rr,
+    };
 
     const score = rand(8, 34);
     const fill = document.getElementById('tele-score-fill');
@@ -405,6 +405,17 @@
       const ss = String(total % 60).padStart(2, '0');
       timerEl.textContent = `${mm}:${ss}`;
     }
+
+    updateTeleModules();
+  }
+
+  function updateTeleModules() {
+    const sepsis = computeSepsisScore(teleVitals, teleCondition);
+    const sepsisRoot = document.getElementById('tele-sepsis-card');
+    if (sepsisRoot) setSepsisUI(sepsisRoot, sepsis);
+    const sdoh = computeSdoh({ conditionGroup: teleCondition });
+    const sdohRoot = document.getElementById('tele-sdoh-card');
+    if (sdohRoot) setSdohUI(sdohRoot, sdoh);
   }
 
   function startTeleSim() {
@@ -417,6 +428,7 @@
       ctx.clearRect(0, 0, ecg.width, ecg.height);
     }
     updateTeleReadings();
+    runDigitalTwin('tele');
     teleInterval = setInterval(updateTeleReadings, 2000);
     teleAnimFrame = requestAnimationFrame(teleAnimLoop);
   }
@@ -575,10 +587,10 @@
   if (els.settingsTestSms) {
     els.settingsTestSms.addEventListener('click', () => {
       if (els.settingsTestSmsStatus) {
-        els.settingsTestSmsStatus.textContent = t('settings.testSmsSent');
+        els.settingsTestSmsStatus.textContent = t('settings.sendSmsSent');
         els.settingsTestSmsStatus.className = 'settings-status status-ok';
       }
-      addLog(t('settings.logTestSms'));
+      addLog(t('settings.logSendSms'));
     });
   }
 
@@ -919,7 +931,69 @@
           <button type="submit" class="btn btn-primary">${escapeHtml(t('clinical.save'))}</button>
           <span id="clinical-status" class="clinical-status hidden"></span>
         </div>
-      </form>`;
+      </form>
+
+      <div class="module-card sepsis" id="detail-sepsis-card">
+        <div class="module-head">
+          <span class="module-tag" data-i18n="modules.sepsisTag">ERKEN UYARI</span>
+          <h3 data-i18n="modules.sepsisTitle">YZ Destekli Erken Sepsis ve Çoklu Organ Yetmezliği Tahmini</h3>
+          <p data-i18n="modules.sepsisSubtitle">qSOFA / MEWS Skor Kartı — 48 saat öncesi risk uyarısı</p>
+        </div>
+        <div class="sepsis-body">
+          <div class="sepsis-score-row">
+            <div class="sepsis-score">
+              <span data-i18n="modules.sepsisRisk">Sepsis Risk Skoru</span>
+              <strong id="detail-sepsis-score">0</strong>
+            </div>
+            <small data-i18n="modules.sepsisRisk48">48 saat öncesi tahmin</small>
+          </div>
+          <div class="sepsis-bars">
+            <div class="sepsis-bar">
+              <span data-i18n="modules.sepsisQsofa">qSOFA</span>
+              <div class="sepsis-bar-bg"><div class="sepsis-bar-fill" id="detail-sepsis-qsofa"></div></div>
+              <em id="detail-sepsis-qsofa-val">0</em>
+            </div>
+            <div class="sepsis-bar">
+              <span data-i18n="modules.sepsisMews">MEWS</span>
+              <div class="sepsis-bar-bg"><div class="sepsis-bar-fill" id="detail-sepsis-mews"></div></div>
+              <em id="detail-sepsis-mews-val">0</em>
+            </div>
+          </div>
+          <div class="sepsis-alarm hidden" id="detail-sepsis-alarm" data-i18n="modules.sepsisAlarm">KRİTİK SEPSİS RİSKİ: Erken Müdahale Önerilir</div>
+        </div>
+      </div>
+
+      <div class="module-card sdoh" id="detail-sdoh-card">
+        <div class="module-head">
+          <span class="module-tag" data-i18n="modules.sdohTag">ÇEVRESEL RİSK</span>
+          <h3 data-i18n="modules.sdohTitle">Sosyal Sağlık Belirleyicileri (SDOH) ve Çevresel Risk Haritası</h3>
+          <p data-i18n="modules.sdohSubtitle">Coğrafi ve çevresel verilerle klinik risk profili</p>
+        </div>
+        <div class="sdoh-body">
+          <div class="sdoh-map">
+            <canvas id="detail-sdoh-map" width="340" height="170"></canvas>
+          </div>
+          <div class="sdoh-metrics">
+            <div class="sdoh-metric"><span data-i18n="modules.sdohAqi">Hava Kalitesi (AQI)</span><strong id="detail-sdoh-aqi">—</strong></div>
+            <div class="sdoh-metric"><span data-i18n="modules.sdohPollen">Polen Yoğunluğu</span><strong id="detail-sdoh-pollen">—</strong></div>
+            <div class="sdoh-metric"><span data-i18n="modules.sdohInfluenza">Mevsimsel Influenza</span><strong id="detail-sdoh-influenza">—</strong></div>
+          </div>
+          <div class="sdoh-risk" id="detail-sdoh-risk" data-i18n="modules.sdohRisk">Çevresel Risk İndeksi: <strong id="detail-sdoh-risk-value">—</strong></div>
+          <div class="sdoh-legend" data-i18n="modules.sdohLegend">Risk haritası: hasta bölgesi ve kronik durum etkisi</div>
+        </div>
+      </div>
+
+      <div class="module-card twin" id="detail-twin-card">
+        <div class="module-head">
+          <span class="module-tag" data-i18n="modules.twinTag">DİJİTAL İKİZ</span>
+          <h3 data-i18n="modules.twinTitle">Hastanın Dijital İkizi</h3>
+          <p data-i18n="modules.twinSubtitle">İlaç / doz simülasyonu — Tedavi öncesi analitik öngörü</p>
+        </div>
+        <div class="twin-body">
+          <button type="button" class="btn btn-primary" id="detail-twin-simulate" data-twin-simulate="detail" data-i18n="modules.twinSimulate">Simüle Et</button>
+          <div class="twin-output hidden" id="detail-twin-output"></div>
+        </div>
+      </div>`;
 
     const addVitalsBtn = document.getElementById('add-vitals-btn');
     if (addVitalsBtn) {
@@ -970,6 +1044,8 @@
         }
       });
     }
+
+    renderPatientModules(p);
   }
 
   /* ---------- Vitals entry ---------- */
@@ -1020,101 +1096,254 @@
     }
   });
 
-  /* ---------- Futuristic modules ---------- */
+  /* ---------- Global health modules ---------- */
+  let teleVitals = {};
+  let teleCondition = 'KOAH';
+
   function selectedOrFirstPatient() {
     const patients = (lastData && lastData.patients) || [];
     return patients.find((p) => p.pseudonym === selectedPseudonym) || patients[0] || null;
   }
 
-  function closeFutureModal() {
-    if (!els.futureModal) return;
-    els.futureModal.classList.add('hidden');
-    document.body.style.overflow = '';
+  function getRespiratoryRate(vitals, condition) {
+    if (vitals && vitals.respiratoryRate) return Number(vitals.respiratoryRate);
+    if (vitals && vitals.rr) return Number(vitals.rr);
+    const hasLung = condition === 'Astım' || condition === 'KOAH';
+    const base = hasLung ? 20 : 16;
+    const hr = Number(vitals?.heartRate || 72);
+    const temp = Number(vitals?.temperature || 36.5);
+    let rr = base + Math.round((hr - 70) / 18) + (temp > 38.5 ? 3 : 0);
+    if (hr > 120) rr += 3;
+    if (hr < 55) rr -= 2;
+    return Math.max(10, Math.min(36, rr));
   }
 
-  function futureLoading() {
-    return `<div class="future-loading" style="flex-direction:column;align-items:center;gap:12px;padding:40px 0;">
-      <div class="spinner" style="border:4px solid rgba(37,99,235,0.15);border-top-color:var(--blue);"></div>
-      <span style="font-size:0.8rem;color:var(--text-muted);">${escapeHtml(t('common.loading'))}</span>
-    </div>`;
+  function computeSepsisScore(vitals, condition) {
+    const hr = Number(vitals?.heartRate || 72);
+    const sys = Number(vitals?.bloodPressureSystolic || 120);
+    const temp = Number(vitals?.temperature || 36.5);
+    const spo2 = Number(vitals?.oxygenSaturation || 97);
+    const rr = getRespiratoryRate(vitals, condition);
+
+    let qsofa = 0;
+    if (rr >= 22) qsofa++;
+    if (sys <= 100) qsofa++;
+    if (temp > 39.5 || hr > 130) qsofa++;
+
+    let mews = 0;
+    if (hr > 130) mews += 2; else if (hr > 110) mews += 1; else if (hr < 50) mews += 2; else if (hr < 60) mews += 1;
+    if (sys <= 70) mews += 2; else if (sys <= 80) mews += 1; else if (sys <= 100) mews += 1;
+    if (rr >= 30) mews += 2; else if (rr >= 21) mews += 1; else if (rr < 9) mews += 2;
+    if (temp >= 38.5) mews += 1; else if (temp < 35.0) mews += 1;
+    if (spo2 < 90) mews += 2; else if (spo2 < 93) mews += 1;
+
+    const score = Math.min(100, Math.round(qsofa * 30 + mews * 9 + (spo2 < 90 ? 10 : 0)));
+    const risk = (qsofa >= 2 || mews >= 5 || score >= 60) ? 'high' : (score >= 30 ? 'moderate' : 'low');
+    return { qsofa, mews, score, risk };
   }
 
-  function futureGenomicContent() {
+  const twinDrugs = {
+    'Diyabet': 'Metformin 1000 mg / Günde 2',
+    'Hipertansiyon': 'Ramipril 5 mg / Günde 1',
+    'Kalp Yetmezliği': 'Bisoprolol 5 mg / Günde 1',
+    'KOAH': 'Tiotropium 18 mcg / Günde 1',
+    'Astım': 'Salmeterol 50 mcg / Günde 2',
+    'Kronik Böbrek Hastalığı': 'Epoetin alfa 4000 IU / Haftada 3',
+    'Diğer': 'Standart antihipertenzif 1 tablet / Günde 1',
+  };
+
+  function simulateDigitalTwin(p) {
+    const condition = p?.conditionGroup || 'Diğer';
+    const ageGroup = p?.ageGroup || '45-64';
+    let interaction = 12;
+    if (condition === 'Kronik Böbrek Hastalığı') interaction += 15;
+    if (['Kalp Yetmezliği', 'Hipertansiyon'].includes(condition)) interaction += 5;
+    if (condition === 'Diyabet') interaction += 4;
+    if (['KOAH', 'Astım'].includes(condition)) interaction += 3;
+    if (ageGroup === '65+') interaction += 4;
+    interaction = Math.min(48, Math.round(interaction + Math.random() * 8));
+    const renal = Math.min(42, Math.round(interaction * 0.7 + Math.random() * 6));
+    const cardiac = Math.min(40, Math.round(8 + Math.random() * 12));
+    const adherence = Math.round(78 + Math.random() * 18);
+    const drug = twinDrugs[condition] || twinDrugs['Diğer'];
+    return { interaction, renal, cardiac, adherence, drug, condition };
+  }
+
+  function digitalTwinHtml(result) {
+    const riskClass = result.interaction >= 25 ? 'high' : result.interaction >= 15 ? 'moderate' : 'low';
+    return `
+      <div class="twin-result">
+        <div class="twin-result-row"><span>${escapeHtml(t('modules.twinDose'))}</span><strong>${escapeHtml(result.drug)}</strong></div>
+        <div class="twin-result-row ${riskClass}"><span>${escapeHtml(t('modules.twinInteraction'))}</span><strong>${result.interaction}%</strong></div>
+        <div class="twin-result-row"><span>${escapeHtml(t('modules.twinRenal'))}</span><strong>${result.renal}%</strong></div>
+        <div class="twin-result-row"><span>${escapeHtml(t('modules.twinCardiac'))}</span><strong>${result.cardiac}%</strong></div>
+        <div class="twin-result-row"><span>${escapeHtml(t('modules.twinAdherence'))}</span><strong>${result.adherence}%</strong></div>
+        <div class="twin-result-note">${escapeHtml(t('modules.twinSimulateResult'))}</div>
+      </div>`;
+  }
+
+  function runDigitalTwin(target) {
+    const output = document.getElementById(`${target}-twin-output`);
+    if (!output) return;
+    let p = selectedOrFirstPatient();
+    if (target === 'tele') {
+      p = { conditionGroup: teleCondition, ageGroup: '65+', latest: teleVitals };
+    } else if (target === 'detail') {
+      const patients = (lastData && lastData.patients) || [];
+      p = patients.find((x) => x.pseudonym === selectedPseudonym) || p;
+    }
+    const result = simulateDigitalTwin(p || { conditionGroup: 'Diğer' });
+    output.innerHTML = digitalTwinHtml(result);
+    output.classList.remove('hidden');
+    addLog(t('modules.twinSimulateResult'));
+  }
+
+  const sdohLabels = {
+    low: 'modules.sdohRiskLow',
+    moderate: 'modules.sdohRiskModerate',
+    high: 'modules.sdohRiskHigh',
+  };
+
+  function computeSdoh(p) {
+    const condition = p?.conditionGroup || 'Diğer';
+    const hasLung = condition === 'Astım' || condition === 'KOAH';
+    const aqi = Math.min(300, Math.round(40 + (hasLung ? 40 : 0) + Math.random() * 70));
+    const pollenRand = Math.random();
+    const pollen = pollenRand < 0.33 ? 'low' : pollenRand < 0.66 ? 'moderate' : 'high';
+    const fluRand = Math.random();
+    const flu = fluRand < 0.5 ? 'low' : fluRand < 0.8 ? 'moderate' : 'high';
+    let risk = 0;
+    if (aqi > 100) risk += 3; else if (aqi > 50) risk += 1;
+    if (pollen === 'high') risk += 2; else if (pollen === 'moderate') risk += 1;
+    if (flu === 'high') risk += 2; else if (flu === 'moderate') risk += 1;
+    if (hasLung) risk += 2;
+    const riskLevel = risk >= 7 ? 'high' : risk >= 4 ? 'moderate' : 'low';
+    return { aqi, pollen, influenza: flu, riskLevel, region: 'Keçiören, Ankara' };
+  }
+
+  function drawSdohMap(canvas, riskLevel, region) {
+    if (!canvas || !canvas.getContext) return;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    const color = riskLevel === 'high' ? 'rgba(239,68,68,0.12)' : riskLevel === 'moderate' ? 'rgba(245,158,11,0.12)' : 'rgba(34,197,94,0.12)';
+    const stroke = riskLevel === 'high' ? '#ef4444' : riskLevel === 'moderate' ? '#f59e0b' : '#22c55e';
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = 'rgba(148,163,184,0.25)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x <= w; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+    for (let y = 0; y <= h; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+    ctx.strokeStyle = 'rgba(37,99,235,0.35)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(30, 30, w - 60, h - 60);
+    const cx = w / 2;
+    const cy = h / 2;
+    const r = 28;
+    ctx.fillStyle = stroke;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.strokeStyle = stroke;
+    ctx.globalAlpha = 0.35;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r + 8, 0, 2 * Math.PI);
+    ctx.stroke();
+    ctx.globalAlpha = 1.0;
+    ctx.fillStyle = 'var(--text)';
+    ctx.font = '600 12px system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(region, cx, h - 12);
+  }
+
+  function setSepsisUI(root, result) {
+    if (!root) return;
+    const scoreEl = root.querySelector('#sepsis-score, .sepsis-score-value, #tele-sepsis-score, #detail-sepsis-score');
+    const qsofaFill = root.querySelector('#sepsis-qsofa, .sepsis-qsofa, #tele-sepsis-qsofa, #detail-sepsis-qsofa');
+    const qsofaVal = root.querySelector('#sepsis-qsofa-val, .sepsis-qsofa-val, #tele-sepsis-qsofa-val, #detail-sepsis-qsofa-val');
+    const mewsFill = root.querySelector('#sepsis-mews, .sepsis-mews, #tele-sepsis-mews, #detail-sepsis-mews');
+    const mewsVal = root.querySelector('#sepsis-mews-val, .sepsis-mews-val, #tele-sepsis-mews-val, #detail-sepsis-mews-val');
+    const alarm = root.querySelector('#sepsis-alarm, .sepsis-alarm, #tele-sepsis-alarm, #detail-sepsis-alarm');
+    if (scoreEl) {
+      scoreEl.textContent = result.score;
+      scoreEl.classList.toggle('high', result.risk === 'high');
+      scoreEl.classList.toggle('moderate', result.risk === 'moderate');
+    }
+    if (qsofaVal) qsofaVal.textContent = result.qsofa;
+    if (mewsVal) mewsVal.textContent = result.mews;
+    if (qsofaFill) {
+      qsofaFill.style.width = `${Math.min(100, result.qsofa * 34)}%`;
+      qsofaFill.classList.toggle('warn', result.qsofa >= 2);
+      qsofaFill.classList.toggle('high', result.qsofa >= 2);
+    }
+    if (mewsFill) {
+      mewsFill.style.width = `${Math.min(100, result.mews * 8)}%`;
+      mewsFill.classList.toggle('warn', result.mews >= 4);
+      mewsFill.classList.toggle('high', result.mews >= 5);
+    }
+    if (alarm) {
+      alarm.classList.toggle('hidden', result.risk !== 'high');
+      alarm.classList.toggle('critical', result.risk === 'high');
+    }
+  }
+
+  function setSdohUI(root, sdoh) {
+    if (!root) return;
+    const aqiEl = root.querySelector('#sdoh-aqi, .sdoh-aqi, #tele-sdoh-aqi, #detail-sdoh-aqi');
+    const pollenEl = root.querySelector('#sdoh-pollen, .sdoh-pollen, #tele-sdoh-pollen, #detail-sdoh-pollen');
+    const fluEl = root.querySelector('#sdoh-influenza, .sdoh-influenza, #tele-sdoh-influenza, #detail-sdoh-influenza');
+    const riskValueEl = root.querySelector('#sdoh-risk-value, .sdoh-risk-value, #tele-sdoh-risk, #detail-sdoh-risk-value');
+    const riskLabelEl = root.querySelector('#sdoh-risk, .sdoh-risk, #tele-sdoh-risk, #detail-sdoh-risk');
+    const canvas = root.querySelector('#sdoh-map, .sdoh-map-canvas, #tele-sdoh-map, #detail-sdoh-map');
+    if (aqiEl) aqiEl.textContent = sdoh.aqi;
+    if (pollenEl) pollenEl.textContent = t(sdohLabels[sdoh.pollen]);
+    if (fluEl) fluEl.textContent = t(sdohLabels[sdoh.influenza]);
+    if (riskValueEl) riskValueEl.textContent = t(sdohLabels[sdoh.riskLevel]);
+    if (riskLabelEl) {
+      riskLabelEl.classList.remove('low', 'moderate', 'high');
+      riskLabelEl.classList.add(sdoh.riskLevel);
+    }
+    drawSdohMap(canvas, sdoh.riskLevel, sdoh.region);
+  }
+
+  function renderModules() {
     const p = selectedOrFirstPatient();
-    const who = p ? displayName(p) : t('genomic.noData');
-    const conditionTurkish = p && p.conditionGroup ? p.conditionGroup : 'Kronik hastalık';
-    const conditionKey = conditionKeyMap[conditionTurkish] || 'chronic';
-    const condition = t('condition.' + conditionKey);
-    return `
-      <h4>${escapeHtml(t('genomic.reportTitle', { who: escapeHtml(who) }))}</h4>
-      <ul>
-        <li>${escapeHtml(t('genomic.item1'))}</li>
-        <li>${escapeHtml(t('genomic.item2'))}</li>
-        <li>${escapeHtml(t('genomic.item3', { condition: escapeHtml(condition) }))}</li>
-        <li>${escapeHtml(t('genomic.item4'))}</li>
-      </ul>
-      <div style="margin-top:10px">
-        <span class="icd-chip">ICD-10: E11</span>
-        <span class="icd-chip">ICD-10: I10</span>
-        <span class="icd-chip">ICD-10: J44</span>
-      </div>`;
+    const sepsis = computeSepsisScore(p?.latest, p?.conditionGroup);
+    const sdoh = computeSdoh(p);
+    const dashRoot = document.getElementById('global-modules');
+    const futRoot = document.getElementById('future-modules');
+    if (dashRoot) {
+      setSepsisUI(dashRoot, sepsis);
+      setSdohUI(dashRoot, sdoh);
+      runDigitalTwin('global');
+    }
+    if (futRoot) {
+      setSepsisUI(futRoot, sepsis);
+      setSdohUI(futRoot, sdoh);
+      runDigitalTwin('future');
+    }
   }
 
-  function futureScribeContent() {
-    const p = selectedOrFirstPatient();
-    const who = p ? displayName(p) : t('scribe.noData');
-    return `
-      <h4>${escapeHtml(t('scribe.reportTitle', { who: escapeHtml(who) }))}</h4>
-      <p>${escapeHtml(t('scribe.p1'))}</p>
-      <p style="margin-top:6px"><em>${escapeHtml(t('scribe.p2'))}</em></p>
-      <div style="margin-top:8px">
-        <span class="icd-chip">${escapeHtml(t('scribe.icd1'))}</span>
-        <span class="icd-chip">${escapeHtml(t('scribe.icd2'))}</span>
-        <span class="icd-chip">${escapeHtml(t('scribe.icd3'))}</span>
-      </div>`;
+  function renderPatientModules(p) {
+    if (!p) return;
+    const sepsis = computeSepsisScore(p.latest, p.conditionGroup);
+    const sdoh = computeSdoh(p);
+    const sepsisRoot = document.getElementById('detail-sepsis-card');
+    const sdohRoot = document.getElementById('detail-sdoh-card');
+    if (sepsisRoot) setSepsisUI(sepsisRoot, sepsis);
+    if (sdohRoot) setSdohUI(sdohRoot, sdoh);
   }
 
-  function futureStaticContent(type) {
-    return `
-      <h4>${escapeHtml(t('technology.' + type + 'Title'))}</h4>
-      <p>${escapeHtml(t('technology.' + type + 'Desc'))}</p>
-      <div class="patient-message" style="margin-top:14px">
-        <strong>${escapeHtml(t('technology.comingSoon'))}</strong>
-      </div>`;
-  }
-
-  function openFutureModal(type) {
-    if (!els.futureModal || !els.futureModalTitle || !els.futureModalBody) return;
-    const title = t('future.' + type + 'Title') || t('technology.' + type + 'Title') || type;
-    els.futureModalTitle.textContent = title;
-    els.futureModalBody.innerHTML = futureLoading();
-    els.futureModal.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-
-    const delay = ['genomic', 'scribe'].includes(type) ? 2600 : 0;
-    setTimeout(() => {
-      if (type === 'genomic') {
-        els.futureModalBody.innerHTML = futureGenomicContent();
-        addLog(t('log.genomic'));
-      } else if (type === 'scribe') {
-        els.futureModalBody.innerHTML = futureScribeContent();
-        addLog(t('log.scribe'));
-      } else {
-        els.futureModalBody.innerHTML = futureStaticContent(type);
-      }
-    }, delay);
-  }
-
-  if (els.genomicBtn) els.genomicBtn.addEventListener('click', () => openFutureModal('genomic'));
-  if (els.scribeBtn) els.scribeBtn.addEventListener('click', () => openFutureModal('scribe'));
-  if (els.futureModalClose) els.futureModalClose.addEventListener('click', closeFutureModal);
-  if (els.futureModal) els.futureModal.addEventListener('click', (e) => { if (e.target === els.futureModal) closeFutureModal(); });
-  if (els.futureViewGrid) {
-    els.futureViewGrid.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-start]');
-      if (btn) openFutureModal(btn.dataset.start);
-    });
-  }
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-twin-simulate]');
+    if (!btn) return;
+    runDigitalTwin(btn.dataset.twinSimulate);
+  });
 
   /* ---------- Analytics charts ---------- */
   function drawLineChart(container, labels, values, color) {
@@ -2024,6 +2253,7 @@
     }
 
     if (currentView === 'future') {
+      renderModules();
       renderFutureView();
       return;
     }
@@ -2041,6 +2271,7 @@
     if (currentView !== 'dashboard') return;
 
     renderAnalytics(data);
+    renderModules();
 
     if (withData.length === 0) {
       els.patients.innerHTML = `<div class="empty-state">
