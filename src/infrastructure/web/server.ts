@@ -182,7 +182,7 @@ function sanitizeThreshold(raw: unknown): PatientThreshold {
   return { metric: metric as PatientThreshold['metric'], operator: operator as PatientThreshold['operator'], value, message };
 }
 
-function findPublicDir(): string {
+function findPublicDir(): string | null {
   const candidates = [
     path.resolve(process.cwd(), 'public'),
     path.resolve(__dirname, '..', '..', 'public'),
@@ -203,7 +203,7 @@ function findPublicDir(): string {
     dir = path.dirname(dir);
   }
 
-  throw new Error('public directory with index.html not found');
+  return null;
 }
 
 const publicDir = findPublicDir();
@@ -230,25 +230,27 @@ export async function createServer() {
   app.use(cors());
   app.use(express.json({ limit: '1mb' }));
 
-  app.use(express.static(publicDir, {
-    index: ['index.html'],
-    maxAge: '1h',
-    etag: true,
-    lastModified: true,
-    setHeaders: (res: Response, filePath: string) => {
-      if (filePath.endsWith('.html')) {
-        res.setHeader('Cache-Control', 'no-cache');
-      } else if (filePath.match(/\.(js|css|svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|eot)$/)) {
-        res.setHeader('Cache-Control', `public, max-age=${ONE_YEAR / 1000}, immutable`);
-      } else {
-        res.setHeader('Cache-Control', `public, max-age=${ONE_HOUR / 1000}`);
-      }
-    },
-  }));
+  if (publicDir) {
+    app.use(express.static(publicDir, {
+      index: ['index.html'],
+      maxAge: '1h',
+      etag: true,
+      lastModified: true,
+      setHeaders: (res: Response, filePath: string) => {
+        if (filePath.endsWith('.html')) {
+          res.setHeader('Cache-Control', 'no-cache');
+        } else if (filePath.match(/\.(js|css|svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|eot)$/)) {
+          res.setHeader('Cache-Control', `public, max-age=${ONE_YEAR / 1000}, immutable`);
+        } else {
+          res.setHeader('Cache-Control', `public, max-age=${ONE_HOUR / 1000}`);
+        }
+      },
+    }));
 
-  app.get('/', (_req: Request, res: Response) => {
-    res.sendFile(path.join(publicDir, 'index.html'));
-  });
+    app.get('/', (_req: Request, res: Response) => {
+      res.sendFile(path.join(publicDir, 'index.html'));
+    });
+  }
 
   app.put('/api/patients/:id/clinical-plan', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -357,7 +359,11 @@ export async function createServer() {
       res.status(404).json({ error: 'Not found' });
       return;
     }
-    res.sendFile(path.join(publicDir, 'index.html'));
+    if (publicDir) {
+      res.sendFile(path.join(publicDir, 'index.html'));
+      return;
+    }
+    res.status(404).json({ error: 'Not found' });
   });
 
   app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
