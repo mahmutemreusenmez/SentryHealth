@@ -1834,8 +1834,193 @@ html[dir="rtl"] .clinical-actions { direction: rtl; }
   color: var(--text);
 }
 
-/* ---------- Broadcast & Voice Assistant ---------- */
-.broadcast-grid,
+/* ---------- AI Clinical SMS Assistant ---------- */
+.ai-sms-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.ai-sms-banner {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--green-soft);
+  border: 1px solid #bbf7d0;
+  color: var(--green);
+  font-size: 0.86rem;
+  font-weight: 700;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+}
+
+.ai-sms-banner.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.ai-sms-intro {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 22px;
+}
+
+.ai-sms-intro h3 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.ai-sms-intro p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.ai-sms-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+@media (max-width: 1024px) {
+  .ai-sms-grid { grid-template-columns: 1fr; }
+}
+
+.ai-sms-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ai-sms-card:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+.ai-sms-card.sent { border-color: #bbf7d0; background: linear-gradient(135deg, #f0fdf4, #ffffff); }
+.ai-sms-card.rejected { border-color: #fecaca; background: linear-gradient(135deg, #fef2f2, #ffffff); }
+
+.ai-sms-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ai-sms-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--indigo-soft);
+  color: var(--indigo);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.ai-sms-branch {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.ai-sms-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.ai-sms-body {
+  font-size: 0.85rem;
+  color: var(--text);
+  line-height: 1.65;
+}
+
+.ai-sms-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.ai-sms-meta strong { color: var(--text); font-size: 1.1rem; }
+
+.ai-sms-status-pending { color: #d97706; font-weight: 700; }
+.ai-sms-status-sent { color: var(--green); font-weight: 700; }
+.ai-sms-status-rejected { color: var(--red); font-weight: 700; }
+
+.ai-sms-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ai-sms-actions .btn-approve {
+  background: linear-gradient(135deg, var(--green), #10b981);
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+}
+
+.ai-sms-actions .btn-approve:hover {
+  filter: brightness(1.05);
+}
+
+.ai-sms-actions .btn-reject {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.ai-sms-actions .btn-reject:hover {
+  background: var(--red-soft);
+  border-color: #fecaca;
+  color: var(--red);
+}
+
+.ai-sms-result {
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.ai-sms-result.ok {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.ai-sms-result.rejected {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+@media (max-width: 767px) {
+  .ai-sms-intro { padding: 16px; }
+  .ai-sms-card { padding: 16px; gap: 12px; }
+  .ai-sms-actions { flex-direction: column; }
+  .ai-sms-actions .btn { width: 100%; }
+  .ai-sms-meta { flex-direction: column; align-items: flex-start; gap: 6px; }
+}
+
+/* ---------- Voice Assistant ---------- */
 .voice-grid {
   display: grid;
   grid-template-columns: 1.2fr 0.8fr;
@@ -1844,11 +2029,9 @@ html[dir="rtl"] .clinical-actions { direction: rtl; }
 }
 
 @media (max-width: 900px) {
-  .broadcast-grid,
   .voice-grid { grid-template-columns: 1fr; }
 }
 
-.broadcast-card,
 .voice-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -1860,7 +2043,6 @@ html[dir="rtl"] .clinical-actions { direction: rtl; }
   gap: 18px;
 }
 
-.broadcast-card h3,
 .voice-card h3 {
   font-size: 0.95rem;
   font-weight: 800;
@@ -1868,48 +2050,11 @@ html[dir="rtl"] .clinical-actions { direction: rtl; }
   margin-bottom: 4px;
 }
 
-.broadcast-card h3 + p,
 .voice-card h3 + p {
   font-size: 0.78rem;
   color: var(--text-muted);
 }
 
-.branch-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.branch-btn {
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  color: var(--text);
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-}
-
-.branch-btn.active {
-  background: linear-gradient(135deg, var(--blue), var(--indigo));
-  color: #fff;
-  border-color: transparent;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.26);
-}
-
-.template-select {
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  font-family: inherit;
-  font-size: 0.85rem;
-}
-
-.broadcast-textarea,
 .voice-textarea {
   width: 100%;
   min-height: 140px;
@@ -1921,94 +2066,6 @@ html[dir="rtl"] .clinical-actions { direction: rtl; }
   font-size: 0.85rem;
   resize: vertical;
 }
-
-.channel-cards {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-}
-
-.channel-card {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--surface-2);
-  cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease;
-}
-
-.channel-card:hover { background: var(--blue-soft); border-color: var(--blue); }
-.channel-card.active { border-color: var(--blue); background: var(--blue-soft); }
-
-.channel-card input { width: 18px; height: 18px; accent-color: var(--blue); }
-
-.target-card {
-  background: linear-gradient(135deg, var(--green-soft), #ecfdf5);
-  border: 1px solid #bbf7d0;
-  border-radius: 12px;
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.target-card .target-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.85rem;
-}
-
-.target-card .target-row .target-value {
-  font-size: 1.3rem;
-  font-weight: 800;
-  color: var(--green);
-}
-
-.history-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  max-height: 260px;
-  overflow-y: auto;
-}
-
-.history-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  border-radius: 10px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  font-size: 0.8rem;
-  animation: slideIn 0.35s ease;
-}
-
-@keyframes slideIn {
-  from { opacity: 0; transform: translateX(-12px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-.history-item .history-icon {
-  width: 34px; height: 34px;
-  display: grid; place-items: center;
-  border-radius: 50%;
-  background: var(--green-soft);
-  color: var(--green);
-  font-size: 1rem;
-}
-
-.history-item .history-body { flex: 1; }
-
-.history-item .history-time {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-}
-
 .variable-buttons {
   display: flex;
   flex-wrap: wrap;

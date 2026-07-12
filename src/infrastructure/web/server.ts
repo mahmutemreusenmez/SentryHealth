@@ -28,16 +28,6 @@ const ALLOWED_OPERATORS = ['>', '<', '>=', '<=', '='];
 const ONE_HOUR = 60 * 60 * 1000;
 const ONE_YEAR = 365 * 24 * 60 * 60 * 1000;
 
-interface BroadcastRecord {
-  id: string;
-  branch: string;
-  template: string;
-  message: string;
-  channel: 'sms' | 'push' | 'both';
-  targetCount: number;
-  createdAt: string;
-}
-
 interface VoiceScenario {
   prompt: string;
   voiceKey: string;
@@ -45,26 +35,12 @@ interface VoiceScenario {
   updatedAt: string;
 }
 
-const broadcasts: BroadcastRecord[] = [];
 let voiceScenario: VoiceScenario = {
   prompt: 'Merhaba [Hasta Adı], son ölçümünüz [Son Ölçüm] ve [Hastalık Tipi] takibiniz için sizi arıyorum. Lütfen ilacınızı düzenli alın ve su tüketimine dikkat edin.',
   voiceKey: 'trF',
   rate: 1,
   updatedAt: new Date().toISOString(),
 };
-
-const branchConditionMap: Record<string, string[]> = {
-  gastroenterology: ['Diğer'],
-  cardiology: ['Kalp Yetmezliği', 'Hipertansiyon'],
-  nephrology: ['Kronik Böbrek Hastalığı'],
-  endocrinology: ['Diyabet'],
-};
-
-function computeBranchTarget(branch: string, patients: AnonymizedPatient[]): number {
-  const conditions = branchConditionMap[branch] || [];
-  if (conditions.length === 0) return 0;
-  return patients.filter((p) => conditions.includes(p.conditionGroup || '')).length;
-}
 
 function sanitizeThreshold(raw: unknown): PatientThreshold {
   if (!raw || typeof raw !== 'object') {
@@ -230,40 +206,6 @@ export async function createServer() {
   app.use('/api/v1/health-data', authMiddleware, healthDataRouter);
   app.use('/api/patients', authMiddleware, patientMetricsRouter);
   app.use('/api/dashboard', authMiddleware, dashboardRouter);
-
-  app.get('/api/broadcasts', authMiddleware, (_req: Request, res: Response) => {
-    res.json(broadcasts);
-  });
-
-  app.post('/api/broadcasts', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const body = req.body as Record<string, unknown>;
-      const branch = String(body.branch || '').trim();
-      const template = String(body.template || '').trim();
-      const message = String(body.message || '').trim();
-      const rawChannel = String(body.channel || 'sms').trim();
-      const channel: BroadcastRecord['channel'] = rawChannel === 'push' || rawChannel === 'both' ? rawChannel : 'sms';
-      if (!branch || !message) {
-        throw new ValidationError('Branş ve mesaj zorunludur');
-      }
-      const patients = await repository.findAll();
-      const targetCount = computeBranchTarget(branch, patients);
-      const record: BroadcastRecord = {
-        id: randomUUID(),
-        branch,
-        template,
-        message,
-        channel,
-        targetCount,
-        createdAt: new Date().toISOString(),
-      };
-      broadcasts.unshift(record);
-      if (broadcasts.length > 100) broadcasts.pop();
-      res.json({ success: true, message: 'Anons başarıyla oluşturuldu.', record });
-    } catch (err) {
-      next(err);
-    }
-  });
 
   app.get('/api/voice-assistant', authMiddleware, (_req: Request, res: Response) => {
     res.json(voiceScenario);

@@ -234,7 +234,7 @@
     viewReports: document.getElementById('view-reports'),
     viewTelemedicine: document.getElementById('view-telemedicine'),
     viewVoice: document.getElementById('view-voice'),
-    broadcastPanel: document.getElementById('broadcast-panel'),
+    aiSmsPanel: document.getElementById('ai-sms-panel'),
     voicePanel: document.getElementById('voice-panel'),
     futureViewGrid: document.getElementById('future-view-grid'),
     futureModal: document.getElementById('future-modal'),
@@ -304,12 +304,11 @@
   let vitalsTarget = null;
   let pollInterval = null;
 
-  let broadcastState = {
-    branch: 'gastroenterology',
-    template: 'nutrition',
-    message: '',
-    channel: 'sms',
-    history: [],
+  let aiSmsState = {
+    suggestions: [
+      { id: 'ai-sms-cardio', branch: 'cardiology', status: 'pending' },
+      { id: 'ai-sms-endo', branch: 'endocrinology', status: 'pending' },
+    ],
   };
 
   let chatState = {
@@ -1924,216 +1923,109 @@
     if (els.futureViewGrid) els.futureViewGrid.classList.remove('hidden');
   }
 
-  /* ---------- Broadcast ---------- */
-  const branchToConditionMap = {
-    gastroenterology: ['Diğer'],
+  /* ---------- AI Clinical SMS Assistant ---------- */
+  const aiBranchToConditionMap = {
     cardiology: ['Kalp Yetmezliği', 'Hipertansiyon'],
-    nephrology: ['Kronik Böbrek Hastalığı'],
     endocrinology: ['Diyabet'],
   };
 
-  const broadcastTemplateMessages = {
-    tr: {
-      nutrition: 'Değerli hasta, gazlı ve asitli içecekler mide sağlığınızı olumsuz etkileyebilir. Lütfen su, ayran ve bitki çaylarına ağırlık verin.',
-      medication: 'Hatırlatma: Reçete edilen ilaçlarınızı düzenli saatlerde almayı unutmayın. Tedavi sürekliliği çok önemlidir.',
-      hydration: 'Günlük en az 2 litre su tüketmeye özen gösterin. Yeterli sıvı alımı tansiyon ve böbrek sağlığınızı destekler.',
-      activity: 'Günlük 30 dakika hafif tempolu yürüyüş yapmanız kalp ve şeker metabolizmanız için faydalıdır.',
-      checkup: 'Yaklaşan kontrol randevunuzu ihmal etmeyin. Düzenli takip, komplikasyon riskini azaltır.',
-    },
-    en: {
-      nutrition: 'Dear patient, carbonated and acidic beverages can harm your digestive health. Please prefer water, ayran, and herbal teas.',
-      medication: 'Reminder: Please take your prescribed medications at regular times. Treatment continuity is essential.',
-      hydration: 'Please drink at least 2 liters of water daily. Adequate hydration supports blood pressure and kidney health.',
-      activity: 'A 30-minute light walk every day is beneficial for your heart and glucose metabolism.',
-      checkup: 'Do not miss your upcoming follow-up appointment. Regular monitoring reduces complication risk.',
-    },
-    ar: {
-      nutrition: 'عزيزي المريض، المشروبات الغازية والحمضية قد تضر بصحة الجهاز الهضمي. يرجى تفضيل الماء واللبن والأعشاب.',
-      medication: 'تذكير: يرجى تناول أدويتك الموصوفة في أوقات منتظمة. استمرارية العلاج ضرورية.',
-      hydration: 'حرص على شرب لترين من الماء يومياً. الترطيب الكافي يدعم ضغط الدم وصحة الكلى.',
-      activity: 'المشي الخفيف لمدة 30 دقيقة يومياً مفيد لقلبك وتمثيل الغذاء.',
-      checkup: 'لا تفوت موعد المتابعة القادم. المراقبة المنتظمة تقلل مخاطر المضاعفات.',
-    },
-  };
-
-  function getBroadcastTemplateMessage(key, lang) {
-    return (broadcastTemplateMessages[lang] || broadcastTemplateMessages.tr)[key] || '';
-  }
-
-  function computeBroadcastTarget() {
+  function computeAiSmsTarget(branch) {
     const patients = (lastData?.patients || []);
-    const conditions = branchToConditionMap[broadcastState.branch] || [];
+    const conditions = aiBranchToConditionMap[branch] || [];
     return patients.filter((p) => conditions.includes(p.conditionGroup || '')).length;
   }
 
-  function updateBroadcastTarget() {
-    const target = computeBroadcastTarget();
-    const countEl = document.getElementById('broadcast-target-count');
-    const sendEl = document.getElementById('broadcast-send');
-    if (countEl) countEl.textContent = target;
-    if (sendEl) sendEl.textContent = t('telemedicine.sendButton', { count: target });
+  function showAiSmsBanner(count) {
+    const banner = document.getElementById('ai-sms-banner');
+    if (!banner) return;
+    banner.textContent = t('telemedicine.sentBanner', { count });
+    banner.classList.remove('hidden');
+    banner.classList.add('visible');
+    clearTimeout(showAiSmsBanner._timer);
+    showAiSmsBanner._timer = setTimeout(() => {
+      banner.classList.remove('visible');
+      banner.classList.add('hidden');
+    }, 6000);
   }
 
-  async function loadBroadcastHistory() {
-    if (broadcastState.loaded) return;
-    try {
-      const res = await api('/api/broadcasts');
-      if (!res.ok) throw new Error('load');
-      const data = await safeJson(res);
-      broadcastState.history = Array.isArray(data) ? data : [];
-      broadcastState.loaded = true;
-      renderTelemedicine(true);
-    } catch {
-      broadcastState.loaded = true;
-    }
+  function approveAiSms(id) {
+    const suggestion = aiSmsState.suggestions.find((s) => s.id === id);
+    if (!suggestion || suggestion.status !== 'pending') return;
+    const count = computeAiSmsTarget(suggestion.branch);
+    suggestion.status = 'sent';
+    suggestion.sentCount = count;
+    suggestion.sentAt = new Date().toISOString();
+    addLog(t('telemedicine.logApproved', { branch: t('telemedicine.branches.' + suggestion.branch), count }));
+    renderTelemedicine(true);
+    showAiSmsBanner(count);
   }
 
-  async function sendBroadcast() {
-    const sendEl = document.getElementById('broadcast-send');
-    const statusEl = document.getElementById('broadcast-status');
-    if (!sendEl) return;
-    sendEl.disabled = true;
-    if (statusEl) statusEl.textContent = '';
-    try {
-      const res = await api('/api/broadcasts', {
-        method: 'POST',
-        body: JSON.stringify({
-          branch: broadcastState.branch,
-          template: broadcastState.template,
-          message: broadcastState.message,
-          channel: broadcastState.channel,
-        }),
-      });
-      const body = await safeJson(res);
-      if (!res.ok) throw new Error(body.error || t('telemedicine.sentError'));
-      if (body.record) broadcastState.history.unshift(body.record);
-      if (statusEl) {
-        statusEl.textContent = t('telemedicine.sentSuccess');
-        statusEl.className = 'status-ok';
-      }
-      addLog(t('telemedicine.historyTitle') + ': ' + broadcastState.template);
-      renderTelemedicine(true);
-    } catch (err) {
-      if (statusEl) {
-        statusEl.textContent = err.message || t('telemedicine.sentError');
-        statusEl.className = 'status-error';
-      }
-      sendEl.disabled = false;
-    }
+  function rejectAiSms(id) {
+    const suggestion = aiSmsState.suggestions.find((s) => s.id === id);
+    if (!suggestion || suggestion.status !== 'pending') return;
+    suggestion.status = 'rejected';
+    addLog(t('telemedicine.logRejected', { branch: t('telemedicine.branches.' + suggestion.branch) }));
+    renderTelemedicine(true);
   }
 
-  function renderBroadcastHistory() {
-    const history = broadcastState.history || [];
-    if (history.length === 0) {
-      return `<div class="history-item"><span class="history-body">${escapeHtml(t('telemedicine.historyEmpty'))}</span></div>`;
+  function renderAiSmsCard(suggestion) {
+    const branchName = t('telemedicine.branches.' + suggestion.branch);
+    const target = computeAiSmsTarget(suggestion.branch);
+    const body = t('telemedicine.suggestions.' + suggestion.id + '.body');
+    const title = t('telemedicine.suggestions.' + suggestion.id + '.title');
+
+    let footer = '';
+    if (suggestion.status === 'pending') {
+      footer = `
+        <div class="ai-sms-actions">
+          <button type="button" class="btn btn-approve" data-ai-approve="${suggestion.id}">${escapeHtml(t('telemedicine.approveBtn'))}</button>
+          <button type="button" class="btn btn-reject" data-ai-reject="${suggestion.id}">${escapeHtml(t('telemedicine.rejectBtn'))}</button>
+        </div>`;
+    } else if (suggestion.status === 'sent') {
+      footer = `<div class="ai-sms-result ok">✓ ${escapeHtml(t('telemedicine.sentBanner', { count: suggestion.sentCount ?? target }))}</div>`;
+    } else {
+      footer = `<div class="ai-sms-result rejected">✕ ${escapeHtml(t('telemedicine.rejectedNote'))}</div>`;
     }
-    return history.slice(0, 10).map((item) => `
-      <div class="history-item">
-        <div class="history-icon">✓</div>
-        <div class="history-body">
-          <div>${escapeHtml(t('telemedicine.branches.' + item.branch) || item.branch)} · ${escapeHtml(item.channel.toUpperCase())}</div>
-          <div class="history-time">${escapeHtml(new Date(item.createdAt).toLocaleString(dateLocale()))}</div>
+
+    return `
+      <article class="ai-sms-card ${suggestion.status}">
+        <header class="ai-sms-card-head">
+          <span class="ai-sms-badge">🤖 ${escapeHtml(t('telemedicine.aiBadge'))}</span>
+          <span class="ai-sms-branch">${escapeHtml(branchName)}</span>
+        </header>
+        <h4 class="ai-sms-title">${escapeHtml(title)}</h4>
+        <p class="ai-sms-body">${escapeHtml(body)}</p>
+        <div class="ai-sms-meta">
+          <span>${escapeHtml(t('telemedicine.targetPatients'))}: <strong>${target}</strong></span>
+          <span class="ai-sms-status-${suggestion.status}">${escapeHtml(t('telemedicine.status.' + suggestion.status))}</span>
         </div>
-      </div>`).join('');
+        ${footer}
+      </article>`;
   }
 
-  function attachBroadcastListeners() {
-    if (!els.broadcastPanel) return;
-    els.broadcastPanel.querySelectorAll('.branch-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        broadcastState.branch = btn.dataset.branch;
-        renderTelemedicine(true);
-      });
-    });
-    const templateSel = document.getElementById('broadcast-template');
-    if (templateSel) {
-      templateSel.addEventListener('change', () => {
-        broadcastState.template = templateSel.value;
-        broadcastState.message = getBroadcastTemplateMessage(broadcastState.template, i18n.getCurrentLang());
-        renderTelemedicine(true);
-      });
-    }
-    const messageEl = document.getElementById('broadcast-message');
-    if (messageEl) {
-      messageEl.addEventListener('input', () => {
-        broadcastState.message = messageEl.value;
-      });
-    }
-    els.broadcastPanel.querySelectorAll('.channel-card').forEach((card) => {
-      card.addEventListener('click', () => {
-        broadcastState.channel = card.dataset.channel;
-        renderTelemedicine(true);
-      });
-    });
-    const sendBtn = document.getElementById('broadcast-send');
-    if (sendBtn) sendBtn.addEventListener('click', sendBroadcast);
-  }
-
-  async function renderTelemedicine(force = false) {
-    if (!els.broadcastPanel) return;
+  function renderTelemedicine(force = false) {
+    if (!els.aiSmsPanel) return;
     const lang = i18n.getCurrentLang();
-    if (!force && els.broadcastPanel.innerHTML && els.broadcastPanel.dataset.lang === lang) {
-      updateBroadcastTarget();
-      return;
-    }
-    if (!broadcastState.loaded) await loadBroadcastHistory();
-    const target = computeBroadcastTarget();
-    if (!broadcastState.message) broadcastState.message = getBroadcastTemplateMessage(broadcastState.template, lang);
+    if (!force && els.aiSmsPanel.innerHTML && els.aiSmsPanel.dataset.lang === lang) return;
 
-    const branchButtons = ['gastroenterology', 'cardiology', 'nephrology', 'endocrinology'].map((key) => `
-      <button type="button" class="branch-btn ${broadcastState.branch === key ? 'active' : ''}" data-branch="${key}">${escapeHtml(t('telemedicine.branches.' + key))}</button>`).join('');
-    const templateOptions = ['nutrition', 'medication', 'hydration', 'activity', 'checkup'].map((key) => `
-      <option value="${key}" ${broadcastState.template === key ? 'selected' : ''}>${escapeHtml(t('telemedicine.templates.' + key))}</option>`).join('');
-    const channel = broadcastState.channel;
-
-    els.broadcastPanel.innerHTML = `
-      <div class="broadcast-card">
-        <h3 data-i18n="telemedicine.branchLabel">${escapeHtml(t('telemedicine.branchLabel'))}</h3>
-        <div class="branch-buttons">${branchButtons}</div>
-        <label class="field">
-          <span data-i18n="telemedicine.templateLabel">${escapeHtml(t('telemedicine.templateLabel'))}</span>
-          <select class="template-select" id="broadcast-template">${templateOptions}</select>
-        </label>
-        <label class="field">
-          <span data-i18n="telemedicine.messageLabel">${escapeHtml(t('telemedicine.messageLabel'))}</span>
-          <textarea class="broadcast-textarea" id="broadcast-message" placeholder="${escapeHtml(t('telemedicine.messageLabel'))}">${escapeHtml(broadcastState.message)}</textarea>
-        </label>
-        <h3 data-i18n="telemedicine.channelLabel">${escapeHtml(t('telemedicine.channelLabel'))}</h3>
-        <div class="channel-cards">
-          <label class="channel-card ${channel === 'sms' ? 'active' : ''}" data-channel="sms">
-            <input type="radio" name="broadcast-channel" value="sms" ${channel === 'sms' ? 'checked' : ''} />
-            <span data-i18n="telemedicine.channelSms">${escapeHtml(t('telemedicine.channelSms'))}</span>
-          </label>
-          <label class="channel-card ${channel === 'push' ? 'active' : ''}" data-channel="push">
-            <input type="radio" name="broadcast-channel" value="push" ${channel === 'push' ? 'checked' : ''} />
-            <span data-i18n="telemedicine.channelPush">${escapeHtml(t('telemedicine.channelPush'))}</span>
-          </label>
-        </div>
-        <button type="button" class="btn btn-primary" id="broadcast-send">${escapeHtml(t('telemedicine.sendButton', { count: target }))}</button>
-        <span id="broadcast-status"></span>
+    const cards = aiSmsState.suggestions.map(renderAiSmsCard).join('');
+    els.aiSmsPanel.innerHTML = `
+      <div class="ai-sms-banner hidden" id="ai-sms-banner" role="status"></div>
+      <div class="ai-sms-intro">
+        <h3>${escapeHtml(t('telemedicine.poolTitle'))}</h3>
+        <p>${escapeHtml(t('telemedicine.poolSubtitle'))}</p>
       </div>
-      <div>
-        <div class="target-card">
-          <h3 data-i18n="telemedicine.targetLabel">${escapeHtml(t('telemedicine.targetLabel'))}</h3>
-          <div class="target-row">
-            <span data-i18n="telemedicine.targetPatients">${escapeHtml(t('telemedicine.targetPatients'))}</span>
-            <span class="target-value" id="broadcast-target-count">${target}</span>
-          </div>
-          <div class="target-row">
-            <span data-i18n="telemedicine.targetStatus">${escapeHtml(t('telemedicine.targetStatus'))}</span>
-            <span class="status-ok" data-i18n="telemedicine.targetStatusValue">${escapeHtml(t('telemedicine.targetStatusValue'))}</span>
-          </div>
-        </div>
-        <div class="broadcast-card" style="margin-top:20px">
-          <h3 data-i18n="telemedicine.historyTitle">${escapeHtml(t('telemedicine.historyTitle'))}</h3>
-          <div class="history-list" id="broadcast-history">${renderBroadcastHistory()}</div>
-        </div>
-      </div>`;
-    els.broadcastPanel.dataset.lang = lang;
-    attachBroadcastListeners();
+      <div class="ai-sms-grid">${cards}</div>`;
+    els.aiSmsPanel.dataset.lang = lang;
+
+    els.aiSmsPanel.querySelectorAll('[data-ai-approve]').forEach((btn) => {
+      btn.addEventListener('click', () => approveAiSms(btn.dataset.aiApprove));
+    });
+    els.aiSmsPanel.querySelectorAll('[data-ai-reject]').forEach((btn) => {
+      btn.addEventListener('click', () => rejectAiSms(btn.dataset.aiReject));
+    });
     i18n.applyTranslations();
   }
-
   /* ---------- Voice Assistant ---------- */
   const defaultVoicePrompts = {
     tr: 'Merhaba [Hasta Adı], son ölçümünüz [Son Ölçüm] ve [Hastalık Tipi] takibiniz için sizi arıyorum. Lütfen ilaçlarınızı düzenli alın ve su tüketimine dikkat edin.',
