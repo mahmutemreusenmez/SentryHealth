@@ -59,13 +59,15 @@
     </div>
 
     <div class="layout">
-      <aside class="sidebar">
+      <div class="sidebar-overlay" id="sidebar-overlay"></div>
+      <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
           <div class="brand-icon">✚</div>
           <div>
             <span class="brand-name" data-i18n="app.brandName">MediTakip</span>
             <span class="brand-sub" data-i18n="app.brandSub">Klinik Yönetim</span>
           </div>
+          <button type="button" class="sidebar-close" id="sidebar-close" aria-label="Menüyü kapat">×</button>
         </div>
 
         <nav class="sidebar-nav">
@@ -98,9 +100,14 @@
 
       <div class="content">
         <header class="topbar">
-          <div>
-            <h1 id="page-title">Ana Panel</h1>
-            <p class="subtitle" data-i18n="app.subtitle">Yapay Zeka Destekli Uzaktan Hasta İzleme · Gerçek Zamanlı Klinik Görünüm</p>
+          <div class="topbar-left">
+            <button type="button" class="hamburger-btn" id="hamburger-btn" aria-label="Menü">
+              <span></span><span></span><span></span>
+            </button>
+            <div>
+              <h1 id="page-title">Ana Panel</h1>
+              <p class="subtitle" data-i18n="app.subtitle">Yapay Zeka Destekli Uzaktan Hasta İzleme · Gerçek Zamanlı Klinik Görünüm</p>
+            </div>
           </div>
           <div class="topbar-right">
             <div class="user-info" id="user-info"></div>

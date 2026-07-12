@@ -71,7 +71,7 @@ const SentryI18n = (() => {
       submit: 'Giriş Yap',
       forgotPassword: 'Şifrenizi unuttuysanız lütfen bilgi işleme başvurunuz.',
       kvkkNote: '🔒 Tüm hasta kimlikleri HMAC-SHA256 ile anonimleştirilir; KVKK/GDPR uyumlu depolama.',
-      error: 'Hatalı T.C. Kimlik Numarası veya Şifre!',
+      error: 'Hatalı Kullanıcı Adı veya Şifre!',
       expired: 'Oturum süresi dolmuş, lütfen tekrar giriş yapın.',
     },
     app: {
@@ -570,7 +570,7 @@ const SentryI18n = (() => {
       submit: 'Sign In',
       forgotPassword: 'Forgot your password? Please contact the IT department.',
       kvkkNote: '🔒 All patient identities are anonymized with HMAC-SHA256; KVKK/GDPR compliant storage.',
-      error: 'Invalid National ID or Password!',
+      error: 'Invalid Username or Password!',
       expired: 'Session expired. Please sign in again.',
     },
     app: {
