@@ -23,17 +23,19 @@ export function buildInteractionLog(schedule: PatientSchedule, healthData: Healt
         target.setDate(target.getDate() + 1);
       }
       while (target <= windowEnd) {
-        const hasResponse = healthData.some((h) => {
+        const responseEntry = healthData.find((h) => {
           const ts = new Date(h.timestamp);
           return ts >= target && ts <= new Date(target.getTime() + 24 * 60 * 60 * 1000);
         });
         let status: InteractionLogEntry['status'] = 'pending';
-        if (hasResponse) {
+        let response: string | undefined;
+        if (responseEntry) {
           status = 'answered';
+          response = `Nabız: ${responseEntry.heartRate}, SpO2: %${responseEntry.oxygenSaturation}, Ateş: ${responseEntry.temperature}°C`;
         } else if (target < now) {
           status = 'overdue';
         }
-        entries.push({ time: target.toISOString(), question: schedule.template, status });
+        entries.push({ time: target.toISOString(), question: schedule.template, status, response });
         target.setDate(target.getDate() + 7);
       }
     }

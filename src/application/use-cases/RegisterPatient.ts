@@ -12,6 +12,7 @@ export interface RegisterPatientInput {
   contactChannel: string;
   caregiver?: {
     name: string;
+    relationship: string;
     phone: string;
     email: string;
   };
@@ -129,10 +130,11 @@ export class RegisterPatient {
     if (!raw || typeof raw !== 'object') return undefined;
     const c = raw as Record<string, unknown>;
     const name = String(c.name ?? '').trim();
+    const relationship = String(c.relationship ?? '').trim();
     const phone = String(c.phone ?? '').trim();
     const email = String(c.email ?? '').trim();
     if (name.length === 0 && phone.length === 0 && email.length === 0) return undefined;
-    return { name, phone, email };
+    return { name, relationship, phone, email };
   }
 
   private parseSchedule(raw: unknown): RegisterPatientInput['schedule'] | undefined {

@@ -1,5 +1,5 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
-import { userStore, sessions, generateToken, hashPassword, FALLBACK_TOKEN } from '../middleware/auth.js';
+import { userStore, sessions, generateToken, hashPassword } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -39,7 +39,7 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
     const user = userStore.findByUsername(username);
     const validCredentials = username === LOCKED_USERNAME && password === LOCKED_PASSWORD;
     if (!validCredentials || !user || user.passwordHash !== hashPassword(password)) {
-      res.status(401).json({ error: 'Hatalı kullanıcı adı veya şifre!' });
+      res.status(401).json({ error: 'Hatalı T.C. Kimlik Numarası veya Şifre!' });
       return;
     }
 
@@ -71,7 +71,7 @@ router.get('/me', async (req: Request, res: Response, next: NextFunction) => {
       return;
     }
     const token = header.slice(7).trim();
-    const user = sessions.get(token) || (token === FALLBACK_TOKEN ? userStore.findByUsername(LOCKED_USERNAME) : undefined);
+    const user = sessions.get(token);
     if (!user) {
       res.status(401).json({ error: 'Oturum geçersiz' });
       return;

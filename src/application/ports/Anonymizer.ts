@@ -10,6 +10,7 @@ export interface PatientThreshold {
 
 export interface PatientCaregiver {
   name: string;
+  relationship: string;
   phone: string;
   email: string;
 }
@@ -24,6 +25,7 @@ export interface InteractionLogEntry {
   time: string;
   question: string;
   status: 'pending' | 'answered' | 'overdue';
+  response?: string;
 }
 
 export interface AnonymizedPatient {

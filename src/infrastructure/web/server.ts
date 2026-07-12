@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import path from 'node:path';
 import fs from 'node:fs';
-import { randomUUID, randomInt } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import type { AnonymizedPatient } from '../../application/ports/Anonymizer.js';
 import { healthDataRouter } from '../../interface/http/routes/healthData.js';
@@ -13,9 +13,8 @@ import { authRouter } from '../../interface/http/routes/auth.js';
 import { adminRouter } from '../../interface/http/routes/admin.js';
 import { authMiddleware, adminMiddleware } from '../../interface/http/middleware/auth.js';
 import { ValidationError } from '../../application/errors/ValidationError.js';
-import { repository, registerPatient } from '../config/dependencies.js';
+import { repository } from '../config/dependencies.js';
 import type { PatientThreshold } from '../../application/ports/Anonymizer.js';
-import type { HealthMetrics } from '../../domain/entities/HealthMetrics.js';
 import { buildInteractionLog } from '../../application/services/InteractionLogBuilder.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -64,99 +63,6 @@ function computeBranchTarget(branch: string, patients: AnonymizedPatient[]): num
   const conditions = branchConditionMap[branch] || [];
   if (conditions.length === 0) return 0;
   return patients.filter((p) => conditions.includes(p.conditionGroup || '')).length;
-}
-
-async function seedMockData(): Promise<void> {
-  const existing = await repository.findAll();
-  if (existing.length > 0) return;
-
-    const trFirst = ['Ahmet','Mehmet','Ayşe','Fatma','Ali','Mustafa','Emine','Hatice','Hasan','Hüseyin','Zeynep','Elif','Osman','Kemal','Murat','Selin','Burak','Cem','Canan','Nazan'];
-    const trLast = ['Yılmaz','Kaya','Demir','Şahin','Yıldız','Çelik','Aydın','Öztürk','Doğan','Kılıç','Arslan','Aslan','Aksoy','Baran','Tekin','Eroğlu','Yavuz','Turan','Tuncer','Özdemir'];
-    const enFirst = ['John','Michael','Emily','Sarah','David','Robert','Jessica','William','James','Jennifer','Thomas','Daniel','Mary','Patricia','Christopher','Matthew','Andrew','Joshua','Amanda','Laura'];
-    const enLast = ['Smith','Johnson','Williams','Brown','Jones','Garcia','Miller','Davis','Rodriguez','Martinez','Hernandez','Lopez','Gonzalez','Wilson','Anderson','Thomas','Taylor','Moore','Jackson','Martin'];
-    const arFirst = ['محمد','أحمد','علي','عمر','خالد','يوسف','حسن','فاطمة','عائشة','مريم','ساره','ليلى','نور','ريم','نورة','فهد','سلطان','عبدالله','نايف','سعد'];
-    const arLast = ['الحربي','العتيبي','القحطاني','الدويسي','الزهراني','المالكي','الشمري','الرشيد','السبيعي','المطيري','البلوي','الصيعري','الجهني','الروقي','الخالدي','الغامدي','الحسين','الشريف','العباس','الفهد'];
-    const namePools = { tr: { first: trFirst, last: trLast }, en: { first: enFirst, last: enLast }, ar: { first: arFirst, last: arLast } };
-
-    const conditions = ['Diyabet','Hipertansiyon','KOAH','Kalp Yetmezliği','Astım','Kronik Böbrek Hastalığı','Diğer'];
-    const questionTemplates = [
-      'Son 24 saatte ne kadar su tükettiniz?',
-      'İlaçlarınızı düzenli aldınız mı?',
-      'Ağrı veya nefes daralması yaşıyor musunuz?',
-      'Dün gece uyku düzeniniz nasıldı?',
-      'Kan şekeri ölçümünüzü yaptınız mı?',
-    ];
-
-    for (let i = 0; i < 200; i++) {
-      try {
-        const lang = (['tr','en','ar'] as const)[randomInt(0, 3)];
-        const first = namePools[lang].first[randomInt(0, namePools[lang].first.length)];
-        const last = namePools[lang].last[randomInt(0, namePools[lang].last.length)];
-        const fullName = `${first} ${last}`;
-        const nationalId = String(10000000000 + i).padStart(11, '0');
-        const year = randomInt(1940, 1995);
-        const month = randomInt(1, 13);
-        const day = randomInt(1, 29);
-        const dateOfBirth = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const condition = conditions[randomInt(0, conditions.length)];
-        const contactChannel = Math.random() < 0.5 ? 'sms' : 'ai';
-
-        const result = await registerPatient.execute({
-          fullName,
-          nationalId,
-          dateOfBirth,
-          condition,
-          contactChannel,
-        });
-
-        const patient = await repository.findByPseudonym(result.pseudonym);
-        if (!patient) continue;
-
-        const measurements: HealthMetrics[] = [];
-        const count = randomInt(4, 10);
-        for (let j = 0; j < count; j++) {
-          const d = new Date();
-          d.setMonth(d.getMonth() - randomInt(0, 12));
-          d.setDate(d.getDate() - randomInt(0, 28));
-          d.setHours(randomInt(8, 22), randomInt(0, 59), 0, 0);
-          const hr = randomInt(55, 145);
-          const sys = randomInt(100, 190);
-          const dia = randomInt(60, 120);
-          const spo2 = randomInt(88, 100);
-          const temp = Number((36.0 + Math.random() * 3.5).toFixed(1));
-          measurements.push({
-            timestamp: d,
-            heartRate: hr,
-            bloodPressureSystolic: sys,
-            bloodPressureDiastolic: dia,
-            oxygenSaturation: spo2,
-            temperature: temp,
-          });
-        }
-        measurements.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-        patient.healthData = measurements;
-
-        const criticalValue = randomInt(130, 150);
-        patient.criticalThreshold = {
-          metric: 'heartRate',
-          operator: '>',
-          value: criticalValue,
-          message: `${criticalValue} bpm üzeri kritik: acil servise başvurun.`,
-        };
-        const warningValue = randomInt(100, 120);
-        patient.warningThreshold = {
-          metric: 'heartRate',
-          operator: '>',
-          value: warningValue,
-          message: `${warningValue} bpm üzeri yüksek: dinlenin ve tekrar ölçün.`,
-        };
-        patient.customQuestion = questionTemplates[randomInt(0, questionTemplates.length)];
-        patient.questionTimes = ['09:00', '18:00'];
-        await repository.save(patient);
-      } catch (err) {
-        console.error('Seed error:', err);
-      }
-    }
 }
 
 function sanitizeThreshold(raw: unknown): PatientThreshold {
@@ -210,7 +116,6 @@ function findPublicDir(): string | null {
 const publicDir = findPublicDir();
 
 export async function createServer() {
-  await seedMockData();
   const app = express();
   app.use(helmet({
     contentSecurityPolicy: {
@@ -288,10 +193,11 @@ export async function createServer() {
       if (body.caregiver !== undefined) {
         const c = body.caregiver;
         const name = String(c.name ?? '').trim();
+        const relationship = String(c.relationship ?? '').trim();
         const phone = String(c.phone ?? '').trim();
         const email = String(c.email ?? '').trim();
         if (name || phone || email) {
-          patient.caregiver = { name, phone, email };
+          patient.caregiver = { name, relationship, phone, email };
         } else {
           delete patient.caregiver;
         }

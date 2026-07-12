@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SentryHealth — Klinik Yönetim Paneli</title>
+  <title>SentryHealth v2.0 — Kronik Hasta Takip Platformu</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet" />
@@ -812,6 +812,10 @@
             <input type="text" name="caregiverName" data-i18n-placeholder="caregiver.name" placeholder="Örn: Mehmet Yılmaz" />
           </label>
           <label class="field">
+            <span data-i18n="caregiver.relationship">Yakınlık Derecesi</span>
+            <input type="text" name="caregiverRelationship" data-i18n-placeholder="caregiver.relationship" placeholder="Eş, Çocuk, Kardeş, vb." />
+          </label>
+          <label class="field">
             <span data-i18n="caregiver.phone">Telefon</span>
             <input type="tel" name="caregiverPhone" data-i18n-placeholder="caregiver.phone" placeholder="05XX XXX XX XX" />
           </label>
@@ -836,12 +840,21 @@
             </select>
           </label>
           <label class="field">
-            <span data-i18n="interaction.scheduleTimes">Soru Saatleri (virgülle ayrılmış)</span>
+            <span data-i18n="interaction.scheduleTimes">Soru / Ölçüm Saatleri (virgülle ayrılmış)</span>
             <input type="text" name="scheduleTimes" data-i18n-placeholder="interaction.scheduleTimes" placeholder="08:00, 15:00" />
           </label>
           <label class="field">
             <span data-i18n="interaction.scheduleTemplate">Soru Şablonu</span>
-            <input type="text" name="scheduleTemplate" data-i18n-placeholder="interaction.scheduleTemplate" placeholder="Oksijen satürasyonunuz şu an kaç?" />
+            <input type="text" name="scheduleTemplate" list="schedule-template-options" data-i18n-placeholder="interaction.scheduleTemplate" placeholder="Örn: Oksijen satürasyonunuz kaç?" />
+            <datalist id="schedule-template-options">
+              <option value="Oksijen satürasyonunuz şu an kaç?">
+              <option value="Açlık kan şekeriniz kaç?">
+              <option value="Tansiyon ölçümünüz sonucu nedir?">
+              <option value="Nabzınız kaç?">
+              <option value="Nefes darlığınız var mı?">
+              <option value="Gün içinde ağrı / sancınız oldu mu?">
+              <option value="İlaçlarınızı düzenli alıyor musunuz?">
+            </datalist>
           </label>
         </div>
 

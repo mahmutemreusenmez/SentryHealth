@@ -30,7 +30,7 @@ export class InMemoryUserStore {
       {
         id: 'u-1',
         username: 'yönetici06',
-        displayName: 'Sistem Yöneticisi',
+        displayName: 'Prof. Dr. Ayşe Yılmaz',
         role: 'admin',
         passwordHash: hashPassword('yönetici123'),
       },

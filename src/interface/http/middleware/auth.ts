@@ -2,10 +2,6 @@ import type { Request, Response, NextFunction } from 'express';
 import { userStore, sessions } from '../../../infrastructure/persistence/InMemoryUserStore.js';
 import type { User } from '../../../infrastructure/persistence/InMemoryUserStore.js';
 
-export const FALLBACK_TOKEN = 'sentryhealth-local-fallback-token';
-
-const FALLBACK_USER = userStore.findByUsername('yönetici06');
-
 declare global {
   namespace Express {
     interface Request {
@@ -22,7 +18,7 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
   }
 
   const token = header.slice(7).trim();
-  const user = sessions.get(token) || (token === FALLBACK_TOKEN ? FALLBACK_USER : undefined);
+  const user = sessions.get(token);
   if (!user) {
     res.status(401).json({ error: 'Oturum geçersiz veya süresi dolmuş' });
     return;

@@ -2,7 +2,6 @@
   const { t } = window.SentryI18n;
   const i18n = window.SentryI18n;
   const POLL_MS = 2500;
-  const FALLBACK_TOKEN = 'sentryhealth-local-fallback-token';
 
   function getLocalDoctors() {
     try { return JSON.parse(localStorage.getItem('sentry_local_doctors') || '[]'); } catch { return []; }
@@ -328,11 +327,6 @@
       showLogin();
       return;
     }
-    if (token === FALLBACK_TOKEN) {
-      setStoredUser({ id: 'u-1', username: 'yönetici06', displayName: 'Sistem Yöneticisi', role: 'admin' });
-      showApp();
-      return;
-    }
     try {
       const res = await api('/api/auth/me');
       if (!res.ok) throw new Error(t('login.expired'));
@@ -352,23 +346,6 @@
     els.loginError.classList.add('hidden');
     const fd = new FormData(els.loginForm);
     const payload = { username: fd.get('username'), password: fd.get('password') };
-
-    if (payload.username === 'yönetici06' && payload.password === 'yönetici123') {
-      localStorage.setItem('token', FALLBACK_TOKEN);
-      setStoredUser({ id: 'u-1', username: 'yönetici06', displayName: 'Sistem Yöneticisi', role: 'admin' });
-      addLog(t('log.login', { who: 'Sistem Yöneticisi', role: 'admin' }));
-      showApp();
-      try {
-        await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-      } catch {
-        // static fallback is active; ignore network issues
-      }
-      return;
-    }
 
     try {
       const res = await fetch('/api/auth/login', {
@@ -880,6 +857,7 @@
     return `<div class="info-card">
       <h5>${escapeHtml(t('caregiver.title'))}</h5>
       ${c.name ? `<p><strong>${escapeHtml(t('caregiver.name'))}</strong> ${escapeHtml(c.name)}</p>` : ''}
+      ${c.relationship ? `<p><strong>${escapeHtml(t('caregiver.relationship'))}</strong> ${escapeHtml(c.relationship)}</p>` : ''}
       ${c.phone ? `<p><strong>${escapeHtml(t('caregiver.phone'))}</strong> ${escapeHtml(c.phone)}</p>` : ''}
       ${c.email ? `<p><strong>${escapeHtml(t('caregiver.email'))}</strong> ${escapeHtml(c.email)}</p>` : ''}
     </div>`;
@@ -892,13 +870,21 @@
     }
     const days = (s.days || []).map((d) => escapeHtml(d)).join(', ');
     const times = (s.times || []).map((time) => escapeHtml(time)).join(', ');
-    const logRows = (p.interactionLog || []).slice(0, 20).map((entry) => {
+    const timelineRows = (p.interactionLog || []).slice(0, 20).map((entry) => {
       const statusKey = entry.status === 'answered' ? 'statusAnswered' : entry.status === 'overdue' ? 'statusOverdue' : 'statusPending';
       const statusClass = entry.status === 'answered' ? 'status-ok' : entry.status === 'overdue' ? 'status-error' : 'status-pending';
+      const responseHtml = entry.response ? `<span class="interaction-response">${escapeHtml(entry.response)}</span>` : '';
       return `<div class="interaction-log-row ${statusClass}">
-        <span class="interaction-time">${escapeHtml(fmtDate(entry.time))} ${escapeHtml(fmtTime(entry.time))}</span>
-        <span class="interaction-question">${escapeHtml(entry.question)}</span>
-        <span class="interaction-status">${escapeHtml(t('interaction.' + statusKey))}</span>
+        <div class="interaction-timeline-dot"></div>
+        <div class="interaction-timeline-content">
+          <div class="interaction-timeline-head">
+            <span class="interaction-time">${escapeHtml(fmtDate(entry.time))} ${escapeHtml(fmtTime(entry.time))}</span>
+            <span class="interaction-status">${escapeHtml(t('interaction.' + statusKey))}</span>
+          </div>
+          <span class="interaction-question">${escapeHtml(entry.question)}</span>
+          ${responseHtml}
+          <div class="interaction-status-bar" style="--status-color: var(--${entry.status === 'answered' ? 'green' : entry.status === 'overdue' ? 'red' : 'amber'})"></div>
+        </div>
       </div>`;
     }).join('');
     return `<div class="info-card">
@@ -907,7 +893,7 @@
       <p><strong>${escapeHtml(t('interaction.scheduleTimes'))}</strong> ${times || '—'}</p>
       <p><strong>${escapeHtml(t('interaction.scheduleTemplate'))}</strong> ${escapeHtml(s.template || '—')}</p>
       <h6>${escapeHtml(t('interaction.logTitle'))}</h6>
-      ${logRows || `<p>${escapeHtml(t('interaction.noLog'))}</p>`}
+      <div class="interaction-timeline">${timelineRows || `<p>${escapeHtml(t('interaction.noLog'))}</p>`}</div>
     </div>`;
   }
 
@@ -1042,7 +1028,7 @@
     const questionTimes = (p.questionTimes || []).join(', ');
     const critical = p.criticalThreshold || { metric: 'heartRate', operator: '>', value: 140, message: t('clinical.criticalDefault') };
     const warning = p.warningThreshold || { metric: 'heartRate', operator: '>', value: 100, message: t('clinical.warningDefault') };
-    const caregiver = p.caregiver || { name: '', phone: '', email: '' };
+    const caregiver = p.caregiver || { name: '', relationship: '', phone: '', email: '' };
     const schedule = p.schedule || { days: [], times: [], template: '' };
     const interactionLog = p.interactionLog || [];
 
@@ -1125,6 +1111,10 @@
           <label class="field">
             <span>${escapeHtml(t('caregiver.name'))}</span>
             <input type="text" name="caregiverName" value="${escapeHtml(caregiver.name)}" />
+          </label>
+          <label class="field">
+            <span>${escapeHtml(t('caregiver.relationship'))}</span>
+            <input type="text" name="caregiverRelationship" value="${escapeHtml(caregiver.relationship)}" />
           </label>
           <label class="field">
             <span>${escapeHtml(t('caregiver.phone'))}</span>
@@ -1248,6 +1238,7 @@
         const scheduleTimes = String(fd.get('scheduleTimes') || '').split(',').map((s) => s.trim()).filter(Boolean);
         const scheduleTemplate = String(fd.get('scheduleTemplate') || '').trim();
         const caregiverName = String(fd.get('caregiverName') || '').trim();
+        const caregiverRelationship = String(fd.get('caregiverRelationship') || '').trim();
         const caregiverPhone = String(fd.get('caregiverPhone') || '').trim();
         const caregiverEmail = String(fd.get('caregiverEmail') || '').trim();
         const payload = {
@@ -1256,7 +1247,7 @@
           questionTimes: times,
           criticalThreshold: buildThreshold('critical'),
           warningThreshold: buildThreshold('warning'),
-          caregiver: caregiverName || caregiverPhone || caregiverEmail ? { name: caregiverName, phone: caregiverPhone, email: caregiverEmail } : undefined,
+          caregiver: caregiverName || caregiverPhone || caregiverEmail ? { name: caregiverName, relationship: caregiverRelationship, phone: caregiverPhone, email: caregiverEmail } : undefined,
           schedule: scheduleDays.length || scheduleTimes.length || scheduleTemplate ? { days: scheduleDays, times: scheduleTimes, template: scheduleTemplate } : undefined,
         };
         try {
@@ -2451,6 +2442,7 @@
     els.formError.classList.add('hidden');
     const fd = new FormData(els.form);
     const caregiverName = String(fd.get('caregiverName') ?? '').trim();
+    const caregiverRelationship = String(fd.get('caregiverRelationship') ?? '').trim();
     const caregiverPhone = String(fd.get('caregiverPhone') ?? '').trim();
     const caregiverEmail = String(fd.get('caregiverEmail') ?? '').trim();
     const scheduleDays = Array.from(els.form.querySelectorAll('select[name="scheduleDays"] option:checked')).map((o) => o.value);
@@ -2462,7 +2454,7 @@
       dateOfBirth: fd.get('dateOfBirth'),
       condition: fd.get('condition'),
       contactChannel: fd.get('contactChannel'),
-      caregiver: caregiverName || caregiverPhone || caregiverEmail ? { name: caregiverName, phone: caregiverPhone, email: caregiverEmail } : undefined,
+      caregiver: caregiverName || caregiverPhone || caregiverEmail ? { name: caregiverName, relationship: caregiverRelationship, phone: caregiverPhone, email: caregiverEmail } : undefined,
       schedule: scheduleDays.length || scheduleTimes.length || scheduleTemplate ? { days: scheduleDays, times: scheduleTimes, template: scheduleTemplate } : undefined,
     };
 

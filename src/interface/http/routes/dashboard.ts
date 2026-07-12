@@ -25,10 +25,8 @@ function buildAnalytics(patients: AnonymizedPatient[]) {
   const responses = new Map<string, number>(months.map((m) => [m, 0]));
   const alarms = new Map<string, number>(months.map((m) => [m, 0]));
 
-  let hasData = false;
   for (const patient of patients) {
     for (const entry of patient.healthData) {
-      hasData = true;
       const m = monthKey(entry.timestamp);
       if (responses.has(m)) {
         responses.set(m, (responses.get(m) ?? 0) + 1);
@@ -41,26 +39,10 @@ function buildAnalytics(patients: AnonymizedPatient[]) {
     }
   }
 
-  if (!hasData) {
-    const demoResponses = [12, 15, 10, 14, 18, 20, 22, 19, 25, 28, 30, 35];
-    const demoAlarms = [1, 0, 2, 1, 3, 2, 4, 1, 2, 3, 5, 4];
-    months.forEach((m, i) => {
-      responses.set(m, demoResponses[i]);
-      alarms.set(m, demoAlarms[i]);
-    });
-  }
-
   const distributionMap = new Map<string, number>();
-  const knownConditions = ['Diyabet', 'Hipertansiyon', 'KOAH', 'Diğer'];
   for (const patient of patients) {
     const cg = patient.conditionGroup || 'Diğer';
     distributionMap.set(cg, (distributionMap.get(cg) ?? 0) + 1);
-  }
-  if (distributionMap.size === 0) {
-    distributionMap.set('Diyabet', 4);
-    distributionMap.set('Hipertansiyon', 3);
-    distributionMap.set('KOAH', 2);
-    distributionMap.set('Diğer', 1);
   }
   const distribution = Array.from(distributionMap.entries()).map(([label, value]) => ({ label, value }));
 
