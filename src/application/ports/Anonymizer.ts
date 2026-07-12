@@ -8,6 +8,24 @@ export interface PatientThreshold {
   message: string;
 }
 
+export interface PatientCaregiver {
+  name: string;
+  phone: string;
+  email: string;
+}
+
+export interface PatientSchedule {
+  days: string[];
+  times: string[];
+  template: string;
+}
+
+export interface InteractionLogEntry {
+  time: string;
+  question: string;
+  status: 'pending' | 'answered' | 'overdue';
+}
+
 export interface AnonymizedPatient {
   id: string;
   pseudonym: string;
@@ -19,6 +37,9 @@ export interface AnonymizedPatient {
   questionTimes?: string[];
   criticalThreshold?: PatientThreshold;
   warningThreshold?: PatientThreshold;
+  caregiver?: PatientCaregiver;
+  schedule?: PatientSchedule;
+  interactionLog?: InteractionLogEntry[];
   healthData: HealthMetrics[];
 }
 

@@ -805,11 +805,52 @@
           </select>
         </label>
 
+        <div class="caregiver-block">
+          <h4 data-i18n="caregiver.title">Hasta Yakını Bilgileri</h4>
+          <label class="field">
+            <span data-i18n="caregiver.name">Adı Soyadı</span>
+            <input type="text" name="caregiverName" data-i18n-placeholder="caregiver.name" placeholder="Örn: Mehmet Yılmaz" />
+          </label>
+          <label class="field">
+            <span data-i18n="caregiver.phone">Telefon</span>
+            <input type="tel" name="caregiverPhone" data-i18n-placeholder="caregiver.phone" placeholder="05XX XXX XX XX" />
+          </label>
+          <label class="field">
+            <span data-i18n="caregiver.email">E-posta</span>
+            <input type="email" name="caregiverEmail" data-i18n-placeholder="caregiver.email" placeholder="yakin@eposta.com" />
+          </label>
+        </div>
+
+        <div class="schedule-block">
+          <h4 data-i18n="interaction.title">Akıllı Takip Takvimi</h4>
+          <label class="field">
+            <span data-i18n="interaction.scheduleDays">Günler</span>
+            <select name="scheduleDays" multiple size="4">
+              <option value="Pazartesi" data-i18n="day.monday">Pazartesi</option>
+              <option value="Salı" data-i18n="day.tuesday">Salı</option>
+              <option value="Çarşamba" data-i18n="day.wednesday">Çarşamba</option>
+              <option value="Perşembe" data-i18n="day.thursday">Perşembe</option>
+              <option value="Cuma" data-i18n="day.friday">Cuma</option>
+              <option value="Cumartesi" data-i18n="day.saturday">Cumartesi</option>
+              <option value="Pazar" data-i18n="day.sunday">Pazar</option>
+            </select>
+          </label>
+          <label class="field">
+            <span data-i18n="interaction.scheduleTimes">Soru Saatleri (virgülle ayrılmış)</span>
+            <input type="text" name="scheduleTimes" data-i18n-placeholder="interaction.scheduleTimes" placeholder="08:00, 15:00" />
+          </label>
+          <label class="field">
+            <span data-i18n="interaction.scheduleTemplate">Soru Şablonu</span>
+            <input type="text" name="scheduleTemplate" data-i18n-placeholder="interaction.scheduleTemplate" placeholder="Oksijen satürasyonunuz şu an kaç?" />
+          </label>
+        </div>
+
         <p class="form-error hidden" id="form-error"></p>
 
         <div class="kvkk-note" data-i18n-html="modal.kvkkNote">
           🔒 Girilen kimlik bilgileri sistemde <strong>saklanmaz</strong>; kayıt anında HMAC-SHA256 ile geri döndürülemez anonim kimliğe dönüştürülür.
         </div>
+        <div class="protocol-note" data-i18n="protocol.note">Sistem Sağlık Bakanlığı onaylı protokoller üzerinden periyodik veri toplama işlemi yürütüyor.</div>
 
         <div class="modal-actions">
           <button type="button" class="btn btn-ghost" id="modal-cancel" data-i18n="modal.cancel">Vazgeç</button>

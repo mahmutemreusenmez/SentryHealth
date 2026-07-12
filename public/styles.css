@@ -2446,9 +2446,98 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
+.caregiver-block, .schedule-block {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 14px;
+}
+
+.caregiver-block h4, .schedule-block h4 {
+  margin-bottom: 12px;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.detail-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 14px 0;
+}
+
+.info-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+.info-card h5, .info-card h6 {
+  margin-bottom: 10px;
+  color: var(--text);
+}
+
+.info-card p {
+  margin-bottom: 6px;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+}
+
+.info-card strong {
+  color: var(--text);
+  margin-right: 6px;
+}
+
+.interaction-log-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  background: var(--surface-2);
+  font-size: 0.85rem;
+}
+
+.interaction-log-row .interaction-time { color: var(--text-muted); white-space: nowrap; }
+.interaction-log-row .interaction-question { flex: 1; color: var(--text); }
+.interaction-log-row .interaction-status { font-weight: 600; }
+
+.status-ok { color: var(--green); }
+.status-error { color: var(--red); }
+.status-pending { color: var(--amber); }
+
+.caregiver-fieldset, .schedule-fieldset {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  margin-top: 14px;
+}
+
+.protocol-note {
+  background: var(--blue-soft);
+  border-left: 4px solid var(--blue);
+  color: var(--text);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.92rem;
+  margin: 14px 0;
+}
+
+.caregiver-fieldset legend, .schedule-fieldset legend {
+  padding: 0 8px;
+  font-weight: 600;
+  color: var(--text);
+}
+
 /* Responsive */
 @media (max-width: 1080px) {
   .tele-grid { grid-template-columns: 1fr; }
+  .detail-cards { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 1000px) {

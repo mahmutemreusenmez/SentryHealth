@@ -26,6 +26,9 @@ export class CryptoAnonymizer implements Anonymizer {
       id: patient.id.toString(),
       pseudonym,
       ageGroup,
+      caregiver: undefined,
+      schedule: undefined,
+      interactionLog: undefined,
       healthData: patient.healthData.map(h => ({
         timestamp: h.timestamp,
         heartRate: h.heartRate,

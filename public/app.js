@@ -54,6 +54,9 @@
       ageGroup: deriveAgeGroup(payload.dateOfBirth),
       conditionGroup: payload.condition || 'Diğer',
       contactChannel: payload.contactChannel || 'sms',
+      caregiver: payload.caregiver || undefined,
+      schedule: payload.schedule || undefined,
+      interactionLog: [],
       healthData: [],
       history: [],
       latest: null,
@@ -667,7 +670,7 @@
     if (clinic.clinicAddress) els.settingsClinicForm.clinicAddress.value = clinic.clinicAddress;
     if (clinic.logo) {
       els.settingsLogoPreview.innerHTML = `<img src="${clinic.logo}" alt="logo" />`;
-      if (els.settingsLogoStatus) els.settingsLogoStatus.textContent = t('settings.logoSimulated');
+      if (els.settingsLogoStatus) els.settingsLogoStatus.textContent = t('settings.logoPreview');
     }
     if (notify.smsThreshold) els.settingsNotifyForm.smsThreshold.value = notify.smsThreshold;
     if (notify.notifyChannel) els.settingsNotifyForm.notifyChannel.value = notify.notifyChannel;
@@ -719,7 +722,7 @@
         clinic.logo = dataUrl;
         localStorage.setItem('settings_clinic', JSON.stringify(clinic));
         els.settingsLogoPreview.innerHTML = `<img src="${dataUrl}" alt="logo" />`;
-        if (els.settingsLogoStatus) els.settingsLogoStatus.textContent = t('settings.logoSimulated');
+        if (els.settingsLogoStatus) els.settingsLogoStatus.textContent = t('settings.logoPreview');
         addLog(t('settings.logClinic'));
       };
       reader.readAsDataURL(file);
@@ -775,6 +778,10 @@
 
   function fmtTime(ts) {
     return new Date(ts).toLocaleTimeString(dateLocale());
+  }
+
+  function fmtDate(ts) {
+    return new Date(ts).toLocaleDateString(dateLocale());
   }
 
   let sparkId = 0;
@@ -863,6 +870,45 @@
       return `<div class="scheduled-tasks"><h5>${escapeHtml(t('scheduledTasks.title'))}</h5><div class="scheduled-task"><span>${escapeHtml(q)}</span></div></div>`;
     }
     return `<div class="scheduled-tasks"><h5>${escapeHtml(t('scheduledTasks.title'))}</h5>${rows}</div>`;
+  }
+
+  function caregiverCard(p) {
+    const c = p.caregiver;
+    if (!c || (!c.name && !c.phone && !c.email)) {
+      return `<div class="info-card"><h5>${escapeHtml(t('caregiver.title'))}</h5><p>${escapeHtml(t('caregiver.empty'))}</p></div>`;
+    }
+    return `<div class="info-card">
+      <h5>${escapeHtml(t('caregiver.title'))}</h5>
+      ${c.name ? `<p><strong>${escapeHtml(t('caregiver.name'))}</strong> ${escapeHtml(c.name)}</p>` : ''}
+      ${c.phone ? `<p><strong>${escapeHtml(t('caregiver.phone'))}</strong> ${escapeHtml(c.phone)}</p>` : ''}
+      ${c.email ? `<p><strong>${escapeHtml(t('caregiver.email'))}</strong> ${escapeHtml(c.email)}</p>` : ''}
+    </div>`;
+  }
+
+  function interactionCard(p) {
+    const s = p.schedule;
+    if (!s || (s.days.length === 0 && s.times.length === 0 && !s.template)) {
+      return `<div class="info-card"><h5>${escapeHtml(t('interaction.title'))}</h5><p>${escapeHtml(t('interaction.noLog'))}</p></div>`;
+    }
+    const days = (s.days || []).map((d) => escapeHtml(d)).join(', ');
+    const times = (s.times || []).map((time) => escapeHtml(time)).join(', ');
+    const logRows = (p.interactionLog || []).slice(0, 20).map((entry) => {
+      const statusKey = entry.status === 'answered' ? 'statusAnswered' : entry.status === 'overdue' ? 'statusOverdue' : 'statusPending';
+      const statusClass = entry.status === 'answered' ? 'status-ok' : entry.status === 'overdue' ? 'status-error' : 'status-pending';
+      return `<div class="interaction-log-row ${statusClass}">
+        <span class="interaction-time">${escapeHtml(fmtDate(entry.time))} ${escapeHtml(fmtTime(entry.time))}</span>
+        <span class="interaction-question">${escapeHtml(entry.question)}</span>
+        <span class="interaction-status">${escapeHtml(t('interaction.' + statusKey))}</span>
+      </div>`;
+    }).join('');
+    return `<div class="info-card">
+      <h5>${escapeHtml(t('interaction.title'))}</h5>
+      <p><strong>${escapeHtml(t('interaction.scheduleDays'))}</strong> ${days || '—'}</p>
+      <p><strong>${escapeHtml(t('interaction.scheduleTimes'))}</strong> ${times || '—'}</p>
+      <p><strong>${escapeHtml(t('interaction.scheduleTemplate'))}</strong> ${escapeHtml(s.template || '—')}</p>
+      <h6>${escapeHtml(t('interaction.logTitle'))}</h6>
+      ${logRows || `<p>${escapeHtml(t('interaction.noLog'))}</p>`}
+    </div>`;
   }
 
   function patientCard(p) {
@@ -996,6 +1042,9 @@
     const questionTimes = (p.questionTimes || []).join(', ');
     const critical = p.criticalThreshold || { metric: 'heartRate', operator: '>', value: 140, message: t('clinical.criticalDefault') };
     const warning = p.warningThreshold || { metric: 'heartRate', operator: '>', value: 100, message: t('clinical.warningDefault') };
+    const caregiver = p.caregiver || { name: '', phone: '', email: '' };
+    const schedule = p.schedule || { days: [], times: [], template: '' };
+    const interactionLog = p.interactionLog || [];
 
     const metricOptions = (selected) => ['heartRate', 'oxygenSaturation', 'temperature', 'systolic', 'diastolic'].map((key) => `
       <option value="${key}" ${selected === key ? 'selected' : ''}>${escapeHtml(t('clinical.options.' + key))}</option>`).join('');
@@ -1035,7 +1084,11 @@
       </div>
       ${alertBanner}
       ${patientMessage}
-      ${scheduledTasks(p)}
+      <div class="protocol-note">${escapeHtml(t('protocol.note'))}</div>
+      <div class="detail-cards">
+        ${caregiverCard(p)}
+        ${interactionCard(p)}
+      </div>
       <div class="detail-charts">
         <div class="chart-box"><span class="chart-title">${escapeHtml(t('chart.pulse'))}</span>${sparkline(history, isAlarm, (h) => h.heartRate)}</div>
         <div class="chart-box"><span class="chart-title">${escapeHtml(t('chart.spo2'))}</span>${sparkline(history, isAlarm, (h) => h.oxygenSaturation)}</div>
@@ -1067,6 +1120,38 @@
           <span>${escapeHtml(t('clinical.sendingTimes'))}</span>
           <input type="text" name="questionTimes" value="${escapeHtml(questionTimes)}" placeholder="${escapeHtml(t('clinical.timesPlaceholder'))}" />
         </label>
+        <fieldset class="caregiver-fieldset">
+          <legend>${escapeHtml(t('caregiver.title'))}</legend>
+          <label class="field">
+            <span>${escapeHtml(t('caregiver.name'))}</span>
+            <input type="text" name="caregiverName" value="${escapeHtml(caregiver.name)}" />
+          </label>
+          <label class="field">
+            <span>${escapeHtml(t('caregiver.phone'))}</span>
+            <input type="tel" name="caregiverPhone" value="${escapeHtml(caregiver.phone)}" />
+          </label>
+          <label class="field">
+            <span>${escapeHtml(t('caregiver.email'))}</span>
+            <input type="email" name="caregiverEmail" value="${escapeHtml(caregiver.email)}" />
+          </label>
+        </fieldset>
+        <fieldset class="schedule-fieldset">
+          <legend>${escapeHtml(t('interaction.title'))}</legend>
+          <label class="field">
+            <span>${escapeHtml(t('interaction.scheduleDays'))}</span>
+            <select name="scheduleDays" multiple size="4">
+              ${['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'].map((d) => `<option value="${escapeHtml(d)}" ${schedule.days.includes(d) ? 'selected' : ''}>${escapeHtml(d)}</option>`).join('')}
+            </select>
+          </label>
+          <label class="field">
+            <span>${escapeHtml(t('interaction.scheduleTimes'))}</span>
+            <input type="text" name="scheduleTimes" value="${escapeHtml(schedule.times.join(', '))}" placeholder="08:00, 15:00" />
+          </label>
+          <label class="field">
+            <span>${escapeHtml(t('interaction.scheduleTemplate'))}</span>
+            <input type="text" name="scheduleTemplate" value="${escapeHtml(schedule.template)}" placeholder="Oksijen satürasyonunuz şu an kaç?" />
+          </label>
+        </fieldset>
         ${thresholdFields('critical', critical, t('clinical.criticalThreshold'))}
         ${thresholdFields('warning', warning, t('clinical.warningThreshold'))}
         <div class="clinical-actions">
@@ -1159,12 +1244,20 @@
             message: message || t(prefix === 'critical' ? 'clinical.criticalDefault' : 'clinical.warningDefault'),
           };
         };
+        const scheduleDays = Array.from(clinicalForm.querySelectorAll('select[name="scheduleDays"] option:checked')).map((o) => o.value);
+        const scheduleTimes = String(fd.get('scheduleTimes') || '').split(',').map((s) => s.trim()).filter(Boolean);
+        const scheduleTemplate = String(fd.get('scheduleTemplate') || '').trim();
+        const caregiverName = String(fd.get('caregiverName') || '').trim();
+        const caregiverPhone = String(fd.get('caregiverPhone') || '').trim();
+        const caregiverEmail = String(fd.get('caregiverEmail') || '').trim();
         const payload = {
           contactChannel: String(fd.get('contactChannel')),
           customQuestion: String(fd.get('customQuestion') || '').trim(),
           questionTimes: times,
           criticalThreshold: buildThreshold('critical'),
           warningThreshold: buildThreshold('warning'),
+          caregiver: caregiverName || caregiverPhone || caregiverEmail ? { name: caregiverName, phone: caregiverPhone, email: caregiverEmail } : undefined,
+          schedule: scheduleDays.length || scheduleTimes.length || scheduleTemplate ? { days: scheduleDays, times: scheduleTimes, template: scheduleTemplate } : undefined,
         };
         try {
           const res = await api(`/api/patients/${encodeURIComponent(p.pseudonym)}/clinical-plan`, {
@@ -1294,7 +1387,7 @@
     'Diğer': 'Standart antihipertenzif 1 tablet / Günde 1',
   };
 
-  function simulateDigitalTwin(p) {
+  function computeDigitalTwin(p) {
     const condition = p?.conditionGroup || 'Diğer';
     const ageGroup = p?.ageGroup || '45-64';
     let interaction = 12;
@@ -1334,7 +1427,7 @@
       const patients = (lastData && lastData.patients) || [];
       p = patients.find((x) => x.pseudonym === selectedPseudonym) || p;
     }
-    const result = simulateDigitalTwin(p || { conditionGroup: 'Diğer' });
+    const result = computeDigitalTwin(p || { conditionGroup: 'Diğer' });
     output.innerHTML = digitalTwinHtml(result);
     output.classList.remove('hidden');
     addLog(t('modules.twinSimulateResult'));
@@ -2298,12 +2391,20 @@
     e.preventDefault();
     els.formError.classList.add('hidden');
     const fd = new FormData(els.form);
+    const caregiverName = String(fd.get('caregiverName') ?? '').trim();
+    const caregiverPhone = String(fd.get('caregiverPhone') ?? '').trim();
+    const caregiverEmail = String(fd.get('caregiverEmail') ?? '').trim();
+    const scheduleDays = Array.from(els.form.querySelectorAll('select[name="scheduleDays"] option:checked')).map((o) => o.value);
+    const scheduleTimes = String(fd.get('scheduleTimes') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+    const scheduleTemplate = String(fd.get('scheduleTemplate') ?? '').trim();
     const payload = {
       fullName: fd.get('fullName'),
       nationalId: fd.get('nationalId'),
       dateOfBirth: fd.get('dateOfBirth'),
       condition: fd.get('condition'),
       contactChannel: fd.get('contactChannel'),
+      caregiver: caregiverName || caregiverPhone || caregiverEmail ? { name: caregiverName, phone: caregiverPhone, email: caregiverEmail } : undefined,
+      schedule: scheduleDays.length || scheduleTimes.length || scheduleTemplate ? { days: scheduleDays, times: scheduleTimes, template: scheduleTemplate } : undefined,
     };
 
     try {

@@ -16,6 +16,7 @@ import { ValidationError } from '../../application/errors/ValidationError.js';
 import { repository, registerPatient } from '../config/dependencies.js';
 import type { PatientThreshold } from '../../application/ports/Anonymizer.js';
 import type { HealthMetrics } from '../../domain/entities/HealthMetrics.js';
+import { buildInteractionLog } from '../../application/services/InteractionLogBuilder.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -283,6 +284,30 @@ export async function createServer() {
         patient.warningThreshold = sanitizeThreshold(body.warningThreshold);
       } else if (body.warningThreshold === null) {
         delete patient.warningThreshold;
+      }
+      if (body.caregiver !== undefined) {
+        const c = body.caregiver;
+        const name = String(c.name ?? '').trim();
+        const phone = String(c.phone ?? '').trim();
+        const email = String(c.email ?? '').trim();
+        if (name || phone || email) {
+          patient.caregiver = { name, phone, email };
+        } else {
+          delete patient.caregiver;
+        }
+      }
+      if (body.schedule !== undefined) {
+        const s = body.schedule;
+        const days = Array.isArray(s.days) ? s.days.map((d: unknown) => String(d).trim()).filter((d: string) => d.length > 0) : [];
+        const times = Array.isArray(s.times) ? s.times.map((t: unknown) => String(t).trim()).filter((t: string) => t.length > 0) : [];
+        const template = String(s.template ?? '').trim();
+        if (days.length || times.length || template) {
+          patient.schedule = { days, times, template };
+          patient.interactionLog = buildInteractionLog(patient.schedule, patient.healthData);
+        } else {
+          delete patient.schedule;
+          delete patient.interactionLog;
+        }
       }
 
       await repository.save(patient);

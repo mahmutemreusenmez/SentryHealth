@@ -2,6 +2,7 @@ import { randomUUID, randomInt } from 'node:crypto';
 import type { Anonymizer, AnonymizedPatient } from '../ports/Anonymizer.js';
 import type { DataRepository } from '../ports/DataRepository.js';
 import { ValidationError } from '../errors/ValidationError.js';
+import { buildInteractionLog } from '../services/InteractionLogBuilder.js';
 
 export interface RegisterPatientInput {
   fullName: string;
@@ -9,6 +10,16 @@ export interface RegisterPatientInput {
   dateOfBirth: string;
   condition: string;
   contactChannel: string;
+  caregiver?: {
+    name: string;
+    phone: string;
+    email: string;
+  };
+  schedule?: {
+    days: string[];
+    times: string[];
+    template: string;
+  };
 }
 
 export interface RegisterPatientResult {
@@ -17,6 +28,8 @@ export interface RegisterPatientResult {
   ageGroup: string;
   conditionGroup: string;
   contactChannel: string;
+  caregiver?: RegisterPatientInput['caregiver'];
+  schedule?: RegisterPatientInput['schedule'];
   kvkk: {
     maskedName: string;
     maskedNationalId: string;
@@ -54,6 +67,9 @@ export class RegisterPatient {
       displayCode,
       conditionGroup: input.condition,
       contactChannel: input.contactChannel as 'sms' | 'ai',
+      caregiver: input.caregiver,
+      schedule: input.schedule,
+      interactionLog: input.schedule ? buildInteractionLog(input.schedule, []) : [],
       healthData: [],
     };
 
@@ -65,6 +81,8 @@ export class RegisterPatient {
       ageGroup,
       conditionGroup: input.condition,
       contactChannel: input.contactChannel,
+      caregiver: input.caregiver,
+      schedule: input.schedule,
       kvkk: {
         maskedName: this.maskName(input.fullName),
         maskedNationalId: this.maskNationalId(input.nationalId),
@@ -101,7 +119,30 @@ export class RegisterPatient {
     const rawContact = String(body.contactChannel ?? 'sms').trim();
     const contactChannel = ALLOWED_CONTACT_CHANNELS.includes(rawContact) ? rawContact : 'sms';
 
-    return { fullName, nationalId, dateOfBirth, condition, contactChannel };
+    const caregiver = this.parseCaregiver(body.caregiver);
+    const schedule = this.parseSchedule(body.schedule);
+
+    return { fullName, nationalId, dateOfBirth, condition, contactChannel, caregiver, schedule };
+  }
+
+  private parseCaregiver(raw: unknown): RegisterPatientInput['caregiver'] | undefined {
+    if (!raw || typeof raw !== 'object') return undefined;
+    const c = raw as Record<string, unknown>;
+    const name = String(c.name ?? '').trim();
+    const phone = String(c.phone ?? '').trim();
+    const email = String(c.email ?? '').trim();
+    if (name.length === 0 && phone.length === 0 && email.length === 0) return undefined;
+    return { name, phone, email };
+  }
+
+  private parseSchedule(raw: unknown): RegisterPatientInput['schedule'] | undefined {
+    if (!raw || typeof raw !== 'object') return undefined;
+    const s = raw as Record<string, unknown>;
+    const days = Array.isArray(s.days) ? s.days.map((d) => String(d).trim()).filter((d) => d.length > 0) : [];
+    const times = Array.isArray(s.times) ? s.times.map((t) => String(t).trim()).filter((t) => t.length > 0) : [];
+    const template = String(s.template ?? '').trim();
+    if (days.length === 0 && times.length === 0 && template.length === 0) return undefined;
+    return { days, times, template };
   }
 
   private deriveAgeGroup(dateOfBirth: Date): string {

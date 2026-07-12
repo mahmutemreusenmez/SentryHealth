@@ -1,6 +1,7 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
 import { repository, analyzer } from '../../../infrastructure/config/dependencies.js';
 import type { AnonymizedPatient } from '../../../application/ports/Anonymizer.js';
+import { buildInteractionLog } from '../../../application/services/InteractionLogBuilder.js';
 
 const router = Router();
 
@@ -96,6 +97,9 @@ router.get('/patients', async (_req: Request, res: Response, next: NextFunction)
         criticalThreshold: patient.criticalThreshold ?? null,
         warningThreshold: patient.warningThreshold ?? null,
         patientMessage: risk.patientMessage ?? null,
+        caregiver: patient.caregiver ?? null,
+        schedule: patient.schedule ?? null,
+        interactionLog: patient.schedule ? buildInteractionLog(patient.schedule, patient.healthData) : [],
         latest,
         history,
         risk,
