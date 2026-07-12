@@ -2534,6 +2534,56 @@ body {
   color: var(--text);
 }
 
+/* Sepsis forecast / organ risk */
+.sepsis-forecast, .sepsis-organ-risk {
+  font-size: 0.78rem;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  color: var(--text);
+}
+
+.sepsis-organ-risk { font-weight: 600; }
+
+/* SDOH alerts */
+.sdoh-flu-index, .sdoh-asthma-risk {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+}
+
+.sdoh-alert {
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 10px 14px;
+  border-radius: 10px;
+  text-align: center;
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.sdoh-alert.low { background: var(--green-soft); color: var(--green); }
+.sdoh-alert.moderate { background: var(--amber-soft); color: var(--amber); }
+.sdoh-alert.high { background: var(--red-soft); color: var(--red); }
+
+/* Glassmorphism dashboard */
+body {
+  background: linear-gradient(135deg, #f0f7ff 0%, #f8f0ff 50%, #f5f3ff 100%);
+  background-attachment: fixed;
+}
+
+.module-card, .tele-sepsis-card, .tele-sdoh-card, .tele-twin-card, .patient-card, .table-card, .chart-card, .report-card, .settings-card, .admin-card {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.07);
+}
+
 /* Responsive */
 @media (max-width: 1080px) {
   .tele-grid { grid-template-columns: 1fr; }

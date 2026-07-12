@@ -1374,7 +1374,9 @@
 
     const score = Math.min(100, Math.round(qsofa * 30 + mews * 9 + (spo2 < 90 ? 10 : 0)));
     const risk = (qsofa >= 2 || mews >= 5 || score >= 60) ? 'high' : (score >= 30 ? 'moderate' : 'low');
-    return { qsofa, mews, score, risk };
+    const organRisk = Math.min(95, Math.round(score * 0.85 + qsofa * 8 + (mews >= 5 ? 10 : 0)));
+    const forecast = risk === 'high' ? 'Kritik — 48 saat içinde erken müdahale önerilir' : risk === 'moderate' ? 'Yükselen — Yakın takip gereklidir' : 'Düşük — Stabil seyir beklenmektedir';
+    return { qsofa, mews, score, risk, organRisk, forecast };
   }
 
   const twinDrugs = {
@@ -1400,18 +1402,30 @@
     const renal = Math.min(42, Math.round(interaction * 0.7 + Math.random() * 6));
     const cardiac = Math.min(40, Math.round(8 + Math.random() * 12));
     const adherence = Math.round(78 + Math.random() * 18);
+    const toxicity = Math.min(35, Math.round(4 + Math.random() * 12));
+    const liverRisk = Math.min(25, Math.round(2 + Math.random() * 10));
+    const cardiacLoad = Math.min(30, Math.round(6 + Math.random() * 10));
+    const drugInteraction = Math.min(28, Math.round(5 + Math.random() * 10));
     const drug = twinDrugs[condition] || twinDrugs['Diğer'];
-    return { interaction, renal, cardiac, adherence, drug, condition };
+    const cardiacLoadText = cardiacLoad > 20 ? 'Yüksek — Yakın izlem' : cardiacLoad > 12 ? 'Hafif artış' : 'Stabil';
+    return { interaction, renal, cardiac, toxicity, liverRisk, cardiacLoad, cardiacLoadText, drugInteraction, adherence, drug, condition };
   }
 
   function digitalTwinHtml(result) {
     const riskClass = result.interaction >= 25 ? 'high' : result.interaction >= 15 ? 'moderate' : 'low';
+    const cardiacLoadClass = result.cardiacLoad > 20 ? 'high' : result.cardiacLoad > 12 ? 'moderate' : 'low';
+    const toxicityClass = result.toxicity > 18 ? 'high' : result.toxicity > 10 ? 'moderate' : 'low';
+    const drugInteractionClass = result.drugInteraction > 18 ? 'high' : result.drugInteraction > 10 ? 'moderate' : 'low';
     return `
       <div class="twin-result">
         <div class="twin-result-row"><span>${escapeHtml(t('modules.twinDose'))}</span><strong>${escapeHtml(result.drug)}</strong></div>
         <div class="twin-result-row ${riskClass}"><span>${escapeHtml(t('modules.twinInteraction'))}</span><strong>${result.interaction}%</strong></div>
+        <div class="twin-result-row ${drugInteractionClass}"><span>${escapeHtml(t('modules.twinDrugInteraction'))}</span><strong>${result.drugInteraction}%</strong></div>
         <div class="twin-result-row"><span>${escapeHtml(t('modules.twinRenal'))}</span><strong>${result.renal}%</strong></div>
+        <div class="twin-result-row ${toxicityClass}"><span>${escapeHtml(t('modules.twinLiverRisk'))}</span><strong>${result.liverRisk}%</strong></div>
+        <div class="twin-result-row"><span>${escapeHtml(t('modules.twinToxicity'))}</span><strong>${result.toxicity}%</strong></div>
         <div class="twin-result-row"><span>${escapeHtml(t('modules.twinCardiac'))}</span><strong>${result.cardiac}%</strong></div>
+        <div class="twin-result-row ${cardiacLoadClass}"><span>${escapeHtml(t('modules.twinCardiacLoad'))}</span><strong>${escapeHtml(result.cardiacLoadText)}</strong></div>
         <div class="twin-result-row"><span>${escapeHtml(t('modules.twinAdherence'))}</span><strong>${result.adherence}%</strong></div>
         <div class="twin-result-note">${escapeHtml(t('modules.twinSimulateResult'))}</div>
       </div>`;
@@ -1447,13 +1461,17 @@
     const pollen = pollenRand < 0.33 ? 'low' : pollenRand < 0.66 ? 'moderate' : 'high';
     const fluRand = Math.random();
     const flu = fluRand < 0.5 ? 'low' : fluRand < 0.8 ? 'moderate' : 'high';
+    const fluIndex = Math.min(100, Math.round(20 + (flu === 'high' ? 50 : flu === 'moderate' ? 25 : 0) + Math.random() * 15));
     let risk = 0;
     if (aqi > 100) risk += 3; else if (aqi > 50) risk += 1;
     if (pollen === 'high') risk += 2; else if (pollen === 'moderate') risk += 1;
     if (flu === 'high') risk += 2; else if (flu === 'moderate') risk += 1;
     if (hasLung) risk += 2;
     const riskLevel = risk >= 7 ? 'high' : risk >= 4 ? 'moderate' : 'low';
-    return { aqi, pollen, influenza: flu, riskLevel, region: 'Keçiören, Ankara' };
+    const localizedRisk = t(sdohLabels[riskLevel]);
+    const asthmaRisk = hasLung ? localizedRisk : t('modules.sdohRiskLow');
+    const conditionAlert = hasLung ? t('modules.sdohConditionAlert', { risk: asthmaRisk }) : t('modules.sdohAlert', { risk: localizedRisk });
+    return { aqi, pollen, influenza: flu, fluIndex, asthmaRisk, alert: localizedRisk, conditionAlert, riskLevel, region: 'Keçiören, Ankara' };
   }
 
   function drawSdohMap(canvas, riskLevel, region) {
@@ -1525,6 +1543,21 @@
       alarm.classList.toggle('hidden', result.risk !== 'high');
       alarm.classList.toggle('critical', result.risk === 'high');
     }
+    let forecastEl = root.querySelector('.sepsis-forecast, .sepsis-prediction');
+    let organEl = root.querySelector('.sepsis-organ-risk');
+    const body = root.querySelector('.sepsis-body');
+    if (body && !forecastEl) {
+      forecastEl = document.createElement('div');
+      forecastEl.className = 'sepsis-forecast';
+      body.appendChild(forecastEl);
+    }
+    if (body && !organEl) {
+      organEl = document.createElement('div');
+      organEl.className = 'sepsis-organ-risk';
+      body.appendChild(organEl);
+    }
+    if (forecastEl) forecastEl.textContent = t('modules.sepsisPrediction', { forecast: result.forecast });
+    if (organEl) organEl.textContent = t('modules.sepsisOrganRisk', { risk: result.organRisk });
   }
 
   function setSdohUI(root, sdoh) {
@@ -1542,6 +1575,32 @@
     if (riskLabelEl) {
       riskLabelEl.classList.remove('low', 'moderate', 'high');
       riskLabelEl.classList.add(sdoh.riskLevel);
+    }
+    let fluIndexEl = root.querySelector('.sdoh-flu-index');
+    let asthmaEl = root.querySelector('.sdoh-asthma-risk');
+    let alertEl = root.querySelector('.sdoh-alert');
+    const body = root.querySelector('.sdoh-body');
+    if (body && !fluIndexEl) {
+      fluIndexEl = document.createElement('div');
+      fluIndexEl.className = 'sdoh-flu-index';
+      body.appendChild(fluIndexEl);
+    }
+    if (body && !asthmaEl) {
+      asthmaEl = document.createElement('div');
+      asthmaEl.className = 'sdoh-asthma-risk';
+      body.appendChild(asthmaEl);
+    }
+    if (body && !alertEl) {
+      alertEl = document.createElement('div');
+      alertEl.className = 'sdoh-alert';
+      body.appendChild(alertEl);
+    }
+    if (fluIndexEl) fluIndexEl.textContent = t('modules.sdohFluIndex') + ': ' + sdoh.fluIndex + '/100';
+    if (asthmaEl) asthmaEl.textContent = t('modules.sdohAsthmaRisk') + ': ' + sdoh.asthmaRisk;
+    if (alertEl) {
+      alertEl.textContent = sdoh.conditionAlert;
+      alertEl.classList.remove('low', 'moderate', 'high');
+      alertEl.classList.add(sdoh.riskLevel);
     }
     drawSdohMap(canvas, sdoh.riskLevel, sdoh.region);
   }
