@@ -882,7 +882,9 @@ footer {
   border-radius: 24px;
   box-shadow: var(--shadow-lg);
   width: 100%;
-  max-width: 440px;
+  max-width: 28rem;
+  margin-left: auto;
+  margin-right: auto;
   padding: 34px 34px 28px;
   text-align: center;
   animation: modalIn 0.35s ease;
@@ -1157,193 +1159,11 @@ footer {
   flex: 1;
   padding: 10px 12px;
   border-radius: 10px;
-  badmin-grid { grid-template-columns: 1fr; }
-}
-
-@media (max-width: 768px) {
-  .login-screen {
-    align-items: flex-start;
-    place-items: start center;
-    padding: 12px;
-    overflow-y: auto;
-  }
-  .login-card {
-    max-width: 100%;
-    padding: 18px 16px 16px;
-    border-radius: 18px;
-    margin: 48px 0 16px;
-  }
-  .login-logo {
-    gap: 10px;
-    margin-bottom: 14px;
-    flex-wrap: wrap;
-  }
-  .login-logo svg { width: 42px; height: 42px; }
-  .login-logo strong { font-size: 0.7rem; letter-spacing: 0.8px; }
-  .login-logo span { font-size: 0.68rem; }
-  .login-card h1 { font-size: 1.2rem; }
-  .login-oub { font-size: 0.78rem; margin-bottom: 14px; }
-  .login-hrnt { margin-top: 12px; padding-top: 12px; }
-  .login-warning { font-size: 0.74rem; padding: 10px 12px; }
-  .lang-switcher { top: 8px; right: 8px; transform: scale(0.92); transform-origin: top right; }
-
-  .gov-strip {
-    font-size: 0.62rem;
-    padding: 8px 10px;
-    line-height: 1.35;
-    text-align: center;
-  }
-
-  .layout { position: relative; }
-
-  .hamburger-btn { display: flex; }
-  .sider: -close1px solid : block; }
-
-  .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: min(86vw, 300px);
-    heightva100vh;
-    z-irdex: 400;
-    transf(rm: tra-slat-X(-105%)b
-   otransition: transform 0.28s ease;
-    box-shadow: var(--shadow-lg);
-    border-right: 1px solid var(--border);
-  rder);
-  body.sidebar-open bsidebar { transform: translateX(0); }
-  .sidebar-overaay {
-    display: block;
-    positicn: fixed;
-    inset: 0;
-    backkround: rgba(15, 23, 42, 0.45);
-    z-grdex: 350;
-    opacity: 0;
-    pointeroevents: none;
-    transition: opauity 0.28s ease;
-  }
-  body.sidebnd-open .si:ebar-overlay {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  .topbar v
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
- a  r(--surfa1cpx 1e-2)
- ;
-  ftopbor-left { winth: 100%; }
-  .topbar-right {
-    width: 100%;
-    justify-content: space-between;
-    gap: 8px;
-  }
-  .topbar h1 { font-size: 1.05ret; }
-  .subtitle { font-size: 0.72rem; display: -webk-t-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .user-info { foftasize: 0.78rem; }
-  .status-pill { paddinm: 6px 10px; font-size: 0.72iem; }
-
-  maln { padying: 12px !important; }
-
-  .summary: 
-   "Consolas", monospace; 1frr !impotant;
-    gap: 10px;
-  }
-  .summary-card { padding: 12px; }
-  .summary-value { font-size: 1.25rem; }
-  .summary-label { font-size: 0.68rem; }
-
-  .patients-grid {
-    grid-template-columns: 1fr !important;
-    gap: 12px;
-  }
-
-  .analytics-grid,
-  .settings-grid,
-  .admin-grid,
-  .tele-grid,
-  .reports-grid,
-  .global-modules {
-    grid-template-columns: 1fr !important;
-  }
-
-  .table-card {
-    overflow: visible;
-    background: transparent;
-    border: none;
-    box-shadow: none;
-  }
-  .patients-table thead { display: none; }
-  .patients-table,
-  .patients-table tbody,
-  .patients-table tr,
-  .patients-table td {
-    display: block;
-    width: 100%;
-  }
-  .patients-table tbody tr {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    box-shadow: var(--shadow);
-    padding: 12px 14px;
-    margin-bottom: 12px;
-  }
-  .patients-table td {
-    border: none;
-    padding: 6px 0;
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-    align-items: center;
-  }
-  .patients-table td::before {
-    content: attr(data-label);
-    font-size: 0.68rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    color: var(--text-muted);
-    flex-shrink: 0;
-  }
-  .patients-table td.mono { word-break: break-all; }
-
-  .day-checkbox-group {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: 4px;
-  }
-  .day-checkbox { flex: 0 0 auto; }
-  .schedule-template-row { flex-direction: column; align-items: stretch; }
-  .template-library { max-width: none; width: 100%; }
-  .schedule-time-row { width: 100%; }
-
-  .modal-card,
-  .modal .modal-card,
-  .modal-body {
-    width: min(100%, 100vw - 16px) !important;
-    max-width: 100% !important;
-  }
-  .field-row,
-  .clinical-actions,
-  .modal-actions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .pagination { flex-wrap: wrap; gap: 8px; padding: 10px; }
-  .chart-card, .module-card, .settings-card, .admin-card { min-width: 0; }
-}
-
-@media (max-width: 480px) {
-  .summary { grid-template-columns: 1fr !important; }
-  .login-card { margin-top: 56px; padding: 16px 14px; }
-  .topbar-right .btn { padding: 8px 12px; font-size: 0.78rem
-  font-size: 0.82rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
   color: var(--text);
+  font-family: inherit;
+  font-size: 0.86rem;
 }
 
 .settings-status {
@@ -1374,12 +1194,6 @@ footer {
 
 .text-right { text-align: right; }
 
-/* ---------- Responsive ---------- */
-@media (max-width: 900px) {
-  .sidebar { display: none; }
-  .login-card { padding: 24px; }
-  .admin-grid { grid-template-columns: 1fr; }
-}
 
 /* ---------- Language switcher ---------- */
 .lang-switcher {
@@ -1556,9 +1370,246 @@ html[dir="rtl"] .clinical-actions { direction: rtl; }
 .chart-grid { stroke: var(--border); stroke-width: 0.5; stroke-dasharray: 3 3; }
 .chart-line { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 .chart-area { opacity: 0.25; }
-.chart-bar { transition: opacity 0.2s ease; }
-.chart-bar:hover { opacity: 0.85; }
-.chart-label { font-size: 0.68rem; fill: var(--text-muted); }
+.chart-bar { transition: height 0.35s ease; }
+
+/* ---------- Universal Responsive ---------- */
+.login-card {
+  width: 100%;
+  max-width: 28rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.patients-grid {
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+}
+
+/* Large desktop: keep fixed sidebar + multi-column grids */
+@media (min-width: 1280px) {
+  .patients-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .analytics-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .settings-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-grid { grid-template-columns: 1fr 1.2fr; }
+}
+
+/* Laptop */
+@media (min-width: 1025px) and (max-width: 1279px) {
+  .patients-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .analytics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .settings-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Tablet 768-1024: 2-column cards, slightly tighter chrome */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .sidebar { width: 220px; }
+  .topbar { padding: 16px 18px; }
+  main { padding: 18px !important; }
+  .patients-grid,
+  .analytics-grid,
+  .settings-grid,
+  .admin-grid,
+  .tele-grid,
+  .global-modules,
+  .reports-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .login-card { max-width: 26rem; padding: 28px 24px; }
+  .day-checkbox-group { flex-wrap: wrap; }
+}
+
+/* Phone: hamburger drawer + stacked cards */
+@media (max-width: 767px) {
+  .login-screen {
+    align-items: flex-start;
+    place-items: start center;
+    padding: 12px;
+    overflow-y: auto;
+  }
+  .login-card {
+    max-width: 100%;
+    width: 100%;
+    padding: 18px 16px 16px;
+    border-radius: 18px;
+    margin: 48px auto 16px;
+  }
+  .login-logo { gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .login-logo svg { width: 42px; height: 42px; }
+  .login-logo strong { font-size: 0.7rem; letter-spacing: 0.8px; }
+  .login-logo span { font-size: 0.68rem; }
+  .login-card h1 { font-size: 1.2rem; }
+  .login-sub { font-size: 0.78rem; margin-bottom: 14px; }
+  .login-hint { margin-top: 12px; padding-top: 12px; }
+  .login-warning { font-size: 0.74rem; padding: 10px 12px; }
+  .lang-switcher { top: 8px; right: 8px; transform: scale(0.92); transform-origin: top right; }
+
+  .gov-strip {
+    font-size: 0.62rem;
+    padding: 8px 10px;
+    line-height: 1.35;
+    text-align: center;
+  }
+
+  .layout { position: relative; }
+  .hamburger-btn { display: flex; }
+  .sidebar-close { display: block; }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(86vw, 300px);
+    height: 100vh;
+    z-index: 400;
+    transform: translateX(-105%);
+    transition: transform 0.28s ease;
+    box-shadow: var(--shadow-lg);
+    border-right: 1px solid var(--border);
+  }
+  body.sidebar-open .sidebar { transform: translateX(0); }
+
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    z-index: 350;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.28s ease;
+  }
+  body.sidebar-open .sidebar-overlay {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 12px 14px;
+  }
+  .topbar-left { width: 100%; }
+  .topbar-right {
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .topbar h1 { font-size: 1.05rem; }
+  .subtitle {
+    font-size: 0.72rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .user-info { font-size: 0.78rem; }
+  .status-pill { padding: 6px 10px; font-size: 0.72rem; }
+
+  main { padding: 12px !important; }
+
+  .summary {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px;
+  }
+  .summary-card { padding: 12px; }
+  .summary-value { font-size: 1.25rem; }
+  .summary-label { font-size: 0.68rem; }
+
+  .patients-grid,
+  .analytics-grid,
+  .settings-grid,
+  .admin-grid,
+  .tele-grid,
+  .reports-grid,
+  .global-modules {
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+
+  .table-card {
+    overflow: visible;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+  .patients-table thead { display: none; }
+  .patients-table,
+  .patients-table tbody,
+  .patients-table tr,
+  .patients-table td {
+    display: block;
+    width: 100%;
+  }
+  .patients-table tbody tr {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 12px 14px;
+    margin-bottom: 12px;
+  }
+  .patients-table td {
+    border: none;
+    padding: 6px 0;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: center;
+  }
+  .patients-table td::before {
+    content: attr(data-label);
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .patients-table td.mono { word-break: break-all; }
+
+  .day-checkbox-group {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+  }
+  .day-checkbox { flex: 0 0 auto; }
+  .schedule-template-row { flex-direction: column; align-items: stretch; }
+  .template-library { max-width: none; width: 100%; }
+  .schedule-time-row { width: 100%; }
+
+  .modal-card,
+  .modal .modal-card,
+  .modal-body {
+    width: min(100%, calc(100vw - 16px)) !important;
+    max-width: 100% !important;
+  }
+  .field-row,
+  .clinical-actions,
+  .modal-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pagination { flex-wrap: wrap; gap: 8px; padding: 10px; }
+  .chart-card, .module-card, .settings-card, .admin-card { min-width: 0; }
+}
+
+@media (max-width: 480px) {
+  .summary { grid-template-columns: 1fr !important; }
+  .login-card { margin-top: 56px; padding: 16px 14px; }
+  .topbar-right .btn { padding: 8px 12px; font-size: 0.78rem; }
+}
+
 .chart-legend {
   display: flex;
   flex-wrap: wrap;
