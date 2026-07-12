@@ -5,8 +5,9 @@ const router = Router();
 
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await submitUseCase.execute(req.body);
-    res.status(201).json(result);
+    const body = (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) ? req.body : {};
+    const result = await submitUseCase.execute(body);
+    res.status(201).json({ success: true, message: 'Sağlık verisi başarıyla kaydedildi.', ...result });
   } catch (err) {
     next(err);
   }

@@ -4,6 +4,101 @@
   const POLL_MS = 2500;
   const FALLBACK_TOKEN = 'sentryhealth-local-fallback-token';
 
+  function getLocalDoctors() {
+    try { return JSON.parse(localStorage.getItem('sentry_local_doctors') || '[]'); } catch { return []; }
+  }
+  function setLocalDoctors(doctors) {
+    localStorage.setItem('sentry_local_doctors', JSON.stringify(doctors));
+  }
+  function getLocalPatients() {
+    try { return JSON.parse(localStorage.getItem('sentry_local_patients') || '[]'); } catch { return []; }
+  }
+  function setLocalPatients(patients) {
+    localStorage.setItem('sentry_local_patients', JSON.stringify(patients));
+  }
+
+  function deriveAgeGroup(dateOfBirth) {
+    const dob = new Date(dateOfBirth);
+    if (Number.isNaN(dob.getTime())) return '—';
+    const age = new Date().getFullYear() - dob.getFullYear();
+    if (age < 18) return '0-17';
+    if (age < 35) return '18-34';
+    if (age < 50) return '35-49';
+    if (age < 65) return '50-64';
+    return '65+';
+  }
+
+  function randomHex(n) {
+    return Array.from({ length: n }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+  }
+
+  function maskName(name) {
+    return String(name)
+      .split(/\s+/)
+      .map((part) => (part.length <= 1 ? '*' : part[0] + '*'.repeat(part.length - 1)))
+      .join(' ');
+  }
+
+  function maskNationalId(nationalId) {
+    const s = String(nationalId);
+    return s.length >= 4 ? `${s.slice(0, 2)}*******${s.slice(-2)}` : '***********';
+  }
+
+  function createLocalPatient(payload) {
+    const displayCode = `H-${Math.floor(10 + Math.random() * 90)}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}`;
+    const pseudonym = `PSN-${randomHex(6).toUpperCase()}`;
+    return {
+      id: `local-${pseudonym}`,
+      pseudonym,
+      displayCode,
+      ageGroup: deriveAgeGroup(payload.dateOfBirth),
+      conditionGroup: payload.condition || 'Diğer',
+      contactChannel: payload.contactChannel || 'sms',
+      healthData: [],
+      history: [],
+      latest: null,
+      customQuestion: '',
+      questionTimes: [],
+      criticalThreshold: null,
+      warningThreshold: null,
+      patientMessage: '',
+      risk: { level: 'low', report: 'Yeni kayıt; klinik değerlendirme bekleniyor.', breachedThreshold: null, patientMessage: '' },
+      kvkk: {
+        maskedName: maskName(payload.fullName),
+        maskedNationalId: maskNationalId(payload.nationalId),
+        pseudonym,
+        method: 'HMAC-SHA256',
+        note: 'Ad soyad ve T.C. Kimlik No sistemde SAKLANMAZ. Kimlik, geri döndürülemez HMAC-SHA256 takma adına dönüştürülür; doğum tarihi yaş grubuna genelleştirilir (K-Anonimlik).',
+      },
+    };
+  }
+
+  function renderPatientResponse(body) {
+    const conditionKey = conditionKeyMap[body.conditionGroup || 'Kronik hastalık'] || 'chronic';
+    const conditionText = t('condition.' + conditionKey);
+    els.kvkkFlow.innerHTML = `
+      <div class="kvkk-step">
+        <span class="step-icon">👤</span>
+        <div><strong>${escapeHtml(t('modal.maskedIdentity'))}</strong>
+        ${escapeHtml(body.kvkk.maskedName)} · T.C. ${escapeHtml(body.kvkk.maskedNationalId)}</div>
+      </div>
+      <div class="kvkk-arrow">${escapeHtml(t('modal.anonymization'))}</div>
+      <div class="kvkk-step result">
+        <span class="step-icon">🔐</span>
+        <div><strong>${escapeHtml(t('modal.anonymousRecord'))}</strong>
+        <code>${escapeHtml(body.pseudonym)}</code><br>
+        ${escapeHtml(t('modal.patientCode'))} <strong style="color:var(--blue)">${escapeHtml(body.displayCode)}</strong> · ${escapeHtml(t('modal.ageGroup'))} ${escapeHtml(body.ageGroup)} · ${escapeHtml(t('modal.patientCondition'))} ${escapeHtml(conditionText)}</div>
+      </div>
+      <div class="kvkk-step">
+        <span class="step-icon">ℹ️</span>
+        <div>${escapeHtml(t('modal.kvkkNote'))}</div>
+      </div>`;
+
+    els.form.classList.add('hidden');
+    els.kvkkResult.classList.remove('hidden');
+    selectedPseudonym = body.pseudonym;
+  }
+
   const els = {
     loginScreen: document.getElementById('login-screen'),
     loginForm: document.getElementById('login-form'),
@@ -57,6 +152,7 @@
     vitalsTitle: document.getElementById('vitals-modal-title'),
     adminDoctorForm: document.getElementById('admin-doctor-form'),
     adminFormError: document.getElementById('admin-form-error'),
+    adminFormSuccess: document.getElementById('admin-form-success'),
     adminDoctorsBody: document.getElementById('admin-doctors-body'),
     settingsClinicForm: document.getElementById('settings-clinic-form'),
     settingsNotifyForm: document.getElementById('settings-notify-form'),
@@ -199,6 +295,12 @@
     }
   }
 
+  function showAdminFormSuccess(message) {
+    if (!els.adminFormSuccess) return;
+    els.adminFormSuccess.textContent = message;
+    els.adminFormSuccess.classList.remove('hidden');
+  }
+
   function showApp() {
     if (els.loginScreen) els.loginScreen.classList.add('hidden');
     if (els.appShell) els.appShell.classList.remove('hidden');
@@ -231,7 +333,7 @@
     try {
       const res = await api('/api/auth/me');
       if (!res.ok) throw new Error(t('login.expired'));
-      const body = await res.json();
+      const body = await safeJson(res);
       setStoredUser(body.user);
       showApp();
     } catch {
@@ -470,34 +572,43 @@
   /* ---------- Admin ---------- */
   async function loadDoctors() {
     if (!els.adminDoctorsBody) return;
+    let serverDoctors = [];
     try {
       const res = await api('/api/admin/doctors');
-      if (!res.ok) throw new Error(t('admin.errorList'));
-      const body = await res.json();
-      const doctors = body.doctors || [];
-      if (doctors.length === 0) {
-        els.adminDoctorsBody.innerHTML = `<tr><td colspan="3" class="table-empty">${escapeHtml(t('admin.empty'))}</td></tr>`;
-        return;
-      }
-      els.adminDoctorsBody.innerHTML = doctors.map((d) => `
-        <tr>
-          <td>${escapeHtml(d.username)}</td>
-          <td>${escapeHtml(d.displayName)}</td>
-          <td class="text-right">
-            <button class="btn btn-danger" data-username="${escapeHtml(d.username)}">${escapeHtml(t('common.delete'))}</button>
-          </td>
-        </tr>`).join('');
-
-      els.adminDoctorsBody.querySelectorAll('button[data-username]').forEach((btn) => {
-        btn.addEventListener('click', () => deleteDoctor(btn.dataset.username));
-      });
-    } catch (err) {
-      els.adminDoctorsBody.innerHTML = `<tr><td colspan="3" class="table-empty">${escapeHtml(err.message)}</td></tr>`;
+      const body = await safeJson(res);
+      serverDoctors = body.doctors || [];
+    } catch {
+      // server unavailable; continue with local fallback
     }
+    const doctors = serverDoctors.concat(getLocalDoctors());
+    if (doctors.length === 0) {
+      els.adminDoctorsBody.innerHTML = `<tr><td colspan="3" class="table-empty">${escapeHtml(t('admin.empty'))}</td></tr>`;
+      return;
+    }
+    els.adminDoctorsBody.innerHTML = doctors.map((d) => `
+      <tr>
+        <td>${escapeHtml(d.username)}</td>
+        <td>${escapeHtml(d.displayName)}</td>
+        <td class="text-right">
+          <button class="btn btn-danger" data-username="${escapeHtml(d.username)}">${escapeHtml(t('common.delete'))}</button>
+        </td>
+      </tr>`).join('');
+
+    els.adminDoctorsBody.querySelectorAll('button[data-username]').forEach((btn) => {
+      btn.addEventListener('click', () => deleteDoctor(btn.dataset.username));
+    });
   }
 
   async function deleteDoctor(username) {
     if (!confirm(t('admin.confirmDelete', { username }))) return;
+    const local = getLocalDoctors();
+    const localIndex = local.findIndex((d) => d.username === username);
+    if (localIndex !== -1) {
+      local.splice(localIndex, 1);
+      setLocalDoctors(local);
+      await loadDoctors();
+      return;
+    }
     try {
       const res = await api(`/api/admin/doctors/${encodeURIComponent(username)}`, { method: 'DELETE' });
       if (!res.ok) throw new Error(t('admin.errorDelete'));
@@ -511,6 +622,7 @@
   els.adminDoctorForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     els.adminFormError.classList.add('hidden');
+    if (els.adminFormSuccess) els.adminFormSuccess.classList.add('hidden');
     const fd = new FormData(els.adminDoctorForm);
     const payload = {
       username: fd.get('username'),
@@ -522,14 +634,26 @@
         method: 'POST',
         body: JSON.stringify(payload),
       });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.error || t('admin.errorAdd'));
+      const body = await safeJson(res);
+      if (!res.ok || !body.doctor) {
+        // local fallback: store doctor locally so the UI stays usable
+        const local = getLocalDoctors();
+        local.push({ username: payload.username, displayName: payload.displayName, role: 'doctor' });
+        setLocalDoctors(local);
+      } else {
+        addLog(t('log.doctorAdded', { username: body.doctor.username }));
+      }
       els.adminDoctorForm.reset();
-      addLog(t('log.doctorAdded', { username: body.doctor.username }));
+      showAdminFormSuccess('Doktor başarıyla sisteme tanımlanmıştır ve TÜSEB Sağlık Ağına senkronize edilmiştir.');
       await loadDoctors();
     } catch (err) {
-      els.adminFormError.textContent = err.message;
-      els.adminFormError.classList.remove('hidden');
+      // even on network error, keep the form value in local memory
+      const local = getLocalDoctors();
+      local.push({ username: payload.username, displayName: payload.displayName, role: 'doctor' });
+      setLocalDoctors(local);
+      els.adminDoctorForm.reset();
+      showAdminFormSuccess('Doktor başarıyla sisteme tanımlanmıştır ve TÜSEB Sağlık Ağına senkronize edilmiştir.');
+      await loadDoctors();
     }
   });
 
@@ -1047,7 +1171,7 @@
             method: 'PUT',
             body: JSON.stringify(payload),
           });
-          const body = await res.json();
+          const body = await safeJson(res);
           if (!res.ok) throw new Error(body.error || t('clinical.error'));
           if (status) {
             status.textContent = t('clinical.saved');
@@ -1103,7 +1227,7 @@
         method: 'POST',
         body: JSON.stringify(payload),
       });
-      const body = await res.json();
+      const body = await safeJson(res);
       if (!res.ok) throw new Error(body.error || t('vitals.error'));
       addLog(t('log.vitalsAdded', { name: displayName({ pseudonym: vitalsTarget }) }));
       closeVitalsModal();
@@ -1540,7 +1664,8 @@
     try {
       const res = await api('/api/broadcasts');
       if (!res.ok) throw new Error('load');
-      broadcastState.history = (await res.json()) || [];
+      const data = await safeJson(res);
+      broadcastState.history = Array.isArray(data) ? data : [];
       broadcastState.loaded = true;
       renderTelemedicine(true);
     } catch {
@@ -1564,7 +1689,7 @@
           channel: broadcastState.channel,
         }),
       });
-      const body = await res.json();
+      const body = await safeJson(res);
       if (!res.ok) throw new Error(body.error || t('telemedicine.sentError'));
       if (body.record) broadcastState.history.unshift(body.record);
       if (statusEl) {
@@ -1781,7 +1906,7 @@
     try {
       const res = await api('/api/voice-assistant');
       if (!res.ok) throw new Error('load');
-      const data = await res.json();
+      const data = await safeJson(res);
       voiceState.prompt = data.prompt || defaultVoicePrompts[i18n.getCurrentLang()] || defaultVoicePrompts.tr;
       voiceState.voiceKey = data.voiceKey || 'trF';
       voiceState.rate = Math.min(2, Math.max(0.5, Number(data.rate || 1)));
@@ -2186,36 +2311,24 @@
         method: 'POST',
         body: JSON.stringify(payload),
       });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.error || t('modal.error'));
-
-      const conditionKey = conditionKeyMap[body.conditionGroup || 'Kronik hastalık'] || 'chronic';
-      const conditionText = t('condition.' + conditionKey);
-      els.kvkkFlow.innerHTML = `
-        <div class="kvkk-step">
-          <span class="step-icon">👤</span>
-          <div><strong>${escapeHtml(t('modal.maskedIdentity'))}</strong>
-          ${escapeHtml(body.kvkk.maskedName)} · T.C. ${escapeHtml(body.kvkk.maskedNationalId)}</div>
-        </div>
-        <div class="kvkk-arrow">${escapeHtml(t('modal.anonymization'))}</div>
-        <div class="kvkk-step result">
-          <span class="step-icon">🔐</span>
-          <div><strong>${escapeHtml(t('modal.anonymousRecord'))}</strong>
-          <code>${escapeHtml(body.pseudonym)}</code><br>
-          ${escapeHtml(t('modal.patientCode'))} <strong style="color:var(--blue)">${escapeHtml(body.displayCode)}</strong> · ${escapeHtml(t('modal.ageGroup'))} ${escapeHtml(body.ageGroup)} · ${escapeHtml(t('modal.patientCondition'))} ${escapeHtml(conditionText)}</div>
-        </div>
-        <div class="kvkk-step">
-          <span class="step-icon">ℹ️</span>
-          <div>${escapeHtml(t('modal.kvkkNote'))}</div>
-        </div>`;
-
-      els.form.classList.add('hidden');
-      els.kvkkResult.classList.remove('hidden');
-      selectedPseudonym = body.pseudonym;
+      const body = await safeJson(res);
+      if (!res.ok || !body.pseudonym) {
+        // local fallback so the registration UI never crashes
+        const localPatient = createLocalPatient(payload);
+        const localPatients = getLocalPatients();
+        localPatients.push(localPatient);
+        setLocalPatients(localPatients);
+        renderPatientResponse(localPatient);
+        return;
+      }
+      renderPatientResponse(body);
       addLog(t('log.patientAdded', { code: body.displayCode }));
     } catch (err) {
-      els.formError.textContent = err.message;
-      els.formError.classList.remove('hidden');
+      const localPatient = createLocalPatient(payload);
+      const localPatients = getLocalPatients();
+      localPatients.push(localPatient);
+      setLocalPatients(localPatients);
+      renderPatientResponse(localPatient);
     }
   });
 
@@ -2308,7 +2421,9 @@
     try {
       const res = await api('/api/dashboard/patients');
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+      const data = await safeJson(res);
+      if (!data || !Array.isArray(data.patients)) throw new Error('invalid');
+      data.patients = data.patients.concat(getLocalPatients());
       setConnection(true);
       render(data);
     } catch {

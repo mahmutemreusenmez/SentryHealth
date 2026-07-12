@@ -290,17 +290,18 @@
                 <form id="admin-doctor-form" class="modal-body" autocomplete="off">
                   <label class="field">
                     <span data-i18n="admin.username">Kullanıcı Adı</span>
-                    <input type="text" name="username" data-i18n-placeholder="admin.username" placeholder="dr_ayse" required minlength="3" />
+                    <input type="text" name="username" data-i18n-placeholder="admin.username" placeholder="doc.dr.ahmet.yilmaz" required minlength="3" />
                   </label>
                   <label class="field">
                     <span data-i18n="admin.displayName">Adı Soyadı</span>
-                    <input type="text" name="displayName" data-i18n-placeholder="admin.displayName" placeholder="Dr. Ayşe Yılmaz" required minlength="3" />
+                    <input type="text" name="displayName" data-i18n-placeholder="admin.displayName" placeholder="Doç. Dr. Ahmet Yılmaz" required minlength="3" />
                   </label>
                   <label class="field">
                     <span data-i18n="login.password">Şifre</span>
                     <input type="password" name="password" required minlength="4" />
                   </label>
                   <p class="form-error hidden" id="admin-form-error"></p>
+                  <p class="status-ok hidden" id="admin-form-success"></p>
                   <button type="submit" class="btn btn-primary" data-i18n="admin.add">Doktor Ekle</button>
                 </form>
               </div>

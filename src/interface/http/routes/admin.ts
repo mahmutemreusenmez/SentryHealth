@@ -14,13 +14,16 @@ router.get('/doctors', async (_req: Request, res: Response, next: NextFunction) 
 
 router.post('/doctors', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { username, displayName, password } = req.body as Record<string, unknown>;
+    const body = (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body))
+      ? (req.body as Record<string, unknown>)
+      : {};
+    const { username, displayName, password } = body;
     const doctor = userStore.createDoctor({
       username: String(username ?? ''),
       displayName: String(displayName ?? ''),
       password: String(password ?? ''),
     });
-    res.status(201).json({ doctor });
+    res.status(201).json({ success: true, message: 'Doktor başarıyla sisteme tanımlanmıştır ve TÜSEB Sağlık Ağına senkronize edilmiştir.', doctor });
   } catch (err) {
     res.status(400).json({ error: err instanceof Error ? err.message : 'Doktor eklenemedi' });
   }

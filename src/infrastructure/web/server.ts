@@ -286,7 +286,7 @@ export async function createServer() {
       }
 
       await repository.save(patient);
-      res.json({ success: true });
+      res.json({ success: true, message: 'Klinik plan başarıyla güncellendi.' });
     } catch (err) {
       next(err);
     }
@@ -326,7 +326,7 @@ export async function createServer() {
       };
       broadcasts.unshift(record);
       if (broadcasts.length > 100) broadcasts.pop();
-      res.json({ success: true, record });
+      res.json({ success: true, message: 'Anons başarıyla oluşturuldu.', record });
     } catch (err) {
       next(err);
     }
@@ -346,7 +346,7 @@ export async function createServer() {
         throw new ValidationError('Prompt boş olamaz');
       }
       voiceScenario = { prompt, voiceKey, rate, updatedAt: new Date().toISOString() };
-      res.json({ success: true });
+      res.json({ success: true, message: 'Sesli asistan senaryosu güncellendi.' });
     } catch (err) {
       next(err);
     }

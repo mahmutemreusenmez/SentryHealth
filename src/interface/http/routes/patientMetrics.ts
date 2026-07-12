@@ -10,8 +10,9 @@ const router = Router({ mergeParams: true });
 
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await registerPatient.execute(req.body);
-    res.status(201).json(result);
+    const body = (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) ? req.body : {};
+    const result = await registerPatient.execute(body);
+    res.status(201).json({ success: true, message: 'Hasta kaydı başarıyla tamamlandı.', ...result });
   } catch (err) {
     next(err);
   }
@@ -37,8 +38,9 @@ router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
 
 router.post('/:id/metrics', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await recordPatientMetrics.execute(req.params.id, req.body);
-    res.status(201).json(result);
+    const body = (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) ? req.body : {};
+    const result = await recordPatientMetrics.execute(req.params.id, body);
+    res.status(201).json({ success: true, message: 'Vital ölçüm başarıyla kaydedildi.', ...result });
   } catch (err) {
     next(err);
   }
