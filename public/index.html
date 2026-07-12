@@ -253,6 +253,7 @@
                 <p data-i18n="emptyState.p2">“+ Yeni Hasta Ekle” ile hasta kaydedin, ardından Hastalar sekmesinden “Ölçüm Gir” ile vital değerleri girin.</p>
               </div>
             </section>
+            <div id="patients-pager" class="pagination"></div>
           </div>
 
           <div id="view-patients" class="view hidden">
@@ -277,6 +278,7 @@
                 </tbody>
               </table>
             </section>
+            <div id="patients-table-pager" class="pagination"></div>
             <section id="patient-detail" class="patient-detail hidden"></section>
           </div>
 
@@ -829,32 +831,33 @@
           <h4 data-i18n="interaction.title">Akıllı Takip Takvimi</h4>
           <label class="field">
             <span data-i18n="interaction.scheduleDays">Günler</span>
-            <select name="scheduleDays" multiple size="4">
-              <option value="Pazartesi" data-i18n="day.monday">Pazartesi</option>
-              <option value="Salı" data-i18n="day.tuesday">Salı</option>
-              <option value="Çarşamba" data-i18n="day.wednesday">Çarşamba</option>
-              <option value="Perşembe" data-i18n="day.thursday">Perşembe</option>
-              <option value="Cuma" data-i18n="day.friday">Cuma</option>
-              <option value="Cumartesi" data-i18n="day.saturday">Cumartesi</option>
-              <option value="Pazar" data-i18n="day.sunday">Pazar</option>
-            </select>
+            <div class="day-checkbox-group" id="schedule-day-boxes">
+              <label class="day-checkbox"><input type="checkbox" name="scheduleDays" value="Pazartesi" data-i18n="day.mondayShort">Pzt</label>
+              <label class="day-checkbox"><input type="checkbox" name="scheduleDays" value="Salı" data-i18n="day.tuesdayShort">Sal</label>
+              <label class="day-checkbox"><input type="checkbox" name="scheduleDays" value="Çarşamba" data-i18n="day.wednesdayShort">Çar</label>
+              <label class="day-checkbox"><input type="checkbox" name="scheduleDays" value="Perşembe" data-i18n="day.thursdayShort">Per</label>
+              <label class="day-checkbox"><input type="checkbox" name="scheduleDays" value="Cuma" data-i18n="day.fridayShort">Cum</label>
+              <label class="day-checkbox"><input type="checkbox" name="scheduleDays" value="Cumartesi" data-i18n="day.saturdayShort">Cmt</label>
+              <label class="day-checkbox"><input type="checkbox" name="scheduleDays" value="Pazar" data-i18n="day.sundayShort">Paz</label>
+            </div>
           </label>
           <label class="field">
-            <span data-i18n="interaction.scheduleTimes">Soru / Ölçüm Saatleri (virgülle ayrılmış)</span>
-            <input type="text" name="scheduleTimes" data-i18n-placeholder="interaction.scheduleTimes" placeholder="08:00, 15:00" />
+            <span data-i18n="interaction.scheduleTimes">Soru / Ölçüm Saatleri</span>
+            <div id="schedule-times-list" class="schedule-times-list">
+              <div class="schedule-time-row"><input type="time" class="schedule-time-input" value="08:00" /><button type="button" class="btn btn-ghost btn-sm schedule-time-remove" data-i18n="schedule.removeTime">×</button></div>
+            </div>
+            <button type="button" class="btn btn-ghost btn-sm schedule-time-add" id="schedule-time-add" data-i18n="schedule.addTime">+ Saat Ekle</button>
           </label>
           <label class="field">
             <span data-i18n="interaction.scheduleTemplate">Soru Şablonu</span>
-            <input type="text" name="scheduleTemplate" list="schedule-template-options" data-i18n-placeholder="interaction.scheduleTemplate" placeholder="Örn: Oksijen satürasyonunuz kaç?" />
-            <datalist id="schedule-template-options">
-              <option value="Oksijen satürasyonunuz şu an kaç?">
-              <option value="Açlık kan şekeriniz kaç?">
-              <option value="Tansiyon ölçümünüz sonucu nedir?">
-              <option value="Nabzınız kaç?">
-              <option value="Nefes darlığınız var mı?">
-              <option value="Gün içinde ağrı / sancınız oldu mu?">
-              <option value="İlaçlarınızı düzenli alıyor musunuz?">
-            </datalist>
+            <div class="schedule-template-row">
+              <select id="template-library" class="template-library">
+                <option value="" data-i18n="schedule.templateLibrary">Şablon Kütüphanesi</option>
+              </select>
+              <input type="text" name="scheduleTemplate" id="schedule-template-input" data-i18n-placeholder="interaction.scheduleTemplate" placeholder="Örn: Açlık kan şekeriniz kaç?" />
+            </div>
+            <button type="button" class="btn btn-ghost btn-sm save-template-btn" id="save-template-btn" data-i18n="schedule.saveTemplate">Bu Soruyu Şablon Olarak Kaydet</button>
+            <span class="save-template-status hidden" data-i18n="schedule.saved">Şablon kütüphaneye kaydedildi</span>
           </label>
         </div>
 

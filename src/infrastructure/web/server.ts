@@ -14,6 +14,7 @@ import { adminRouter } from '../../interface/http/routes/admin.js';
 import { authMiddleware, adminMiddleware } from '../../interface/http/middleware/auth.js';
 import { ValidationError } from '../../application/errors/ValidationError.js';
 import { repository } from '../config/dependencies.js';
+import { seedPatients } from '../config/seedPatients.js';
 import type { PatientThreshold } from '../../application/ports/Anonymizer.js';
 import { buildInteractionLog } from '../../application/services/InteractionLogBuilder.js';
 
@@ -116,6 +117,7 @@ function findPublicDir(): string | null {
 const publicDir = findPublicDir();
 
 export async function createServer() {
+  await seedPatients();
   const app = express();
   app.use(helmet({
     contentSecurityPolicy: {

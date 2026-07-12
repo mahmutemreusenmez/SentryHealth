@@ -2558,6 +2558,63 @@ body {
   color: var(--text);
 }
 
+.day-checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.day-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.day-checkbox:hover { background: var(--blue-soft); border-color: var(--blue); }
+.day-checkbox input { accent-color: var(--blue); cursor: pointer; }
+.day-checkbox:has(input:checked) { background: var(--blue-soft); border-color: var(--blue); color: var(--blue); }
+
+.schedule-times-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.schedule-time-row { display: flex; align-items: center; gap: 8px; }
+.schedule-time-row input[type="time"] {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 0.9rem;
+}
+.schedule-time-remove { padding: 6px 10px; line-height: 1; }
+
+.schedule-template-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.template-library {
+  max-width: 220px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 0.9rem;
+}
+.save-template-status { display: block; font-size: 0.82rem; color: var(--green); margin-top: 4px; }
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px;
+}
+.pager-info { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
+.pagination .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
 /* Sepsis forecast / organ risk */
 .sepsis-forecast, .sepsis-organ-risk {
   font-size: 0.78rem;

@@ -16,6 +16,111 @@
     localStorage.setItem('sentry_local_patients', JSON.stringify(patients));
   }
 
+  function getCustomTemplates() {
+    try { return JSON.parse(localStorage.getItem('sentry_custom_templates') || '[]'); } catch { return []; }
+  }
+  function setCustomTemplates(templates) {
+    localStorage.setItem('sentry_custom_templates', JSON.stringify(templates));
+  }
+  function saveCustomTemplate(text) {
+    const templates = getCustomTemplates();
+    if (!text || templates.includes(text)) return templates;
+    templates.push(text);
+    setCustomTemplates(templates);
+    return templates;
+  }
+  function renderTemplateLibrary(select, value = '') {
+    const templates = getCustomTemplates();
+    select.innerHTML = `<option value="">${escapeHtml(t('schedule.templateLibrary'))}</option>`;
+    templates.forEach((tpl) => {
+      const opt = document.createElement('option');
+      opt.value = tpl;
+      opt.textContent = tpl;
+      select.appendChild(opt);
+    });
+    select.value = value;
+  }
+
+  const DAYS = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+  const DAY_SHORT = { 'Pazartesi': 'Pzt', 'Salı': 'Sal', 'Çarşamba': 'Çar', 'Perşembe': 'Per', 'Cuma': 'Cum', 'Cumartesi': 'Cmt', 'Pazar': 'Paz' };
+
+  function buildDayCheckboxes(selected = []) {
+    return `<div class="day-checkbox-group">${DAYS.map((d) => `<label class="day-checkbox"><input type="checkbox" name="scheduleDays" value="${escapeHtml(d)}" ${selected.includes(d) ? 'checked' : ''}>${escapeHtml(DAY_SHORT[d])}</label>`).join('')}</div>`;
+  }
+  function buildTimeRows(times = []) {
+    if (!times.length) times = ['08:00'];
+    return times.map((time) => `<div class="schedule-time-row"><input type="time" class="schedule-time-input" value="${escapeHtml(time)}" /><button type="button" class="btn btn-ghost btn-sm schedule-time-remove">×</button></div>`).join('');
+  }
+  function getScheduleDays(container) {
+    return Array.from(container.querySelectorAll('input[name="scheduleDays"]:checked')).map((cb) => cb.value);
+  }
+  function getScheduleTimes(container) {
+    return Array.from(container.querySelectorAll('.schedule-time-input')).map((i) => i.value).filter(Boolean);
+  }
+  function setupScheduleEditor(container, times = [], template = '') {
+    const list = container.querySelector('.schedule-times-list');
+    const addBtn = container.querySelector('.schedule-time-add');
+    const select = container.querySelector('.template-library');
+    const input = container.querySelector('input[name="scheduleTemplate"]');
+    const saveBtn = container.querySelector('.save-template-btn');
+    if (list) list.innerHTML = buildTimeRows(times);
+    if (select) renderTemplateLibrary(select, template);
+    if (select && input) {
+      select.addEventListener('change', () => { if (select.value) input.value = select.value; });
+    }
+    if (saveBtn && input) {
+      saveBtn.addEventListener('click', () => {
+        const val = input.value.trim();
+        if (!val) return;
+        saveCustomTemplate(val);
+        if (select) renderTemplateLibrary(select, val);
+        const status = container.querySelector('.save-template-status');
+        if (status) { status.textContent = t('schedule.saved'); status.classList.remove('hidden'); setTimeout(() => status.classList.add('hidden'), 2000); }
+      });
+    }
+    if (addBtn && list) {
+      addBtn.addEventListener('click', () => {
+        const row = document.createElement('div');
+        row.className = 'schedule-time-row';
+        row.innerHTML = '<input type="time" class="schedule-time-input" value="08:00" /><button type="button" class="btn btn-ghost btn-sm schedule-time-remove">×</button>';
+        list.appendChild(row);
+      });
+    }
+    container.addEventListener('click', (e) => {
+      if (e.target.classList.contains('schedule-time-remove')) {
+        e.target.closest('.schedule-time-row').remove();
+      }
+    });
+  }
+
+  const PAGE_SIZE = 12;
+  let dashboardPage = 1;
+  let tablePage = 1;
+
+  function renderPager(container, page, total, onChange) {
+    if (!container) return;
+    container.innerHTML = '';
+    if (total <= 1) return;
+    const prev = document.createElement('button');
+    prev.type = 'button';
+    prev.className = 'btn btn-ghost';
+    prev.textContent = t('pagination.prev') || '←';
+    prev.disabled = page === 1;
+    prev.addEventListener('click', () => onChange(page - 1));
+    const next = document.createElement('button');
+    next.type = 'button';
+    next.className = 'btn btn-ghost';
+    next.textContent = t('pagination.next') || '→';
+    next.disabled = page === total;
+    next.addEventListener('click', () => onChange(page + 1));
+    const info = document.createElement('span');
+    info.className = 'pager-info';
+    info.textContent = (t('pagination.pageOf') || 'Sayfa {page} / {total}').replace('{page}', page).replace('{total}', total);
+    container.appendChild(prev);
+    container.appendChild(info);
+    container.appendChild(next);
+  }
+
   function deriveAgeGroup(dateOfBirth) {
     const dob = new Date(dateOfBirth);
     if (Number.isNaN(dob.getTime())) return '—';
@@ -117,7 +222,9 @@
     connText: document.getElementById('connection-text'),
     navAlarmCount: document.getElementById('nav-alarm-count'),
     tableBody: document.getElementById('patients-table-body'),
+    patientsTablePager: document.getElementById('patients-table-pager'),
     patientDetail: document.getElementById('patient-detail'),
+    patientsPager: document.getElementById('patients-pager'),
     viewDashboard: document.getElementById('view-dashboard'),
     viewPatients: document.getElementById('view-patients'),
     viewAdmin: document.getElementById('view-admin'),
@@ -966,10 +1073,16 @@
     if (patients.length === 0) {
       els.tableBody.innerHTML = `<tr><td colspan="6" class="table-empty">${escapeHtml(t('patients.empty'))}</td></tr>`;
       els.patientDetail.classList.add('hidden');
+      if (els.patientsTablePager) els.patientsTablePager.innerHTML = '';
       return;
     }
 
-    els.tableBody.innerHTML = patients.map((p) => `
+    const total = Math.ceil(patients.length / PAGE_SIZE) || 1;
+    if (tablePage > total) tablePage = total;
+    const start = (tablePage - 1) * PAGE_SIZE;
+    const pagePatients = patients.slice(start, start + PAGE_SIZE);
+
+    els.tableBody.innerHTML = pagePatients.map((p) => `
       <tr data-pseudonym="${escapeHtml(p.pseudonym)}" class="${p.pseudonym === selectedPseudonym ? 'selected' : ''}">
         <td><span class="code-chip">${escapeHtml(p.displayCode || p.pseudonym.slice(0, 8).toUpperCase())}</span></td>
         <td class="mono">${escapeHtml(p.pseudonym)}</td>
@@ -985,6 +1098,8 @@
         if (lastData) render(lastData);
       });
     });
+
+    renderPager(els.patientsTablePager, tablePage, total, (p) => { tablePage = p; renderPatientsTable(patients); });
 
     renderPatientDetail(patients);
   }
@@ -1125,21 +1240,25 @@
             <input type="email" name="caregiverEmail" value="${escapeHtml(caregiver.email)}" />
           </label>
         </fieldset>
-        <fieldset class="schedule-fieldset">
+        <fieldset class="schedule-fieldset detail-schedule">
           <legend>${escapeHtml(t('interaction.title'))}</legend>
           <label class="field">
             <span>${escapeHtml(t('interaction.scheduleDays'))}</span>
-            <select name="scheduleDays" multiple size="4">
-              ${['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'].map((d) => `<option value="${escapeHtml(d)}" ${schedule.days.includes(d) ? 'selected' : ''}>${escapeHtml(d)}</option>`).join('')}
-            </select>
+            ${buildDayCheckboxes(schedule.days)}
           </label>
           <label class="field">
             <span>${escapeHtml(t('interaction.scheduleTimes'))}</span>
-            <input type="text" name="scheduleTimes" value="${escapeHtml(schedule.times.join(', '))}" placeholder="08:00, 15:00" />
+            <div class="schedule-times-list">${buildTimeRows(schedule.times)}</div>
+            <button type="button" class="btn btn-ghost btn-sm schedule-time-add">+ Saat Ekle</button>
           </label>
           <label class="field">
             <span>${escapeHtml(t('interaction.scheduleTemplate'))}</span>
-            <input type="text" name="scheduleTemplate" value="${escapeHtml(schedule.template)}" placeholder="Oksijen satürasyonunuz şu an kaç?" />
+            <div class="schedule-template-row">
+              <select class="template-library"><option value="">${escapeHtml(t('schedule.templateLibrary'))}</option></select>
+              <input type="text" name="scheduleTemplate" value="${escapeHtml(schedule.template)}" placeholder="${escapeHtml(t('interaction.scheduleTemplate'))}" />
+            </div>
+            <button type="button" class="btn btn-ghost btn-sm save-template-btn">${escapeHtml(t('schedule.saveTemplate'))}</button>
+            <span class="save-template-status hidden">${escapeHtml(t('schedule.saved'))}</span>
           </label>
         </fieldset>
         ${thresholdFields('critical', critical, t('clinical.criticalThreshold'))}
@@ -1234,8 +1353,8 @@
             message: message || t(prefix === 'critical' ? 'clinical.criticalDefault' : 'clinical.warningDefault'),
           };
         };
-        const scheduleDays = Array.from(clinicalForm.querySelectorAll('select[name="scheduleDays"] option:checked')).map((o) => o.value);
-        const scheduleTimes = String(fd.get('scheduleTimes') || '').split(',').map((s) => s.trim()).filter(Boolean);
+        const scheduleDays = getScheduleDays(clinicalForm);
+        const scheduleTimes = getScheduleTimes(clinicalForm);
         const scheduleTemplate = String(fd.get('scheduleTemplate') || '').trim();
         const caregiverName = String(fd.get('caregiverName') || '').trim();
         const caregiverRelationship = String(fd.get('caregiverRelationship') || '').trim();
@@ -1269,6 +1388,7 @@
           }
         }
       });
+      setupScheduleEditor(clinicalForm, schedule.times, schedule.template);
     }
 
     renderPatientModules(p);
@@ -2415,6 +2535,7 @@
   /* ---------- Modal ---------- */
   function openModal() {
     els.form.reset();
+    setupScheduleEditor(els.form, ['08:00'], '');
     els.form.classList.remove('hidden');
     els.formError.classList.add('hidden');
     els.kvkkResult.classList.add('hidden');
@@ -2445,8 +2566,8 @@
     const caregiverRelationship = String(fd.get('caregiverRelationship') ?? '').trim();
     const caregiverPhone = String(fd.get('caregiverPhone') ?? '').trim();
     const caregiverEmail = String(fd.get('caregiverEmail') ?? '').trim();
-    const scheduleDays = Array.from(els.form.querySelectorAll('select[name="scheduleDays"] option:checked')).map((o) => o.value);
-    const scheduleTimes = String(fd.get('scheduleTimes') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+    const scheduleDays = getScheduleDays(els.form);
+    const scheduleTimes = getScheduleTimes(els.form);
     const scheduleTemplate = String(fd.get('scheduleTemplate') ?? '').trim();
     const payload = {
       fullName: fd.get('fullName'),
@@ -2525,6 +2646,10 @@
       renderPatientsTable(patients);
     }
 
+    if (currentView === 'dashboard' && els.patientsPager) {
+      els.patientsPager.innerHTML = '';
+    }
+
     if (currentView === 'analytics') {
       renderAnalytics(data);
       return;
@@ -2566,7 +2691,11 @@
 
     const order = { critical: 0, high: 1, medium: 2, low: 3 };
     withData.sort((a, b) => order[a.risk.level] - order[b.risk.level]);
-    els.patients.innerHTML = withData.map(patientCard).join('');
+    const total = Math.ceil(withData.length / PAGE_SIZE) || 1;
+    if (dashboardPage > total) dashboardPage = total;
+    const start = (dashboardPage - 1) * PAGE_SIZE;
+    els.patients.innerHTML = withData.slice(start, start + PAGE_SIZE).map(patientCard).join('');
+    renderPager(els.patientsPager, dashboardPage, total, (p) => { dashboardPage = p; render(data); });
   }
 
   async function poll() {
