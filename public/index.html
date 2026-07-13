@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/enabiz-overrides.css" />
 </head>
 <body>
 
@@ -22,21 +23,20 @@
     <div class="login-card">
       <div class="login-logo">
         <svg viewBox="0 0 72 72" aria-label="T.C. Sağlık Bakanlığı Logosu">
-          <circle cx="36" cy="36" r="34" fill="none" stroke="#2563eb" stroke-width="2"/>
-          <path d="M24 44c2 6 8 10 12 10s12-4 12-10c0-7-7-8-12-12-5-4-5-8 0-12 5-4 10-3 12 0" fill="none" stroke="#dc2626" stroke-width="3" stroke-linecap="round"/>
-          <polygon points="52,22 54,28 60,28 55,32 57,38 52,34 47,38 49,32 44,28 50,28" fill="#dc2626"/>
+          <circle cx="36" cy="36" r="34" fill="none" stroke="#10b981" stroke-width="2"/>
+          <path d="M24 44c2 6 8 10 12 10s12-4 12-10c0-7-7-8-12-12-5-4-5-8 0-12 5-4 10-3 12 0" fill="none" stroke="#0284c7" stroke-width="3" stroke-linecap="round"/>
+          <polygon points="52,22 54,28 60,28 55,32 57,38 52,34 47,38 49,32 44,28 50,28" fill="#10b981"/>
         </svg>
         <div>
           <strong data-i18n="login.brandTitle">T.C. SAĞLIK BAKANLIĞI</strong>
-          <span data-i18n="login.brandSub">SentryHealth Klinik Giriş</span>
+          <span data-i18n="login.brandSub">SentryHealth</span>
         </div>
       </div>
-      <h1 data-i18n="login.title">SentryHealth</h1>
-      <p class="login-sub" data-i18n="login.subtitle">Yapay Zeka Destekli Uzaktan Hasta İzleme ve Klinik Yönetim</p>
+      <h1 data-i18n="login.title">Kurumsal Giriş</h1>
       <form id="login-form" class="login-form" autocomplete="off">
         <label class="field">
           <span data-i18n="login.username">Kullanıcı Adı</span>
-          <input type="text" name="username" data-i18n-placeholder="login.username" placeholder="Kurumsal kullanıcı adınız" required minlength="3" />
+          <input type="text" name="username" data-i18n-placeholder="login.username" placeholder="Kullanıcı Adı" required minlength="3" />
         </label>
         <label class="field">
           <span data-i18n="login.password">Şifre</span>
@@ -45,15 +45,6 @@
         <p class="form-error hidden" id="login-error"></p>
         <button type="submit" class="btn btn-primary btn-block" data-i18n="login.submit">Giriş Yap</button>
       </form>
-      <div class="login-hint">
-        <p class="login-warning" data-i18n="login.forgotPassword">Şifrenizi unuttuysanız lütfen bilgi işleme başvurunuz.</p>
-      </div>
-      <p class="kvkk-note" data-i18n="login.kvkkNote" style="margin-top:14px;margin-bottom:0">
-        🔒 Tüm hasta kimlikleri HMAC-SHA256 ile anonimleştirilir; KVKK/GDPR uyumlu depolama.
-      </p>
-      <p class="kvkk-note" data-i18n="login.systemSeal" style="margin-top:8px;margin-bottom:0">
-        SentryHealth v2.0 — TÜSEB Uzaktan Kronik Hasta Takip ve Proaktif Sağlık Yönetim Sistemi Katmanı
-      </p>
     </div>
   </section>
 
@@ -110,8 +101,7 @@
               <span></span><span></span><span></span>
             </button>
             <div>
-              <h1 id="page-title">Ana Panel</h1>
-              <p class="subtitle" data-i18n="app.subtitle">Yapay Zeka Destekli Uzaktan Hasta İzleme · Gerçek Zamanlı Klinik Görünüm</p>
+              <h1 class="topbar-system-title" id="page-title"><span>SentryHealth</span> | T.C. Sağlık Bakanlığı Entegre Kronik Hasta Takip Sistemi</h1>
             </div>
           </div>
           <div class="topbar-right">
@@ -172,8 +162,7 @@
 
             <section class="scorecard-section" id="scorecard-section">
               <h2 data-i18n="scorecard.title">AI Klinik Risk Skor Tablosu</h2>
-              <p class="scorecard-subtitle" data-i18n="scorecard.subtitle">Botun topladığı vital veriler MEWS kriterlerine göre puanlanır. Kırmızı alanlar acil müdahaleyi, sarı alanlar yakın takibi gösterir.</p>
-              <div class="scorecard-grid">
+              <p class="scorecard-subtitle" dai18n="scorecard.e">Bo
                 <div class="scorecard-card low">
                   <span class="scorecard-card-label" data-i18n="scorecard.low">Risk Yok (Yeşil)</span>
                   <strong class="scorecard-card-value" id="scorecard-count-low">—</strong>

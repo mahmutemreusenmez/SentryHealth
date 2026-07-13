@@ -449,6 +449,7 @@
     showLogin();
   }
 
+
   async function initAuth() {
     const token = getToken();
     if (!token) {
@@ -1240,6 +1241,112 @@
     renderPatientDetail(patients);
   }
 
+  /* ---------- SentryCompanion AI ---------- */
+  const COMPANION_DOCTORS = ['Uzm. Dr. Mustafa Yılmaz', 'Doç. Dr. Elif Kaya', 'Prof. Dr. Kerem Demir', 'Uzm. Dr. Zeynep Arslan'];
+
+  function companionSeed(pseudonym) {
+    let h = 0;
+    const s = String(pseudonym || '');
+    for (let i = 0; i < s.length; i += 1) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    return h;
+  }
+
+  function companionMinutes(time) {
+    const parts = String(time).split(':');
+    return (Number(parts[0]) || 0) * 60 + (Number(parts[1]) || 0);
+  }
+
+  function buildCompanionTimeline(p) {
+    const seed = companionSeed(p.pseudonym);
+    const key = conditionKeyMap[p.conditionGroup] || 'other';
+    const name = displayName(p);
+    const doctor = COMPANION_DOCTORS[seed % COMPANION_DOCTORS.length];
+    const scheduleTimes = p.schedule && Array.isArray(p.schedule.times) && p.schedule.times.length ? p.schedule.times : ['08:00', '20:00'];
+    const now = new Date();
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    const events = [];
+
+    scheduleTimes.slice(0, 3).forEach((time, idx) => {
+      const past = companionMinutes(time) <= nowMin;
+      const taken = ((seed >> idx) & 3) !== 0;
+      events.push({
+        time,
+        type: 'medication',
+        message: t('companion.med.' + key, { name, time }),
+        status: past ? (taken ? 'confirmed' : 'missed') : 'scheduled',
+      });
+    });
+
+    const apptTime = '10:00';
+    events.push({
+      time: apptTime,
+      type: 'appointment',
+      message: t(key === 'diabetes' ? 'companion.appt.lab' : 'companion.appt.visit', { name, doctor, time: apptTime }),
+      status: companionMinutes(apptTime) <= nowMin ? 'read' : 'scheduled',
+    });
+
+    const lifeTime = '12:30';
+    events.push({
+      time: lifeTime,
+      type: 'lifestyle',
+      message: t('companion.life.' + key, { name }),
+      status: companionMinutes(lifeTime) <= nowMin ? (((seed >> 4) & 3) !== 0 ? 'read' : 'pending') : 'scheduled',
+    });
+
+    events.sort((a, b) => companionMinutes(a.time) - companionMinutes(b.time));
+    return events;
+  }
+
+  function companionStatusChip(status) {
+    const cls = { confirmed: 'green', read: 'blue', pending: 'amber', missed: 'red', scheduled: 'neutral' }[status] || 'neutral';
+    return `<span class="companion-status ${cls}">${escapeHtml(t('companion.status.' + status))}</span>`;
+  }
+
+  function renderCompanionPanel(p) {
+    const events = buildCompanionTimeline(p);
+    const seed = companionSeed(p.pseudonym);
+    const medEvents = events.filter((e) => e.type === 'medication');
+    const pastMed = medEvents.filter((e) => e.status !== 'scheduled');
+    const takenMed = pastMed.filter((e) => e.status === 'confirmed');
+    const medRate = pastMed.length ? Math.round((takenMed.length / pastMed.length) * 100) : 100;
+    const readRate = 80 + (seed % 20);
+    const typeIcons = { medication: '💊', appointment: '📅', lifestyle: '🌤️' };
+
+    const bar = (labelKey, value) => `
+      <div class="companion-metric">
+        <div class="companion-metric-head"><span>${escapeHtml(t(labelKey))}</span><strong class="${value >= 70 ? 'ok' : 'bad'}">%${value}</strong></div>
+        <div class="companion-bar-bg"><div class="companion-bar-fill ${value >= 70 ? 'green' : 'red'}" style="width:${value}%"></div></div>
+      </div>`;
+
+    const items = events.map((e) => `
+      <div class="companion-item ${e.type}">
+        <div class="companion-time">${escapeHtml(e.time)}</div>
+        <div class="companion-item-body">
+          <div class="companion-item-top">
+            <span class="companion-type">${typeIcons[e.type]} ${escapeHtml(t('companion.type.' + e.type))}</span>
+            ${companionStatusChip(e.status)}
+          </div>
+          <p class="companion-msg"><strong>${escapeHtml(t('companion.aiPrefix'))}</strong> ${escapeHtml(e.message)}</p>
+        </div>
+      </div>`).join('');
+
+    return `
+      <section class="companion-card">
+        <div class="companion-head">
+          <div class="companion-avatar">AI</div>
+          <div class="companion-titles">
+            <h3>${escapeHtml(t('companion.title'))}</h3>
+          </div>
+          <span class="companion-live"><span class="dot"></span>${escapeHtml(t('companion.live'))}</span>
+        </div>
+        <div class="companion-stats">
+          ${bar('companion.medAdherence', medRate)}
+          ${bar('companion.readRate', readRate)}
+        </div>
+        <div class="companion-timeline">${items}</div>
+      </section>`;
+  }
+
   function renderPatientDetail(patients) {
     const p = patients.find((x) => x.pseudonym === selectedPseudonym);
     if (!p) {
@@ -1313,34 +1420,38 @@
 
     els.patientDetail.innerHTML = `
       <div class="detail-head">
-        <h3>${escapeHtml(displayName(p))}${contactBadge(p)} — ${escapeHtml(t('patient.history'))}</h3>
+        <h3>${escapeHtml(displayName(p))}${contactBadge(p)}</h3>
         <div style="display:flex;align-items:center;gap:10px">
           ${riskChip(p.risk.level)}
           <button class="btn btn-primary" id="add-vitals-btn">${escapeHtml(t('patient.addVitals'))}</button>
         </div>
       </div>
-      ${alertBanner}
-      ${patientMessage}
-      <div class="protocol-note">${escapeHtml(t('protocol.note'))}</div>
-      <div class="detail-cards">
-        ${caregiverCard(p)}
-        ${interactionCard(p)}
-      </div>
-      ${renderPatientScorecard(p)}
-      <div class="detail-charts">
-        <div class="chart-box"><span class="chart-title">${escapeHtml(t('chart.pulse'))}</span>${sparkline(history, isAlarm, (h) => h.heartRate)}</div>
-        <div class="chart-box"><span class="chart-title">${escapeHtml(t('chart.spo2'))}</span>${sparkline(history, isAlarm, (h) => h.oxygenSaturation)}</div>
-        <div class="chart-box"><span class="chart-title">${escapeHtml(t('chart.temp'))}</span>${sparkline(history, isAlarm, (h) => h.temperature)}</div>
-      </div>
-      <table class="history-table">
-        <thead><tr><th>${escapeHtml(t('table.time'))}</th><th>${escapeHtml(t('vital.pulse'))}</th><th>${escapeHtml(t('vital.spo2'))}</th><th>${escapeHtml(t('vital.temp'))}</th><th>${escapeHtml(t('vital.bp'))}</th></tr></thead>
-        <tbody>${rows || `<tr><td colspan="5">${escapeHtml(t('patient.noMeasurements'))}</td></tr>`}</tbody>
-      </table>
-      <div class="xai-report" style="margin-top:14px">
-        <span class="xai-title">${escapeHtml(t('xai.envTitle'))}</span>
-        ${escapeHtml(p.risk.report)}
+      <div class="detail-tabs" role="tablist">
+        <button type="button" class="detail-tab active" data-tab="vitals">Kronik Vitaller</button>
+        <button type="button" class="detail-tab" data-tab="schedule">Akıllı Takip Takvimi</button>
+        <button type="button" class="detail-tab" data-tab="triage">Online Ön Triyaj</button>
+        <button type="button" class="detail-tab" data-tab="mhrs">MHRS Sevk Geçmişi</button>
+        <button type="button" class="detail-tab" data-tab="companion">SentryCompanion AI</button>
       </div>
 
+      <div class="detail-tab-panel active" data-panel="vitals">
+        <div class="detail-cards">
+          ${caregiverCard(p)}
+          ${interactionCard(p)}
+        </div>
+        ${renderPatientScorecard(p)}
+        <div class="detail-charts">
+          <div class="chart-box"><span class="chart-title">${escapeHtml(t('chart.pulse'))}</span>${sparkline(history, isAlarm, (h) => h.heartRate)}</div>
+          <div class="chart-box"><span class="chart-title">${escapeHtml(t('chart.spo2'))}</span>${sparkline(history, isAlarm, (h) => h.oxygenSaturation)}</div>
+          <div class="chart-box"><span class="chart-title">${escapeHtml(t('chart.temp'))}</span>${sparkline(history, isAlarm, (h) => h.temperature)}</div>
+        </div>
+        <table class="history-table">
+          <thead><tr><th>${escapeHtml(t('table.time'))}</th><th>${escapeHtml(t('vital.pulse'))}</th><th>${escapeHtml(t('vital.spo2'))}</th><th>${escapeHtml(t('vital.temp'))}</th><th>${escapeHtml(t('vital.bp'))}</th></tr></thead>
+          <tbody>${rows || `<tr><td colspan="5">${escapeHtml(t('patient.noMeasurements'))}</td></tr>`}</tbody>
+        </table>
+      </div>
+
+      <div class="detail-tab-panel" data-panel="schedule">
       <form id="clinical-plan-form" class="clinical-plan">
         <h4 class="clinical-title">${escapeHtml(t('clinical.title'))}</h4>
         <label class="field">
@@ -1416,12 +1527,36 @@
           <span id="clinical-status" class="clinical-status hidden"></span>
         </div>
       </form>
+      </div>
+
+      <div class="detail-tab-panel" data-panel="triage">
+        <table class="history-table">
+          <thead><tr><th>Tarih</th><th>Şikayet</th><th>Sevk</th><th>Durum</th></tr></thead>
+          <tbody>
+            <tr><td>${escapeHtml(new Date().toLocaleDateString('tr-TR'))}</td><td>Rutin kontrol</td><td>Tele-Tıp</td><td>Yeşil</td></tr>
+            <tr><td>${escapeHtml(new Date(Date.now() - 86400000 * 3).toLocaleDateString('tr-TR'))}</td><td>${escapeHtml(translateCondition(p.conditionGroup))}</td><td>Aile Hekimi</td><td>Sarı</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="detail-tab-panel" data-panel="mhrs">
+        <table class="history-table">
+          <thead><tr><th>Tarih</th><th>Branş</th><th>Barkod</th><th>Durum</th></tr></thead>
+          <tbody>
+            <tr><td>${escapeHtml(new Date(Date.now() - 86400000 * 7).toLocaleDateString('tr-TR'))}</td><td>Kardiyoloji</td><td>MHRS-${escapeHtml((p.displayCode || 'H00').replace(/[^A-Z0-9]/gi, '').slice(0, 6))}</td><td>Onaylandı</td></tr>
+            <tr><td>${escapeHtml(new Date(Date.now() - 86400000 * 30).toLocaleDateString('tr-TR'))}</td><td>Dahiliye</td><td>MHRS-${escapeHtml((p.pseudonym || 'PSN').slice(-6).toUpperCase())}</td><td>Tamamlandı</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="detail-tab-panel" data-panel="companion">
+        ${renderCompanionPanel(p)}
+      </div>
 
       <div class="module-card sepsis" id="detail-sepsis-card">
         <div class="module-head">
           <span class="module-tag" data-i18n="modules.sepsisTag">ERKEN UYARI</span>
-          <h3 data-i18n="modules.sepsisTitle">YZ Destekli Erken Sepsis ve Çoklu Organ Yetmezliği Tahmini</h3>
-          <p data-i18n="modules.sepsisSubtitle">qSOFA / MEWS Skor Kartı — 48 saat öncesi risk uyarısı</p>
+          <h3 data-i18n="modules.sepsisTitle">Sepsis Risk Skoru</h3>
         </div>
         <div class="sepsis-body">
           <div class="sepsis-score-row">
@@ -1450,8 +1585,7 @@
       <div class="module-card sdoh" id="detail-sdoh-card">
         <div class="module-head">
           <span class="module-tag" data-i18n="modules.sdohTag">ÇEVRESEL RİSK</span>
-          <h3 data-i18n="modules.sdohTitle">Sosyal Sağlık Belirleyicileri (SDOH) ve Çevresel Risk Haritası</h3>
-          <p data-i18n="modules.sdohSubtitle">Coğrafi ve çevresel verilerle klinik risk profili</p>
+          <h3 data-i18n="modules.sdohTitle">Çevresel Risk</h3>
         </div>
         <div class="sdoh-body">
           <div class="sdoh-map">
@@ -1482,6 +1616,16 @@
       ${neyimVarDetailCard()}`;
 
     wireMhrsActions(els.patientDetail);
+
+    els.patientDetail.querySelectorAll('.detail-tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const key = tab.dataset.tab;
+        els.patientDetail.querySelectorAll('.detail-tab').forEach((btn) => btn.classList.toggle('active', btn === tab));
+        els.patientDetail.querySelectorAll('.detail-tab-panel').forEach((panel) => {
+          panel.classList.toggle('active', panel.dataset.panel === key);
+        });
+      });
+    });
 
     const addVitalsBtn = document.getElementById('add-vitals-btn');
     if (addVitalsBtn) {
@@ -3171,7 +3315,9 @@
     document.querySelectorAll('#lang-switcher button').forEach((btn) => {
       btn.classList.toggle('active', btn.dataset.lang === lang);
     });
-    if (els.pageTitle) els.pageTitle.textContent = t('page.' + currentView) || 'SentryHealth';
+    if (els.pageTitle) {
+      els.pageTitle.innerHTML = '<span>SentryHealth</span> | T.C. Sağlık Bakanlığı Entegre Kronik Hasta Takip Sistemi';
+    }
     if (lastData) render(lastData);
     if (currentView === 'admin' && currentUser?.role === 'admin') loadDoctors();
     if (els.systemLogs) {
