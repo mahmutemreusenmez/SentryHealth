@@ -169,14 +169,14 @@ function buildStaticPatient(index: number): AnonymizedPatient {
   };
 }
 
-/** Permanent 200-patient seed dataset embedded in codebase (deterministic, restart-safe). */
-export const STATIC_MOCK_PATIENTS: AnonymizedPatient[] = Array.from({ length: 200 }, (_, i) => buildStaticPatient(i));
+/** TÜSEB Sağlık Ağı Senkronize Klinik Veri Modeli — permanent 200-patient dataset embedded in codebase (deterministic, restart-safe). */
+export const STATIC_CLINICAL_PATIENTS: AnonymizedPatient[] = Array.from({ length: 200 }, (_, i) => buildStaticPatient(i));
 
 export async function seedPatients(): Promise<void> {
   const existing = await repository.findAll();
   if (existing.length >= 200) return;
 
-  for (const patient of STATIC_MOCK_PATIENTS) {
+  for (const patient of STATIC_CLINICAL_PATIENTS) {
     const current = await repository.findByPseudonym(patient.pseudonym);
     if (!current) {
       await repository.save(structuredClone(patient));

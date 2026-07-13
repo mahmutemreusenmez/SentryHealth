@@ -145,7 +145,7 @@
 
   function maskNationalId(nationalId) {
     const s = String(nationalId);
-    return s.length >= 4 ? `${s.slice(0, 2)}*******${s.slice(-2)}` : '***********';
+    return s.length >= 6 ? `${s.slice(0, 3)}*****${s.slice(-3)}` : '***********';
   }
 
   function createLocalPatient(payload) {

@@ -71,7 +71,8 @@ const SentryI18n = (() => {
       submit: 'Giriş Yap',
       forgotPassword: 'Şifrenizi unuttuysanız lütfen bilgi işleme başvurunuz.',
       kvkkNote: '🔒 Tüm hasta kimlikleri HMAC-SHA256 ile anonimleştirilir; KVKK/GDPR uyumlu depolama.',
-      error: 'Hatalı Kullanıcı Adı veya Şifre!',
+      systemSeal: 'SentryHealth v2.0 — TÜSEB Uzaktan Kronik Hasta Takip ve Proaktif Sağlık Yönetim Sistemi Katmanı',
+      error: 'Yetkisiz Erişim Algılandı. Lütfen Geçerli Personel Kimlik Bilgilerini Giriniz.',
       expired: 'Oturum süresi dolmuş, lütfen tekrar giriş yapın.',
     },
     app: {
@@ -146,7 +147,7 @@ const SentryI18n = (() => {
       subtitle: 'Klinik karar destek ve risk analizi modülleri',
     },
     telemedicine: {
-      title: 'Yapay Zeka Destekli Klinik SMS Asistanı',
+      title: 'Tıbbi Değerlendirme ve Ölçüm Takvimi',
       poolTitle: 'AI Bildirim Havuzu — Hekim Onay Ekranı',
       poolSubtitle: 'Yapay zeka; poliklinik hasta profili, mevsimsel şartlar ve risk faktörlerini analiz ederek klinik tavsiye SMS taslakları üretir. Gönderim yalnızca doktor onayıyla gerçekleşir.',
       aiBadge: 'Yapay Zeka Önerisi',
@@ -507,7 +508,7 @@ const SentryI18n = (() => {
       empty: 'Kayıtlı hasta yakını bilgisi yok.',
     },
     interaction: {
-      title: 'Akıllı Takip Takvimi',
+      title: 'Tıbbi Değerlendirme ve Ölçüm Takvimi',
       logTitle: 'Etkileşim Logu',
       scheduleDays: 'Günler',
       scheduleTimes: 'Soru Saatleri',
@@ -653,7 +654,8 @@ const SentryI18n = (() => {
       submit: 'Sign In',
       forgotPassword: 'Forgot your password? Please contact the IT department.',
       kvkkNote: '🔒 All patient identities are anonymized with HMAC-SHA256; KVKK/GDPR compliant storage.',
-      error: 'Invalid Username or Password!',
+      systemSeal: 'SentryHealth v2.0 — TÜSEB Remote Chronic Patient Monitoring and Proactive Health Management System Layer',
+      error: 'Unauthorized Access Detected. Please Enter Valid Personnel Credentials.',
       expired: 'Session expired. Please sign in again.',
     },
     app: {
@@ -728,7 +730,7 @@ const SentryI18n = (() => {
       subtitle: 'Clinical decision support and risk analysis modules',
     },
     telemedicine: {
-      title: 'AI-Powered Clinical SMS Assistant',
+      title: 'Medical Assessment and Measurement Schedule',
       poolTitle: 'AI Notification Pool — Physician Approval Screen',
       poolSubtitle: 'The AI analyzes each clinic\'s patient profile, seasonal conditions and risk factors to draft clinical advisory SMS messages. Delivery happens only with physician approval.',
       aiBadge: 'AI Suggestion',
@@ -1089,7 +1091,7 @@ const SentryI18n = (() => {
       empty: 'No caregiver information on file.',
     },
     interaction: {
-      title: 'Smart Follow-up Calendar',
+      title: 'Medical Assessment and Measurement Schedule',
       logTitle: 'Interaction Log',
       scheduleDays: 'Days',
       scheduleTimes: 'Question Times',
@@ -1235,7 +1237,8 @@ const SentryI18n = (() => {
       submit: 'تسجيل الدخول',
       forgotPassword: 'نسيت كلمة المرور؟ يرجى التواصل مع قسم تقنية المعلومات.',
       kvkkNote: '🔒 يتم إخفاء هويات جميع المرضى باستخدام HMAC-SHA256؛ تخزين متوافق مع KVKK/GDPR.',
-      error: 'رقم الهوية أو كلمة المرور غير صحيحة!',
+      systemSeal: 'SentryHealth v2.0 — طبقة نظام TÜSEB للمتابعة المزمنة عن بُعد والإدارة الصحية الاستباقية',
+      error: 'تم رصد وصول غير مصرح به. يرجى إدخال بيانات اعتماد موظف صالحة.',
       expired: 'انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى.',
     },
     app: {
@@ -1310,7 +1313,7 @@ const SentryI18n = (() => {
       subtitle: 'وحدات دعم القرار السريري وتحليل المخاطر',
     },
     telemedicine: {
-      title: 'مساعد الرسائل السريرية المدعوم بالذكاء الاصطناعي',
+      title: 'جدول التقييم الطبي والقياسات',
       poolTitle: 'مجمع إشعارات الذكاء الاصطناعي — شاشة موافقة الطبيب',
       poolSubtitle: 'يحلل الذكاء الاصطناعي ملف مرضى العيادة والظروف الموسمية وعوامل الخطر لصياغة مسودات رسائل نصية استشارية. يتم الإرسال فقط بموافقة الطبيب.',
       aiBadge: 'اقتراح الذكاء الاصطناعي',
@@ -1671,7 +1674,7 @@ const SentryI18n = (() => {
       empty: 'لا توجد معلومات مقدم رعاية مسجلة.',
     },
     interaction: {
-      title: 'تقويم المتابعة الذكي',
+      title: 'جدول التقييم الطبي والقياسات',
       logTitle: 'سجل التفاعل',
       scheduleDays: 'الأيام',
       scheduleTimes: 'أوقات الأسئلة',

@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SentryHealth v2.0 — Kronik Hasta Takip Platformu</title>
+  <title>SentryHealth v2.0 — TÜSEB Uzaktan Kronik Hasta Takip ve Proaktif Sağlık Yönetim Sistemi Katmanı</title>
+  <meta name="description" content="SentryHealth v2.0 — TÜSEB Uzaktan Kronik Hasta Takip ve Proaktif Sağlık Yönetim Sistemi Katmanı" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet" />
@@ -49,6 +50,9 @@
       </div>
       <p class="kvkk-note" data-i18n="login.kvkkNote" style="margin-top:14px;margin-bottom:0">
         🔒 Tüm hasta kimlikleri HMAC-SHA256 ile anonimleştirilir; KVKK/GDPR uyumlu depolama.
+      </p>
+      <p class="kvkk-note" data-i18n="login.systemSeal" style="margin-top:8px;margin-bottom:0">
+        SentryHealth v2.0 — TÜSEB Uzaktan Kronik Hasta Takip ve Proaktif Sağlık Yönetim Sistemi Katmanı
       </p>
     </div>
   </section>
@@ -203,93 +207,10 @@
               </div>
             </section>
 
-            <section class="analytics-section" id="analytics-section">
-              <h2 data-i18n="analytics.title">Analitik &amp; İstatistikler</h2>
-              <div class="analytics-grid">
-                <div class="chart-card">
-                  <span class="chart-title" data-i18n="analytics.monthlyTrend">Aylık Yanıt Trendi</span>
-                  <div class="chart-svg" id="chart-trend"></div>
-                </div>
-                <div class="chart-card">
-                  <span class="chart-title" data-i18n="analytics.monthlyAlarms">Aylık Alarm Sayısı</span>
-                  <div class="chart-svg" id="chart-alarms"></div>
-                </div>
-                <div class="chart-card">
-                  <span class="chart-title" data-i18n="analytics.diseaseDistribution">Hastalık Dağılımı</span>
-                  <div class="chart-svg" id="chart-distribution"></div>
-                </div>
-              </div>
-            </section>
-
-            <h2 class="future-title" data-i18n="future.title">İleri Sağlık Modülleri</h2>
-            <section class="global-modules" id="global-modules">
-              <div class="module-card sepsis">
-                <div class="module-head">
-                  <span class="module-tag" data-i18n="modules.sepsisTag">ERKEN UYARI</span>
-                  <h3 data-i18n="modules.sepsisTitle">YZ Destekli Erken Sepsis ve Çoklu Organ Yetmezliği Tahmini</h3>
-                  <p data-i18n="modules.sepsisSubtitle">qSOFA / MEWS Skor Kartı — 48 saat öncesi risk uyarısı</p>
-                </div>
-                <div class="sepsis-body">
-                  <div class="sepsis-score-row">
-                    <div class="sepsis-score">
-                      <span data-i18n="modules.sepsisRisk">Sepsis Risk Skoru</span>
-                      <strong id="sepsis-score">0</strong>
-                    </div>
-                    <small data-i18n="modules.sepsisRisk48">48 saat öncesi tahmin</small>
-                  </div>
-                  <div class="sepsis-bars">
-                    <div class="sepsis-bar">
-                      <span data-i18n="modules.sepsisQsofa">qSOFA</span>
-                      <div class="sepsis-bar-bg"><div class="sepsis-bar-fill" id="sepsis-qsofa"></div></div>
-                      <em id="sepsis-qsofa-val">0</em>
-                    </div>
-                    <div class="sepsis-bar">
-                      <span data-i18n="modules.sepsisMews">MEWS</span>
-                      <div class="sepsis-bar-bg"><div class="sepsis-bar-fill" id="sepsis-mews"></div></div>
-                      <em id="sepsis-mews-val">0</em>
-                    </div>
-                  </div>
-                  <div class="sepsis-alarm hidden" id="sepsis-alarm" data-i18n="modules.sepsisAlarm">KRİTİK SEPSİS RİSKİ: Erken Müdahale Önerilir</div>
-                </div>
-              </div>
-
-              <div class="module-card twin">
-                <div class="module-head">
-                  <span class="module-tag" data-i18n="modules.twinTag">DİJİTAL İKİZ</span>
-                  <h3 data-i18n="modules.twinTitle">Hastanın Dijital İkizi</h3>
-                  <p data-i18n="modules.twinSubtitle">İlaç / doz analizi — Tedavi öncesi analitik öngörü</p>
-                </div>
-                <div class="twin-body">
-                  <button type="button" class="btn btn-primary" id="global-twin-simulate" data-twin-simulate="global" data-i18n="modules.twinSimulate">Analiz Et</button>
-                  <div class="twin-output hidden" id="global-twin-output"></div>
-                </div>
-              </div>
-
-              <div class="module-card sdoh">
-                <div class="module-head">
-                  <span class="module-tag" data-i18n="modules.sdohTag">ÇEVRESEL RİSK</span>
-                  <h3 data-i18n="modules.sdohTitle">Sosyal Sağlık Belirleyicileri (SDOH) ve Çevresel Risk Haritası</h3>
-                  <p data-i18n="modules.sdohSubtitle">Coğrafi ve çevresel verilerle klinik risk profili</p>
-                </div>
-                <div class="sdoh-body">
-                  <div class="sdoh-map">
-                    <canvas id="sdoh-map" width="340" height="170"></canvas>
-                  </div>
-                  <div class="sdoh-metrics">
-                    <div class="sdoh-metric"><span data-i18n="modules.sdohAqi">Hava Kalitesi (AQI)</span><strong id="sdoh-aqi">—</strong></div>
-                    <div class="sdoh-metric"><span data-i18n="modules.sdohPollen">Polen Yoğunluğu</span><strong id="sdoh-pollen">—</strong></div>
-                    <div class="sdoh-metric"><span data-i18n="modules.sdohInfluenza">Mevsimsel Influenza</span><strong id="sdoh-influenza">—</strong></div>
-                  </div>
-                  <div class="sdoh-risk" id="sdoh-risk" data-i18n="modules.sdohRisk">Çevresel Risk İndeksi: <strong id="sdoh-risk-value">—</strong></div>
-                  <div class="sdoh-legend" id="sdoh-legend" data-i18n="modules.sdohLegend">Risk haritası: hasta bölgesi ve kronik durum etkisi</div>
-                </div>
-              </div>
-            </section>
-
             <section id="alerts" class="alerts"></section>
 
             <section class="patients-header">
-              <h2 data-i18n="telemedicine.title">Tele-Tıp — Canlı Hasta İzleme</h2>
+              <h2 data-i18n="page.telemedicine">Tele-Tıp Konsolu</h2>
               <span class="kvkk-badge" title="Hasta kimlikleri HMAC-SHA256 ile anonimleştirilmiştir" data-i18n="telemedicine.kvkkBadge">🔒 KVKK Uyumlu — Anonimleştirilmiş Veri</span>
             </section>
             <section id="patients" class="patients-grid">
@@ -883,7 +804,7 @@
             </section>
 
             <section class="patients-header" style="margin-top:24px">
-              <h2 data-i18n="telemedicine.title">Yapay Zeka Destekli Klinik SMS Asistanı</h2>
+              <h2 data-i18n="telemedicine.title">Tıbbi Değerlendirme ve Ölçüm Takvimi</h2>
             </section>
             <section class="ai-sms-panel" id="ai-sms-panel"></section>
           </div>
@@ -1011,7 +932,7 @@
         </div>
 
         <div class="schedule-block">
-          <h4 data-i18n="interaction.title">Akıllı Takip Takvimi</h4>
+          <h4 data-i18n="interaction.title">Tıbbi Değerlendirme ve Ölçüm Takvimi</h4>
           <label class="field">
             <span data-i18n="interaction.scheduleDays">Günler</span>
             <div class="day-checkbox-group" id="schedule-day-boxes">
