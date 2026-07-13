@@ -903,6 +903,10 @@
           <input type="text" name="nationalId" data-i18n-placeholder="modal.nationalId" placeholder="11 haneli" required pattern="\d{11}" maxlength="11" inputmode="numeric" />
         </label>
         <label class="field">
+          <span data-i18n="modal.phone">Hasta Telefon Numarası (SMS ve Sesli Bot için zorunlu)</span>
+          <input type="tel" name="phone" data-i18n-placeholder="modal.phonePlaceholder" placeholder="05XX XXX XX XX" required pattern="0?5[0-9\s()-]{9,14}" maxlength="17" inputmode="tel" />
+        </label>
+        <label class="field">
           <span data-i18n="modal.dateOfBirth">Doğum Tarihi</span>
           <input type="date" name="dateOfBirth" required />
         </label>

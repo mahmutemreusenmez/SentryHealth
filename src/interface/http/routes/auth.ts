@@ -35,7 +35,7 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
     const password = String(body.password ?? '');
     const user = userStore.findByUsername(username);
     if (!user || !verifyPassword(password, user.passwordHash)) {
-      res.status(401).json({ error: 'Yetkisiz Erişim Algılandı. Lütfen Geçerli Personel Kimlik Bilgilerini Giriniz.' });
+      res.status(401).json({ error: 'Yetkisiz Erişim Algılandı: Kimlik bilgileri doğrulanamadı. Bu deneme güvenlik kayıtlarına işlenmiştir.' });
       return;
     }
 

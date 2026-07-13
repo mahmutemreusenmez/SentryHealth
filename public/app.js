@@ -59,12 +59,14 @@
   }
   function setupScheduleEditor(container, times = [], template = '') {
     const list = container.querySelector('.schedule-times-list');
-    const addBtn = container.querySelector('.schedule-time-add');
     const select = container.querySelector('.template-library');
-    const input = container.querySelector('input[name="scheduleTemplate"]');
-    const saveBtn = container.querySelector('.save-template-btn');
     if (list) list.innerHTML = buildTimeRows(times);
     if (select) renderTemplateLibrary(select, template);
+    if (container.dataset.scheduleBound === '1') return;
+    container.dataset.scheduleBound = '1';
+    const addBtn = container.querySelector('.schedule-time-add');
+    const input = container.querySelector('input[name="scheduleTemplate"]');
+    const saveBtn = container.querySelector('.save-template-btn');
     if (select && input) {
       select.addEventListener('change', () => { if (select.value) input.value = select.value; });
     }
@@ -88,7 +90,8 @@
     }
     container.addEventListener('click', (e) => {
       if (e.target.classList.contains('schedule-time-remove')) {
-        e.target.closest('.schedule-time-row').remove();
+        const row = e.target.closest('.schedule-time-row');
+        if (row) row.remove();
       }
     });
   }
@@ -157,6 +160,7 @@
       displayCode,
       ageGroup: deriveAgeGroup(payload.dateOfBirth),
       conditionGroup: payload.condition || 'Diğer',
+      phone: payload.phone || '',
       contactChannel: payload.contactChannel || 'sms',
       caregiver: payload.caregiver || undefined,
       schedule: payload.schedule || undefined,
@@ -183,11 +187,12 @@
   function renderPatientResponse(body) {
     const conditionKey = conditionKeyMap[body.conditionGroup || 'Kronik hastalık'] || 'chronic';
     const conditionText = t('condition.' + conditionKey);
+    const kvkk = body.kvkk || { maskedName: '—', maskedNationalId: '—' };
     els.kvkkFlow.innerHTML = `
       <div class="kvkk-step">
         <span class="step-icon">👤</span>
         <div><strong>${escapeHtml(t('modal.maskedIdentity'))}</strong>
-        ${escapeHtml(body.kvkk.maskedName)} · T.C. ${escapeHtml(body.kvkk.maskedNationalId)}</div>
+        ${escapeHtml(kvkk.maskedName)} · T.C. ${escapeHtml(kvkk.maskedNationalId)}</div>
       </div>
       <div class="kvkk-arrow">${escapeHtml(t('modal.anonymization'))}</div>
       <div class="kvkk-step result">
@@ -749,10 +754,10 @@
 
   function updateTeleModules() {
     const sepsis = computeSepsisScore(teleVitals, teleCondition);
-    const sepsisRoot = document.getElementById('tele-sepsis-card');
+    const sepsisRoot = document.querySelector('.tele-sepsis-card');
     if (sepsisRoot) setSepsisUI(sepsisRoot, sepsis);
     const sdoh = computeSdoh({ conditionGroup: teleCondition });
-    const sdohRoot = document.getElementById('tele-sdoh-card');
+    const sdohRoot = document.querySelector('.tele-sdoh-card');
     if (sdohRoot) setSdohUI(sdohRoot, sdoh);
   }
 
@@ -2951,10 +2956,59 @@
     if (e.target === els.modal) closeModal();
   });
 
+  function showFormError(message) {
+    els.formError.textContent = message;
+    els.formError.classList.remove('hidden');
+  }
+
+  function persistLocalPatient(payload) {
+    const localPatient = createLocalPatient(payload);
+    const localPatients = getLocalPatients();
+    localPatients.push(localPatient);
+    setLocalPatients(localPatients);
+    if (lastData && Array.isArray(lastData.patients)) {
+      lastData.patients.push(localPatient);
+      render(lastData);
+    }
+    return localPatient;
+  }
+
   els.form.addEventListener('submit', async (e) => {
     e.preventDefault();
     els.formError.classList.add('hidden');
     const fd = new FormData(els.form);
+
+    const fullName = String(fd.get('fullName') ?? '').trim();
+    if (fullName.length < 3) {
+      showFormError(t('modal.errorFullName'));
+      return;
+    }
+
+    const nationalId = String(fd.get('nationalId') ?? '').trim();
+    if (!/^\d{11}$/.test(nationalId)) {
+      showFormError(t('modal.errorNationalId'));
+      return;
+    }
+
+    const phone = String(fd.get('phone') ?? '').replace(/[\s()-]/g, '');
+    if (!/^0?5\d{9}$/.test(phone)) {
+      showFormError(t('modal.errorPhone'));
+      return;
+    }
+
+    const dateOfBirth = String(fd.get('dateOfBirth') ?? '').trim();
+    const dob = new Date(dateOfBirth);
+    if (!dateOfBirth || Number.isNaN(dob.getTime()) || dob > new Date()) {
+      showFormError(t('modal.errorDateOfBirth'));
+      return;
+    }
+
+    const condition = String(fd.get('condition') ?? '').trim();
+    if (!condition) {
+      showFormError(t('modal.errorCondition'));
+      return;
+    }
+
     const caregiverName = String(fd.get('caregiverName') ?? '').trim();
     const caregiverRelationship = String(fd.get('caregiverRelationship') ?? '').trim();
     const caregiverPhone = String(fd.get('caregiverPhone') ?? '').trim();
@@ -2963,11 +3017,12 @@
     const scheduleTimes = getScheduleTimes(els.form);
     const scheduleTemplate = String(fd.get('scheduleTemplate') ?? '').trim();
     const payload = {
-      fullName: fd.get('fullName'),
-      nationalId: fd.get('nationalId'),
-      dateOfBirth: fd.get('dateOfBirth'),
-      condition: fd.get('condition'),
-      contactChannel: fd.get('contactChannel'),
+      fullName,
+      nationalId,
+      phone,
+      dateOfBirth,
+      condition,
+      contactChannel: fd.get('contactChannel') || 'sms',
       caregiver: caregiverName || caregiverPhone || caregiverEmail ? { name: caregiverName, relationship: caregiverRelationship, phone: caregiverPhone, email: caregiverEmail } : undefined,
       schedule: scheduleDays.length || scheduleTimes.length || scheduleTemplate ? { days: scheduleDays, times: scheduleTimes, template: scheduleTemplate } : undefined,
     };
@@ -2978,23 +3033,23 @@
         body: JSON.stringify(payload),
       });
       const body = await safeJson(res);
+      if (res.status === 400 && body && body.error) {
+        showFormError(body.error);
+        return;
+      }
       if (!res.ok || !body.pseudonym) {
-        // local fallback so the registration UI never crashes
-        const localPatient = createLocalPatient(payload);
-        const localPatients = getLocalPatients();
-        localPatients.push(localPatient);
-        setLocalPatients(localPatients);
+        const localPatient = persistLocalPatient(payload);
         renderPatientResponse(localPatient);
+        addLog(t('log.patientAdded', { code: localPatient.displayCode }));
         return;
       }
       renderPatientResponse(body);
       addLog(t('log.patientAdded', { code: body.displayCode }));
+      poll();
     } catch (err) {
-      const localPatient = createLocalPatient(payload);
-      const localPatients = getLocalPatients();
-      localPatients.push(localPatient);
-      setLocalPatients(localPatients);
+      const localPatient = persistLocalPatient(payload);
       renderPatientResponse(localPatient);
+      addLog(t('log.patientAdded', { code: localPatient.displayCode }));
     }
   });
 
@@ -3104,6 +3159,9 @@
       render(data);
     } catch {
       setConnection(false);
+      if (!lastData) {
+        render({ patients: getLocalPatients() });
+      }
     }
   }
 

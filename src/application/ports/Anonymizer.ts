@@ -34,6 +34,7 @@ export interface AnonymizedPatient {
   ageGroup?: string;
   displayCode?: string;
   conditionGroup?: string;
+  phone?: string;
   contactChannel?: 'sms' | 'ai';
   customQuestion?: string;
   questionTimes?: string[];

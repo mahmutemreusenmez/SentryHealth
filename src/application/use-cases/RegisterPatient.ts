@@ -7,6 +7,7 @@ import { buildInteractionLog } from '../services/InteractionLogBuilder.js';
 export interface RegisterPatientInput {
   fullName: string;
   nationalId: string;
+  phone: string;
   dateOfBirth: string;
   condition: string;
   contactChannel: string;
@@ -28,6 +29,7 @@ export interface RegisterPatientResult {
   displayCode: string;
   ageGroup: string;
   conditionGroup: string;
+  phone: string;
   contactChannel: string;
   caregiver?: RegisterPatientInput['caregiver'];
   schedule?: RegisterPatientInput['schedule'];
@@ -67,6 +69,7 @@ export class RegisterPatient {
       ageGroup,
       displayCode,
       conditionGroup: input.condition,
+      phone: input.phone,
       contactChannel: input.contactChannel as 'sms' | 'ai',
       caregiver: input.caregiver,
       schedule: input.schedule,
@@ -81,6 +84,7 @@ export class RegisterPatient {
       displayCode,
       ageGroup,
       conditionGroup: input.condition,
+      phone: input.phone,
       contactChannel: input.contactChannel,
       caregiver: input.caregiver,
       schedule: input.schedule,
@@ -106,6 +110,11 @@ export class RegisterPatient {
     const nationalId = String(body.nationalId ?? '').trim();
     if (!/^\d{11}$/.test(nationalId)) throw new ValidationError('T.C. Kimlik No 11 haneli rakam olmalıdır');
 
+    const phone = String(body.phone ?? '').replace(/[\s()-]/g, '');
+    if (!/^0?5\d{9}$/.test(phone)) {
+      throw new ValidationError('Hasta Telefon Numarası zorunludur ve geçerli bir mobil numara formatında olmalıdır (Örn: 05XX XXX XX XX)');
+    }
+
     const dateOfBirth = String(body.dateOfBirth ?? '').trim();
     const dob = new Date(dateOfBirth);
     if (!dateOfBirth || Number.isNaN(dob.getTime()) || dob > new Date()) {
@@ -123,7 +132,7 @@ export class RegisterPatient {
     const caregiver = this.parseCaregiver(body.caregiver);
     const schedule = this.parseSchedule(body.schedule);
 
-    return { fullName, nationalId, dateOfBirth, condition, contactChannel, caregiver, schedule };
+    return { fullName, nationalId, phone, dateOfBirth, condition, contactChannel, caregiver, schedule };
   }
 
   private parseCaregiver(raw: unknown): RegisterPatientInput['caregiver'] | undefined {
