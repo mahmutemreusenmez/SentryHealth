@@ -731,8 +731,9 @@
       const res = await api('/api/admin/doctors');
       const body = await safeJson(res);
       serverDoctors = body.doctors || [];
-    } catch {
+    } catch (err) {
       // server unavailable; continue with local fallback
+      console.warn('Doktor listesi sunucudan alınamadı, yerel kayıtlar kullanılıyor.', err);
     }
     const doctors = serverDoctors.concat(getLocalDoctors());
     if (doctors.length === 0) {
@@ -2403,7 +2404,8 @@
       voiceState.voiceKey = data.voiceKey || 'trF';
       voiceState.rate = Math.min(2, Math.max(0.5, Number(data.rate || 1)));
       voiceState.loaded = true;
-    } catch {
+    } catch (err) {
+      console.warn('Sesli asistan senaryosu yüklenemedi, varsayılanlar kullanılıyor.', err);
       voiceState.loaded = true;
     }
   }
@@ -2938,7 +2940,8 @@
       data.patients = data.patients.concat(getLocalPatients());
       setConnection(true);
       render(data);
-    } catch {
+    } catch (err) {
+      console.error('Hasta panosu verisi güncellenemedi:', err);
       setConnection(false);
     }
   }

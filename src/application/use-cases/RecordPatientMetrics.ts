@@ -4,6 +4,7 @@ import type { DataRepository } from '../ports/DataRepository.js';
 import type { HealthAnalyzer, RiskAssessment } from '../services/HealthAnalyzer.js';
 import type { MetricsDto } from '../dto/MetricsDto.js';
 import { parseMetricsDto } from '../dto/MetricsDto.js';
+import { ValidationError } from '../errors/ValidationError.js';
 import type { HealthData } from '../../domain/entities/HealthData.js';
 import type { AnonymizedPatient } from '../ports/Anonymizer.js';
 
@@ -67,12 +68,12 @@ export class RecordPatientMetrics {
 
     const parts = bp.split('/').map(s => s.trim());
     if (parts.length !== 2) {
-      throw new Error('bloodPressure string must be in "systolic/diastolic" format');
+      throw new ValidationError('bloodPressure string must be in "systolic/diastolic" format');
     }
 
     const [systolic, diastolic] = parts.map(Number);
     if (Number.isNaN(systolic) || Number.isNaN(diastolic)) {
-      throw new Error('bloodPressure values must be numbers');
+      throw new ValidationError('bloodPressure values must be numbers');
     }
 
     return { systolic, diastolic };

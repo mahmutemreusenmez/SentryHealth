@@ -247,9 +247,18 @@ export async function createServer() {
     res.status(404).json({ error: 'Not found' });
   });
 
-  app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err instanceof ValidationError ? 400 : 500;
-    res.status(status).json({ error: err.message });
+  app.use((err: unknown, req: Request, res: Response, next: NextFunction) => {
+    if (res.headersSent) {
+      return next(err);
+    }
+
+    if (err instanceof ValidationError) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+
+    console.error(`[SentryHealth] Beklenmeyen sunucu hatası: ${req.method} ${req.originalUrl}`, err);
+    res.status(500).json({ error: 'Sunucu tarafında beklenmeyen bir hata oluştu.' });
   });
 
   return app;
