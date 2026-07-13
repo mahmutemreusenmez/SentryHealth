@@ -29,12 +29,13 @@ function parseBloodPressure(raw: unknown): string | { systolic: number; diastoli
   throw new ValidationError('Tansiyon değeri geçersiz');
 }
 
-function simulateBotResponse(pseudonym: string, channel: 'voice' | 'sms') {
+function simulateBotResponse(pseudonym: string, channel: 'voice' | 'sms', glucose?: number) {
   const hr = Math.round(60 + Math.random() * 40);
   const sys = Math.round(110 + Math.random() * 30);
   const dia = Math.round(70 + Math.random() * 20);
   const spo2 = Math.round(94 + Math.random() * 6);
   const temp = Number((36.2 + Math.random() * 1.8).toFixed(1));
+  const glu = glucose ?? Math.round(80 + Math.random() * 40);
 
   const jobId = `bot-${randomUUID().slice(0, 8)}`;
   const provider = channel === 'voice' ? 'vapi' : 'twilio';
@@ -49,8 +50,9 @@ function simulateBotResponse(pseudonym: string, channel: 'voice' | 'sms') {
       bloodPressure: `${sys}/${dia}`,
       oxygenSaturation: spo2,
       bodyTemperature: temp,
+      glucose: glu,
     },
-    transcript: `${pseudonym} numaralı hasta ile ${channel === 'voice' ? 'sesli' : 'SMS'} etkileşim tamamlandı. Yanıtlar: Nabız ${hr}, SpO2 %${spo2}, Tansiyon ${sys}/${dia}.`,
+    transcript: `${pseudonym} numaralı hasta ile ${channel === 'voice' ? 'sesli' : 'SMS'} etkileşim tamamlandı. Yanıtlar: Nabız ${hr}, SpO2 %${spo2}, Tansiyon ${sys}/${dia}, Şeker ${glu}.`,
   };
 }
 
@@ -66,7 +68,8 @@ router.post('/trigger', async (req: Request, res: Response, next: NextFunction) 
     const channel = String(body.channel || 'voice').trim() as 'voice' | 'sms';
     if (channel !== 'voice' && channel !== 'sms') throw new ValidationError('Geçersiz kanal');
 
-    const simulation = simulateBotResponse(pseudonym, channel);
+    const glucose = body.glucose !== undefined ? Number(body.glucose) : undefined;
+    const simulation = simulateBotResponse(pseudonym, channel, Number.isNaN(glucose) ? undefined : glucose);
     const result = await recordPatientMetrics.execute(pseudonym, simulation.simulatedValues);
 
     return res.json({
@@ -96,12 +99,15 @@ router.post('/webhook', async (req: Request, res: Response, next: NextFunction) 
     const oxygenSaturation = Number(values.oxygenSaturation ?? values.oxygen_saturation);
     const bodyTemperature = Number(values.bodyTemperature ?? values.body_temperature);
     const bloodPressure = parseBloodPressure(values.bloodPressure ?? values.blood_pressure ?? values.bp);
+    const glucoseRaw = values.glucose ?? values.blood_glucose ?? values.glukoz;
+    const glucose = glucoseRaw !== undefined && glucoseRaw !== null && glucoseRaw !== '' ? Number(glucoseRaw) : undefined;
 
     if (Number.isNaN(heartRate) || Number.isNaN(oxygenSaturation) || Number.isNaN(bodyTemperature)) {
       throw new ValidationError('Vital değerler sayı olmalıdır');
     }
 
-    const payload = { heartRate, bloodPressure, oxygenSaturation, bodyTemperature };
+    const payload: any = { heartRate, bloodPressure, oxygenSaturation, bodyTemperature };
+    if (glucose !== undefined && !Number.isNaN(glucose)) payload.glucose = glucose;
     const result = await recordPatientMetrics.execute(pseudonym, payload);
 
     return res.json({ success: true, ...result, message: 'Bot verisi başarıyla kaydedildi.' });

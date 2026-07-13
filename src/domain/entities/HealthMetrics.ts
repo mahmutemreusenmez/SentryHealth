@@ -5,5 +5,6 @@ export interface HealthMetrics {
   bloodPressureDiastolic: number;
   oxygenSaturation: number;
   temperature: number;
+  glucose?: number;
   notes?: string;
 }

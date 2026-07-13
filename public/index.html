@@ -298,6 +298,67 @@
               </div>
             </section>
             <div id="patients-pager" class="pagination"></div>
+
+            <section class="optimizer-section" id="optimizer-section">
+              <div class="optimizer-head">
+                <div>
+                  <h2 data-i18n="optimizer.title">Akıllı Klinik Yoğunluk ve Poliklinik Optimizasyon Merkezi</h2>
+                  <p class="optimizer-subtitle" data-i18n="optimizer.subtitle">Klinik Yük Optimizasyon Algoritması Aktif</p>
+                </div>
+                <span class="kvkk-badge" data-i18n="optimizer.badge">TÜSEB Sağlık Ağı Entegre</span>
+              </div>
+
+              <div class="optimizer-stats" id="optimizer-stats">
+                <div class="optimizer-stat green">
+                  <span data-i18n="optimizer.statTeleTitle">Fiziki Randevusu Teletıba Çevrilen Stabil Hasta Sayısı</span>
+                  <strong id="optimizer-stat-tele">—</strong>
+                </div>
+                <div class="optimizer-stat yellow">
+                  <span data-i18n="optimizer.statAvoidTitle">Erken Risk Tespiti İle Acil Servis Başvurusu Önlenen Hasta Sayısı</span>
+                  <strong id="optimizer-stat-avoid">—</strong>
+                </div>
+                <div class="optimizer-stat red">
+                  <span data-i18n="optimizer.statCriticalTitle">Öncelikli Hastaneye Çağrılan Kritik Vaka Sayısı</span>
+                  <strong id="optimizer-stat-critical">—</strong>
+                </div>
+              </div>
+
+              <div class="optimizer-grid">
+                <div class="optimizer-panel triage">
+                  <h3 data-i18n="optimizer.triageTitle">Dinamik Triyaj ve Önceliklendirme</h3>
+                  <div class="triage-legend">
+                    <span class="triage-legend-item green">● <span data-i18n="optimizer.green">Yeşil Kod</span></span>
+                    <span class="triage-legend-item yellow">● <span data-i18n="optimizer.yellow">Sarı Kod</span></span>
+                    <span class="triage-legend-item red">● <span data-i18n="optimizer.red">Kırmızı Kod</span></span>
+                  </div>
+                  <div class="tribe-columns" id="optimizer-triage-columns">
+                    <div class="triage-column green">
+                      <h4 data-i18n="optimizer.greenList">Stabil Hastalar</h4>
+                      <ul id="optimizer-green-list"></ul>
+                    </div>
+                    <div class="triage-column yellow">
+                      <h4 data-i18n="optimizer.yellowList">Sınırda Hastalar</h4>
+                      <ul id="optimizer-yellow-list"></ul>
+                    </div>
+                    <div class="triage-column red">
+                      <h4 data-i18n="optimizer.redList">Kritik Hastalar</h4>
+                      <ul id="optimizer-red-list"></ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="optimizer-panel prescriptions">
+                  <h3 data-i18n="optimizer.prescriptionTitle">Dijital Onay Bekleyen Kronik İlaç / Rapor Talepleri</h3>
+                  <div class="optimizer-banner hidden" id="optimizer-prescription-banner" role="status"></div>
+                  <ul class="prescription-list" id="optimizer-prescription-list"></ul>
+                </div>
+              </div>
+
+              <div class="optimizer-chart-wrap">
+                <span class="chart-title" data-i18n="optimizer.chartTitle">Proaktif Hastane Yatış Engelleme Trendi — Önlenen Hastane Yoğunluğu Oranı</span>
+                <div class="chart-svg" id="optimizer-avoidance-chart"></div>
+              </div>
+            </section>
           </div>
 
           <div id="view-patients" class="view hidden">

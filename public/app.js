@@ -286,6 +286,15 @@
     scorecardTableBody: document.getElementById('scorecard-table-body'),
     botTriggerBtn: document.getElementById('bot-trigger-btn'),
     botTriggerStatus: document.getElementById('bot-trigger-status'),
+    optimizerStatTele: document.getElementById('optimizer-stat-tele'),
+    optimizerStatAvoid: document.getElementById('optimizer-stat-avoid'),
+    optimizerStatCritical: document.getElementById('optimizer-stat-critical'),
+    optimizerGreenList: document.getElementById('optimizer-green-list'),
+    optimizerYellowList: document.getElementById('optimizer-yellow-list'),
+    optimizerRedList: document.getElementById('optimizer-red-list'),
+    optimizerPrescriptionList: document.getElementById('optimizer-prescription-list'),
+    optimizerPrescriptionBanner: document.getElementById('optimizer-prescription-banner'),
+    optimizerAvoidanceChart: document.getElementById('optimizer-avoidance-chart'),
   };
 
   const conditionKeyMap = {
@@ -2112,6 +2121,93 @@
     }
   }
 
+  /* ---------- Clinical Load Optimizer ---------- */
+  let optimizerState = { prescriptions: [] };
+
+  function optimizerEmptyLi(text) {
+    return `<li class="optimizer-empty">${escapeHtml(text)}</li>`;
+  }
+
+  function renderTriageList(listEl, patients, color) {
+    if (!listEl) return;
+    listEl.innerHTML = (patients || []).length
+      ? patients.slice(0, 6).map((p) => `
+        <li class="triage-patient ${color}">
+          <strong>${escapeHtml(p.displayCode || p.pseudonym)}</strong>
+          <span>${escapeHtml(p.conditionGroup || t('condition.other'))}</span>
+          <small>${escapeHtml(t(p.reason))}</small>
+        </li>`).join('')
+      : optimizerEmptyLi(t('optimizer.empty'));
+  }
+
+  function renderPrescriptionList(candidates) {
+    optimizerState.prescriptions = candidates || [];
+    if (!els.optimizerPrescriptionList) return;
+    els.optimizerPrescriptionList.innerHTML = (candidates || []).length
+      ? candidates.map((c, i) => `
+        <li class="prescription-item">
+          <div class="prescription-patient">
+            <strong>${escapeHtml(c.displayCode || c.pseudonym)}</strong>
+            <span>${escapeHtml(c.conditionGroup || t('condition.other'))}</span>
+          </div>
+          <p class="prescription-recommendation">${escapeHtml(t(c.recommendation))}</p>
+          <button type="button" class="btn btn-primary prescription-approve" data-index="${i}">${escapeHtml(t('optimizer.approveBtn'))}</button>
+        </li>`).join('')
+      : optimizerEmptyLi(t('optimizer.noPrescription'));
+
+    els.optimizerPrescriptionList.querySelectorAll('.prescription-approve').forEach((btn) => {
+      btn.addEventListener('click', () => approvePrescription(Number(btn.dataset.index)));
+    });
+  }
+
+  function showOptimizerBanner(message) {
+    if (!els.optimizerPrescriptionBanner) return;
+    els.optimizerPrescriptionBanner.textContent = message;
+    els.optimizerPrescriptionBanner.classList.remove('hidden');
+    els.optimizerPrescriptionBanner.classList.add('visible');
+    clearTimeout(showOptimizerBanner._timer);
+    showOptimizerBanner._timer = setTimeout(() => {
+      els.optimizerPrescriptionBanner.classList.remove('visible');
+      els.optimizerPrescriptionBanner.classList.add('hidden');
+    }, 6000);
+  }
+
+  function approvePrescription(index) {
+    const candidate = optimizerState.prescriptions[index];
+    if (!candidate || candidate.approved) return;
+    candidate.approved = true;
+    renderPrescriptionList(optimizerState.prescriptions);
+    showOptimizerBanner(t('optimizer.approvedBanner'));
+    addLog(t('optimizer.approvedLog', { code: candidate.displayCode || candidate.pseudonym }));
+  }
+
+  async function renderOptimizer() {
+    if (!els.optimizerStatTele) return;
+    try {
+      const res = await api('/api/optimizer/dashboard');
+      const data = res.ok ? await safeJson(res) : {};
+      const stats = data.stats || {};
+      if (els.optimizerStatTele) els.optimizerStatTele.textContent = String(stats.teleConvertedStable ?? '—');
+      if (els.optimizerStatAvoid) els.optimizerStatAvoid.textContent = String(stats.earlyRiskAvoided ?? '—');
+      if (els.optimizerStatCritical) els.optimizerStatCritical.textContent = String(stats.criticalHospitalCalled ?? '—');
+
+      renderTriageList(els.optimizerGreenList, data.triage?.green, 'green');
+      renderTriageList(els.optimizerYellowList, data.triage?.yellow, 'yellow');
+      renderTriageList(els.optimizerRedList, data.triage?.red, 'red');
+
+      renderPrescriptionList(data.prescriptions || []);
+
+      const trend = data.avoidanceTrend || [];
+      const labels = trend.map((p) => p.date.slice(5));
+      const values = trend.map((p) => p.rate);
+      drawLineChart(els.optimizerAvoidanceChart, labels, values, 'var(--green)');
+    } catch (err) {
+      if (els.optimizerAvoidanceChart) {
+        els.optimizerAvoidanceChart.innerHTML = `<span class="empty-chart" style="color:var(--text-muted);font-size:0.8rem;">${escapeHtml(t('analytics.noData'))}</span>`;
+      }
+    }
+  }
+
   /* ---------- AI Clinical SMS Assistant ---------- */
   const aiBranchToConditionMap = {
     cardiology: ['Kalp Yetmezliği', 'Hipertansiyon'],
@@ -2814,6 +2910,7 @@
     renderAnalytics(data);
     renderModules();
     renderScorecard();
+    renderOptimizer();
 
     if (withData.length === 0) {
       els.patients.innerHTML = `<div class="empty-state">

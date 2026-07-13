@@ -47,6 +47,7 @@ export class RecordPatientMetrics {
       bloodPressureDiastolic: bp.diastolic,
       oxygenSaturation: dto.oxygenSaturation,
       temperature: dto.bodyTemperature,
+      glucose: dto.glucose,
     };
 
     patient.healthData.push(metric);

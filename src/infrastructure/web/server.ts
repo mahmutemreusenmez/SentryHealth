@@ -13,6 +13,7 @@ import { authRouter } from '../../interface/http/routes/auth.js';
 import { adminRouter } from '../../interface/http/routes/admin.js';
 import { botRouter } from '../../interface/http/routes/bot.js';
 import { scorecardRouter } from '../../interface/http/routes/scorecard.js';
+import { optimizerRouter } from '../../interface/http/routes/optimizer.js';
 import { authMiddleware, adminMiddleware } from '../../interface/http/middleware/auth.js';
 import { ValidationError } from '../../application/errors/ValidationError.js';
 import { repository } from '../config/dependencies.js';
@@ -210,6 +211,7 @@ export async function createServer() {
   app.use('/api/dashboard', authMiddleware, dashboardRouter);
   app.use('/api/bot', authMiddleware, botRouter);
   app.use('/api/scorecard', authMiddleware, scorecardRouter);
+  app.use('/api/optimizer', authMiddleware, optimizerRouter);
 
   app.get('/api/voice-assistant', authMiddleware, (_req: Request, res: Response) => {
     res.json(voiceScenario);
