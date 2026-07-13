@@ -39,7 +39,7 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
     const user = userStore.findByUsername(username);
     const validCredentials = username === LOCKED_USERNAME && password === LOCKED_PASSWORD;
     if (!validCredentials || !user || user.passwordHash !== hashPassword(password)) {
-      res.status(401).json({ error: 'Hatalı Kullanıcı Adı veya Şifre!' });
+      res.status(401).json({ error: 'Yetkisiz Erişim Algılandı: Kimlik bilgileri doğrulanamadı. Bu deneme güvenlik kayıtlarına işlenmiştir.' });
       return;
     }
 
