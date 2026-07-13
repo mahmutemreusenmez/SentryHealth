@@ -1226,7 +1226,10 @@
     const pastMed = medEvents.filter((e) => e.status !== 'scheduled');
     const takenMed = pastMed.filter((e) => e.status === 'confirmed');
     const medRate = pastMed.length ? Math.round((takenMed.length / pastMed.length) * 100) : 100;
-    const readRate = 80 + (seed % 20);
+    const sentCount = events.filter((e) => e.status !== 'scheduled').length;
+    const confirmedCount = events.filter((e) => e.status === 'confirmed' || e.status === 'read').length;
+    const missedCount = events.filter((e) => e.status === 'missed' || e.status === 'pending').length;
+    const readRate = sentCount ? Math.round((confirmedCount / sentCount) * 100) : (80 + (seed % 20));
     const typeIcons = { medication: '💊', appointment: '📅', lifestyle: '🌤️' };
 
     const bar = (labelKey, value) => `
@@ -1240,7 +1243,7 @@
         <div class="companion-time">${escapeHtml(e.time)}</div>
         <div class="companion-item-body">
           <div class="companion-item-top">
-            <span class="companion-type">${typeIcons[e.type]} ${escapeHtml(t('companion.type.' + e.type))}</span>
+            <span class="companion-type">${typeIcons[e.type] || ''} ${escapeHtml(t('companion.type.' + e.type))}</span>
             ${companionStatusChip(e.status)}
           </div>
           <p class="companion-msg"><strong>${escapeHtml(t('companion.aiPrefix'))}</strong> ${escapeHtml(e.message)}</p>
@@ -1253,14 +1256,22 @@
           <div class="companion-avatar">AI</div>
           <div class="companion-titles">
             <h3>${escapeHtml(t('companion.title'))}</h3>
+            <p>${escapeHtml(t('companion.subtitle'))}</p>
           </div>
           <span class="companion-live"><span class="dot"></span>${escapeHtml(t('companion.live'))}</span>
+        </div>
+        <div class="companion-monitor">
+          <div class="companion-monitor-item ok"><span>${escapeHtml(t('companion.sentToday'))}</span><strong>${sentCount}</strong></div>
+          <div class="companion-monitor-item ok"><span>${escapeHtml(t('companion.confirmedToday'))}</span><strong>${confirmedCount}</strong></div>
+          <div class="companion-monitor-item ${missedCount ? 'bad' : 'ok'}"><span>${escapeHtml(t('companion.missedToday'))}</span><strong>${missedCount}</strong></div>
         </div>
         <div class="companion-stats">
           ${bar('companion.medAdherence', medRate)}
           ${bar('companion.readRate', readRate)}
         </div>
+        <div class="companion-timeline-label">${escapeHtml(t('companion.timelineTitle'))}</div>
         <div class="companion-timeline">${items}</div>
+        <div class="companion-foot">${escapeHtml(t('companion.doctorNote'))}</div>
       </section>`;
   }
 

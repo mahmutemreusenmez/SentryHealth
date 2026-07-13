@@ -3809,12 +3809,12 @@ body {
 .companion-card {
   margin: 16px 0;
   padding: 18px 20px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(255, 255, 255, 0.65) 45%, rgba(99, 102, 241, 0.08));
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(37, 99, 235, 0.18);
-  box-shadow: 0 10px 30px rgba(37, 99, 235, 0.08);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(255, 255, 255, 0.72) 42%, rgba(2, 132, 199, 0.1));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(16, 185, 129, 0.28);
+  box-shadow: 0 8px 28px rgba(15, 118, 110, 0.1);
 }
 
 .companion-head {
@@ -3830,10 +3830,48 @@ body {
   flex-shrink: 0;
   display: grid;
   place-items: center;
-  font-size: 1.5rem;
-  border-radius: 14px;
-  background: linear-gradient(135deg, var(--blue), var(--indigo, #6366f1));
-  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #10b981, #0284c7);
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+}
+
+.companion-monitor {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.companion-monitor-item {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.companion-monitor-item span {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 600;
+}
+.companion-monitor-item strong {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+.companion-monitor-item.ok strong { color: #047857; }
+.companion-monitor-item.bad strong { color: #dc2626; }
+.companion-timeline-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin: 4px 0 8px;
 }
 
 .companion-titles { flex: 1; min-width: 0; }
@@ -3974,6 +4012,7 @@ body {
 @media (max-width: 767px) {
   .companion-card { padding: 14px; }
   .companion-stats { grid-template-columns: 1fr; }
+  .companion-monitor { grid-template-columns: 1fr; }
   .companion-item { flex-direction: column; gap: 8px; }
   .companion-time { align-self: flex-start; }
 }
@@ -3983,4 +4022,5 @@ body {
   .companion-titles h3 { font-size: 0.9rem; }
   .companion-msg { font-size: 0.78rem; }
   .companion-item-top { flex-direction: column; align-items: flex-start; }
+  .companion-monitor-item strong { font-size: 1rem; }
 }
