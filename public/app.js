@@ -1158,6 +1158,114 @@
     renderPatientDetail(patients);
   }
 
+  /* ---------- SentryCompanion AI ---------- */
+  const COMPANION_DOCTORS = ['Uzm. Dr. Mustafa Yılmaz', 'Doç. Dr. Elif Kaya', 'Prof. Dr. Kerem Demir', 'Uzm. Dr. Zeynep Arslan'];
+
+  function companionSeed(pseudonym) {
+    let h = 0;
+    const s = String(pseudonym || '');
+    for (let i = 0; i < s.length; i += 1) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    return h;
+  }
+
+  function companionMinutes(time) {
+    const parts = String(time).split(':');
+    return (Number(parts[0]) || 0) * 60 + (Number(parts[1]) || 0);
+  }
+
+  function buildCompanionTimeline(p) {
+    const seed = companionSeed(p.pseudonym);
+    const key = conditionKeyMap[p.conditionGroup] || 'other';
+    const name = displayName(p);
+    const doctor = COMPANION_DOCTORS[seed % COMPANION_DOCTORS.length];
+    const scheduleTimes = p.schedule && Array.isArray(p.schedule.times) && p.schedule.times.length ? p.schedule.times : ['08:00', '20:00'];
+    const now = new Date();
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    const events = [];
+
+    scheduleTimes.slice(0, 3).forEach((time, idx) => {
+      const past = companionMinutes(time) <= nowMin;
+      const taken = ((seed >> idx) & 3) !== 0;
+      events.push({
+        time,
+        type: 'medication',
+        message: t('companion.med.' + key, { name, time }),
+        status: past ? (taken ? 'confirmed' : 'missed') : 'scheduled',
+      });
+    });
+
+    const apptTime = '10:00';
+    events.push({
+      time: apptTime,
+      type: 'appointment',
+      message: t(key === 'diabetes' ? 'companion.appt.lab' : 'companion.appt.visit', { name, doctor, time: apptTime }),
+      status: companionMinutes(apptTime) <= nowMin ? 'read' : 'scheduled',
+    });
+
+    const lifeTime = '12:30';
+    events.push({
+      time: lifeTime,
+      type: 'lifestyle',
+      message: t('companion.life.' + key, { name }),
+      status: companionMinutes(lifeTime) <= nowMin ? (((seed >> 4) & 3) !== 0 ? 'read' : 'pending') : 'scheduled',
+    });
+
+    events.sort((a, b) => companionMinutes(a.time) - companionMinutes(b.time));
+    return events;
+  }
+
+  function companionStatusChip(status) {
+    const cls = { confirmed: 'green', read: 'blue', pending: 'amber', missed: 'red', scheduled: 'neutral' }[status] || 'neutral';
+    return `<span class="companion-status ${cls}">${escapeHtml(t('companion.status.' + status))}</span>`;
+  }
+
+  function renderCompanionPanel(p) {
+    const events = buildCompanionTimeline(p);
+    const seed = companionSeed(p.pseudonym);
+    const medEvents = events.filter((e) => e.type === 'medication');
+    const pastMed = medEvents.filter((e) => e.status !== 'scheduled');
+    const takenMed = pastMed.filter((e) => e.status === 'confirmed');
+    const medRate = pastMed.length ? Math.round((takenMed.length / pastMed.length) * 100) : 100;
+    const readRate = 80 + (seed % 20);
+    const typeIcons = { medication: '💊', appointment: '📅', lifestyle: '🌤️' };
+
+    const bar = (labelKey, value) => `
+      <div class="companion-metric">
+        <div class="companion-metric-head"><span>${escapeHtml(t(labelKey))}</span><strong class="${value >= 70 ? 'ok' : 'bad'}">%${value}</strong></div>
+        <div class="companion-bar-bg"><div class="companion-bar-fill ${value >= 70 ? 'green' : 'red'}" style="width:${value}%"></div></div>
+      </div>`;
+
+    const items = events.map((e) => `
+      <div class="companion-item ${e.type}">
+        <div class="companion-time">${escapeHtml(e.time)}</div>
+        <div class="companion-item-body">
+          <div class="companion-item-top">
+            <span class="companion-type">${typeIcons[e.type]} ${escapeHtml(t('companion.type.' + e.type))}</span>
+            ${companionStatusChip(e.status)}
+          </div>
+          <p class="companion-msg"><strong>${escapeHtml(t('companion.aiPrefix'))}</strong> ${escapeHtml(e.message)}</p>
+        </div>
+      </div>`).join('');
+
+    return `
+      <section class="companion-card">
+        <div class="companion-head">
+          <div class="companion-avatar">🤖</div>
+          <div class="companion-titles">
+            <h3>${escapeHtml(t('companion.title'))}</h3>
+            <p>${escapeHtml(t('companion.subtitle'))}</p>
+          </div>
+          <span class="companion-live"><span class="dot"></span>${escapeHtml(t('companion.live'))}</span>
+        </div>
+        <div class="companion-stats">
+          ${bar('companion.medAdherence', medRate)}
+          ${bar('companion.readRate', readRate)}
+        </div>
+        <div class="companion-timeline">${items}</div>
+        <div class="companion-foot">${escapeHtml(t('companion.doctorNote'))}</div>
+      </section>`;
+  }
+
   function renderPatientDetail(patients) {
     const p = patients.find((x) => x.pseudonym === selectedPseudonym);
     if (!p) {
@@ -1244,6 +1352,7 @@
         ${caregiverCard(p)}
         ${interactionCard(p)}
       </div>
+      ${renderCompanionPanel(p)}
       ${renderPatientScorecard(p)}
       <div class="detail-charts">
         <div class="chart-box"><span class="chart-title">${escapeHtml(t('chart.pulse'))}</span>${sparkline(history, isAlarm, (h) => h.heartRate)}</div>
