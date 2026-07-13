@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeMewsScore } from '../../src/interface/http/routes/scorecard.js';
+import { computeMewsScore } from '../../src/application/services/MewsScore.js';
 
 const normal = {
   heartRate: 75,
