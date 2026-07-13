@@ -98,7 +98,7 @@ const SentryI18n = (() => {
       future: 'İleri Modüller',
       analytics: 'Analitik',
       reports: 'Raporlar',
-      aiAssistant: 'Neyim Var? (Akıllı Triyaj)',
+      aiAssistant: 'Görüntülü Triyaj (Neyim Var?)',
     },
     status: {
       online: 'Canlı Bağlantı',
@@ -106,7 +106,7 @@ const SentryI18n = (() => {
       connecting: 'Bağlanıyor…',
     },
     role: { doctor: 'Doktor', admin: 'Yönetici' },
-    page: { dashboard: 'Ana Panel', patients: 'Hastalar', admin: 'Yönetici Paneli', settings: 'Ayarlar', future: 'İleri Sağlık Modülleri', analytics: 'Analitik', reports: 'Raporlar', telemedicine: 'Tele-Tıp Konsolu', voice: 'Neyim Var? — Online Akıllı Triyaj Asistanı' },
+    page: { dashboard: 'Ana Panel', patients: 'Hastalar', admin: 'Yönetici Paneli', settings: 'Ayarlar', future: 'İleri Sağlık Modülleri', analytics: 'Analitik', reports: 'Raporlar', telemedicine: 'Tele-Tıp Konsolu', voice: 'Online Canlı Görüntülü Ön Triyaj Odası' },
     summary: {
       total: 'Toplam Hasta',
       openAlarms: 'Açık Alarm',
@@ -780,7 +780,7 @@ const SentryI18n = (() => {
       future: 'Advanced Modules',
       analytics: 'Analytics',
       reports: 'Reports',
-      aiAssistant: 'What\'s Wrong? (Smart Triage)',
+      aiAssistant: 'Live Video Triage',
     },
     status: {
       online: 'Live Connection',
@@ -788,7 +788,7 @@ const SentryI18n = (() => {
       connecting: 'Connecting…',
     },
     role: { doctor: 'Doctor', admin: 'Admin' },
-    page: { dashboard: 'Dashboard', patients: 'Patients', admin: 'Admin Panel', settings: 'Settings', future: 'Advanced Health Modules', analytics: 'Analytics', reports: 'Reports', telemedicine: 'Telemedicine Console', voice: 'What\'s Wrong? — Online Smart Triage Assistant' },
+    page: { dashboard: 'Dashboard', patients: 'Patients', admin: 'Admin Panel', settings: 'Settings', future: 'Advanced Health Modules', analytics: 'Analytics', reports: 'Reports', telemedicine: 'Telemedicine Console', voice: 'Online Live Video Pre-Triage Room' },
     summary: {
       total: 'Total Patients',
       openAlarms: 'Open Alarms',
