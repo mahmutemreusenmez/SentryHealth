@@ -77,6 +77,7 @@
           <span class="nav-section" data-i18n="nav.future">İleri Modüller</span>
           <a href="#" class="nav-item" data-view="future"><span class="nav-icon">🌐</span> <span data-i18n="nav.future">İleri Modüller</span></a>
           <span class="nav-section" data-i18n="analytics.title">Analitik &amp; Raporlar</span>
+          <a href="#" class="nav-item" data-view="connect"><span class="nav-icon">🔗</span> <span data-i18n="nav.connect">SentryConnect | Veri Entegrasyon Katmanı</span></a>
           <a href="#" class="nav-item" data-view="analytics"><span class="nav-icon">📊</span> <span data-i18n="nav.analytics">Analitik</span></a>
           <a href="#" class="nav-item" data-view="reports"><span class="nav-icon">📄</span> <span data-i18n="nav.reports">Raporlar</span></a>
         </nav>
@@ -846,6 +847,71 @@
               </div>
             </section>
             <section class="chatbot-grid" id="voice-panel"></section>
+          </div>
+
+          <div id="view-connect" class="view hidden">
+            <section class="connect-header">
+              <div>
+                <h2 data-i18n="connect.title">SentryConnect — Entegrasyon ve API Yönetim Merkezi</h2>
+                <p data-i18n="connect.subtitle">Evrensel Sağlık Verisi Entegrasyon Katmanı · Canlı İş Akışı Motoru</p>
+              </div>
+              <span class="connect-prod-badge" data-i18n="connect.badge">Üretim Dağıtım Sürümü (Production Layer)</span>
+            </section>
+
+            <section class="connect-grid">
+              <div class="connect-panel fhir">
+                <div class="connect-panel-head">
+                  <h3 data-i18n="connect.fhirTitle">HL7 FHIR v4.0 Standartları Doğrulama Konsolu</h3>
+                  <span class="connect-live"><span class="connect-live-dot"></span><span data-i18n="connect.fhirLive">CANLI AKIŞ</span></span>
+                </div>
+                <p class="connect-panel-sub" data-i18n="connect.fhirSub">Görüntülü triyaj ve SentryCompanion AI verilerinin anlık FHIR dönüşümü</p>
+                <div class="fhir-console" id="fhir-console" aria-live="polite"></div>
+              </div>
+
+              <div class="connect-panel workflow">
+                <div class="connect-panel-head">
+                  <h3 data-i18n="connect.workflowTitle">Canlı İş Akışı Entegrasyon Durumu</h3>
+                </div>
+                <p class="connect-panel-sub" data-i18n="connect.workflowSub">Yapay zeka sevk kararlarının HBYS ve bakanlık sunucularına gömülme durumu</p>
+                <ul class="connect-signals">
+                  <li class="connect-signal">
+                    <span class="signal-dot"></span>
+                    <div>
+                      <strong data-i18n="connect.sig1">T.C. Sağlık Bakanlığı e-Nabız Senkronizasyonu</strong>
+                      <em data-i18n="connect.sig1Status">AKTİF (HL7 FHIR)</em>
+                    </div>
+                  </li>
+                  <li class="connect-signal">
+                    <span class="signal-dot"></span>
+                    <div>
+                      <strong data-i18n="connect.sig2">Merkezi Hekim Randevu Sistemi (MHRS) Öncelik Atama Hattı</strong>
+                      <em data-i18n="connect.sig2Status">BAĞLANDI</em>
+                    </div>
+                  </li>
+                  <li class="connect-signal">
+                    <span class="signal-dot"></span>
+                    <div>
+                      <strong data-i18n="connect.sig3">Hastane Bilgi Yönetim Sistemi (HBYS) Canlı Entegrasyon Katmanı</strong>
+                      <em data-i18n="connect.sig3Status">AKTİF</em>
+                    </div>
+                  </li>
+                </ul>
+                <div class="connect-metrics">
+                  <div class="connect-metric">
+                    <span data-i18n="connect.metricMsgs">Bugün İşlenen FHIR Mesajı</span>
+                    <strong id="connect-msg-count">—</strong>
+                  </div>
+                  <div class="connect-metric">
+                    <span data-i18n="connect.metricLatency">Ortalama Senkronizasyon Gecikmesi</span>
+                    <strong id="connect-latency">—</strong>
+                  </div>
+                  <div class="connect-metric">
+                    <span data-i18n="connect.metricUptime">Entegrasyon Hattı Çalışma Oranı</span>
+                    <strong id="connect-uptime">—</strong>
+                  </div>
+                </div>
+              </div>
+            </section>
           </div>
         </main>
 
