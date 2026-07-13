@@ -1521,8 +1521,7 @@
       <div class="module-card twin" id="detail-twin-card">
         <div class="module-head">
           <span class="module-tag" data-i18n="modules.twinTag">DİJİTAL İKİZ</span>
-          <h3 data-i18n="modules.twinTitle">Hastanın Dijital İkizi</h3>
-          <p data-i18n="modules.twinSubtitle">İlaç / doz analizi — Tedavi öncesi analitik öngörü</p>
+          <h3 data-i18n="modules.twinTitle">Dijital İkiz</h3>
         </div>
         <div class="twin-body">
           <button type="button" class="btn btn-primary" id="detail-twin-simulate" data-twin-simulate="detail" data-i18n="modules.twinSimulate">Analiz Et</button>
