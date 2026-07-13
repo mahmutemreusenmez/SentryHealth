@@ -2579,6 +2579,30 @@
     return 'enF';
   }
 
+  const TRIAGE_KEYWORDS = {
+    red: [
+      'göğüs ağrı', 'göğüsümde', 'göğsümde', 'baskı', 'nefes alam', 'nefes dar', 'solunum', 'bayıl', 'bilinç',
+      'inme', 'felç', 'konuşma bozuk', 'yüzümde kayma', 'sol kol', 'kalp kriz', 'çarpıntı şiddet', 'morar',
+      'chest pain', 'chest pressure', 'cannot breathe', "can't breathe", 'shortness of breath', 'stroke',
+      'unconscious', 'faint', 'left arm', 'heart attack', 'severe bleeding',
+      'ألم الصدر', 'ضغط في صدري', 'لا أستطيع التنفس', 'ضيق التنفس', 'سكتة', 'إغماء', 'ذراعي الأيسر',
+    ],
+    yellow: [
+      'öksür', 'geçmeyen', 'iki hafta', 'rutin', 'şeker takibi', 'tansiyon takibi', 'kontrol', 'muayene',
+      'kronik', 'ağrı', 'ateş', 'bıçak', 'yara', 'kırık', 'şişlik', 'reçete', 'reçete', 'rapor',
+      'cough', 'two weeks', 'routine', 'glucose follow', 'check-up', 'checkup', 'chronic', 'fever',
+      'swelling', 'wound', 'examination', 'follow-up check',
+      'سعال', 'أسبوعين', 'روتين', 'متابعة السكر', 'فحص', 'مزمن', 'حمى', 'تورم',
+    ],
+  };
+
+  function classifyComplaint(input) {
+    const text = String(input || '').toLowerCase();
+    if (TRIAGE_KEYWORDS.red.some((k) => text.includes(k))) return 'red';
+    if (TRIAGE_KEYWORDS.yellow.some((k) => text.includes(k))) return 'yellow';
+    return 'green';
+  }
+
   function generateBotResponse(input) {
     const lang = i18n.getCurrentLang();
     const text = String(input || '').toLowerCase();
@@ -2618,11 +2642,36 @@
     return t('chatbot.responses.fallback');
   }
 
+  function renderTriageReport(m) {
+    const code = m.triage;
+    return `<div class="chat-msg bot">
+      <div class="triage-report ${code}">
+        <div class="triage-report-head">
+          <span class="triage-report-title">${escapeHtml(t('preTriage.reportTitle'))}</span>
+          <span class="triage-report-time">${fmtTime(m.time)}</span>
+        </div>
+        <div class="triage-report-row">
+          <span class="triage-report-label">${escapeHtml(t('preTriage.reportSeverity'))}</span>
+          <span class="triage-code-badge ${code}">${escapeHtml(t('preTriage.' + code + '.label'))}</span>
+        </div>
+        <div class="triage-report-alert ${code}">${escapeHtml(t('preTriage.' + code + '.alert'))}</div>
+        <div class="triage-report-row column">
+          <span class="triage-report-label">${escapeHtml(t('preTriage.reportAnalysis'))}</span>
+          <p>${escapeHtml(t('preTriage.' + code + '.analysis'))}</p>
+        </div>
+        <button type="button" class="chat-speak" aria-label="${escapeHtml(t('chatbot.speak'))}" data-msg="${escapeHtml(t('preTriage.' + code + '.alert'))}">🔊</button>
+      </div>
+    </div>`;
+  }
+
   function renderChatMessages() {
     const session = getCurrentChatSession();
     if (!session) return '';
     const html = session.messages.map((m) => {
       const isBot = m.role === 'bot';
+      if (isBot && m.triage) {
+        return renderTriageReport(m);
+      }
       if (isBot) {
         return `<div class="chat-msg bot">
           <div class="chat-bubble bot">
@@ -2676,17 +2725,63 @@
     saveChatSessions();
     renderVoice(true);
     setTimeout(() => {
-      const response = generateBotResponse(text);
-      session.messages.push({ role: 'bot', text: response, time: new Date().toISOString() });
+      const code = classifyComplaint(text);
+      session.messages.push({
+        role: 'bot',
+        triage: code,
+        text: t('preTriage.' + code + '.alert'),
+        time: new Date().toISOString(),
+      });
       session.updatedAt = new Date().toISOString();
       chatState.loading = false;
       saveChatSessions();
       renderVoice(true);
-    }, 900);
+    }, 1400);
+  }
+
+  function startTriageVoiceInput() {
+    const input = document.getElementById('chat-input');
+    const micBtn = document.getElementById('chat-mic');
+    if (!input) return;
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SR) {
+      const rec = new SR();
+      rec.lang = i18n.getCurrentLang() === 'tr' ? 'tr-TR' : (i18n.getCurrentLang() === 'ar' ? 'ar-SA' : 'en-US');
+      rec.interimResults = false;
+      if (micBtn) micBtn.classList.add('listening');
+      input.placeholder = t('preTriage.micListening');
+      rec.onresult = (e) => {
+        const transcript = e.results?.[0]?.[0]?.transcript || '';
+        input.value = transcript;
+        if (micBtn) micBtn.classList.remove('listening');
+        input.placeholder = t('chatbot.placeholder');
+      };
+      rec.onerror = () => {
+        if (micBtn) micBtn.classList.remove('listening');
+        input.placeholder = t('chatbot.placeholder');
+      };
+      rec.onend = () => {
+        if (micBtn) micBtn.classList.remove('listening');
+        input.placeholder = t('chatbot.placeholder');
+      };
+      rec.start();
+      return;
+    }
+    const samples = t('chatbot.suggested').split('|');
+    input.value = samples[Math.floor(Math.random() * samples.length)].trim();
+    input.placeholder = t('preTriage.micSimulated');
   }
 
   function attachChatListeners() {
     if (!els.voicePanel) return;
+
+    const micBtn = document.getElementById('chat-mic');
+    if (micBtn) {
+      micBtn.addEventListener('click', () => {
+        if (chatState.loading) return;
+        startTriageVoiceInput();
+      });
+    }
 
     const input = document.getElementById('chat-input');
     const sendBtn = document.getElementById('chat-send');
@@ -2814,6 +2909,7 @@
         <div class="chatbot-messages" id="chat-messages">${renderChatMessages()}</div>
         ${renderSuggested()}
         <div class="chatbot-input-row">
+          <button type="button" class="chat-mic-btn" id="chat-mic" aria-label="${escapeHtml(t('preTriage.micLabel'))}" title="${escapeHtml(t('preTriage.micLabel'))}">🎙️</button>
           <input type="text" id="chat-input" data-i18n-placeholder="chatbot.placeholder" placeholder="${escapeHtml(t('chatbot.placeholder'))}" autocomplete="off" />
           <button type="button" class="btn btn-primary" id="chat-send">${escapeHtml(t('chatbot.send'))}</button>
         </div>

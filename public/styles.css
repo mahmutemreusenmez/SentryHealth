@@ -3524,284 +3524,222 @@ body {
   .prescription-patient { flex-direction: column; align-items: flex-start; }
 }
 
-/* ---------- Neyim Var? & MHRS Klinik Karar Destek ---------- */
-.nv-module {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 26px;
-  margin-bottom: 24px;
-}
-
-.nv-detail-card { margin-top: 20px; }
-
-.nv-head {
+/* ---------- AI Online Triage Assistant (Neyim Var?) ---------- */
+.pretriage-header {
   display: flex;
-  align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 18px;
-  margin-bottom: 20px;
-}
-
-.nv-head-brand {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  min-width: 0;
-}
-
-.nv-logo {
-  flex-shrink: 0;
-  width: 52px;
-  height: 52px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: #ffffff;
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  padding: 6px;
-}
-
-.nv-logo svg { width: 100%; height: 100%; }
-
-.nv-nav-logo svg { width: 18px; height: 18px; vertical-align: middle; }
-
-.nv-head-brand h2 {
-  font-size: 1.15rem;
-  font-weight: 800;
-  color: #0f2f6d;
-}
-
-.nv-subtitle {
-  font-size: 0.82rem;
-  color: var(--text-muted);
-  margin-top: 4px;
-  max-width: 640px;
-}
-
-.nv-badge {
-  flex-shrink: 0;
-  background: #eff6ff;
-  color: #0f2f6d;
-  border: 1px solid #bfdbfe;
-  border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-  white-space: normal;
-}
-
-.nv-analysis-card {
-  border: 1px solid var(--border);
-  border-left: 4px solid var(--blue);
-  border-radius: 12px;
-  background: var(--surface-2);
-  padding: 20px;
-  margin-bottom: 20px;
-}
-
-.nv-analysis-head h3 {
-  font-size: 1rem;
-  font-weight: 700;
-  margin: 8px 0 4px;
-}
-
-.nv-analysis-head p {
-  font-size: 0.82rem;
-  color: var(--text-muted);
-  margin-bottom: 14px;
-}
-
-.nv-tag {
-  display: inline-block;
-  background: #0f2f6d;
-  color: #ffffff;
-  border-radius: 6px;
-  padding: 3px 10px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.8px;
-}
-
-.nv-analysis-body {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.nv-analysis-row {
-  display: flex;
   align-items: flex-start;
   gap: 12px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 12px 14px;
   flex-wrap: wrap;
 }
 
-.nv-analysis-row > div { flex: 1; min-width: 200px; }
-
-.nv-analysis-row strong {
-  display: block;
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  margin-bottom: 2px;
-}
-
-.nv-analysis-row span:not(.nv-row-icon):not(.nv-risk-tag) {
-  font-size: 0.92rem;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.nv-analysis-row.complaint { border-left: 3px solid var(--blue); }
-.nv-analysis-row.history { border-left: 3px solid #0e7a5f; }
-.nv-analysis-row.api { border-left: 3px solid var(--red); }
-
-.nv-row-icon { font-size: 1.1rem; line-height: 1.4; }
-
-.nv-risk-tag {
-  align-self: center;
-  background: var(--red-soft);
-  color: var(--red);
-  border: 1px solid #fecaca;
+.pretriage-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 5px 12px;
   border-radius: 999px;
-  padding: 4px 12px;
-  font-size: 0.72rem;
+  background: var(--green-soft);
+  border: 1px solid #bbf7d0;
+  color: var(--green);
+  font-size: 0.78rem;
   font-weight: 800;
-  letter-spacing: 0.6px;
-  white-space: nowrap;
 }
 
-.nv-mhrs-card {
-  border: 1px solid #c7e3d4;
-  border-left: 4px solid #0e7a5f;
-  border-radius: 12px;
-  background: #f4faf7;
-  padding: 20px;
-  margin-bottom: 20px;
-}
-
-.nv-mhrs-card h3 {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #0b5c47;
-  margin-bottom: 4px;
-}
-
-.nv-mhrs-card p {
-  font-size: 0.82rem;
-  color: var(--text-muted);
-  margin-bottom: 14px;
-}
-
-.nv-mhrs-btn {
-  background: linear-gradient(180deg, #12866a, #0e7a5f);
-  color: #ffffff;
-  font-weight: 700;
-  border: 1px solid #0b5c47;
-  border-radius: 10px;
-  padding: 12px 18px;
-  width: 100%;
-  max-width: 560px;
-  white-space: normal;
-  line-height: 1.35;
-  cursor: pointer;
-  transition: filter 0.15s ease;
-}
-
-.nv-mhrs-btn:hover:not(:disabled) { filter: brightness(1.06); }
-.nv-mhrs-btn:disabled { opacity: 0.65; cursor: default; }
-
-.nv-appointment {
-  margin-top: 14px;
-  background: #ffffff;
-  border: 1px dashed #0e7a5f;
-  border-radius: 10px;
-  padding: 12px 14px;
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: #0b5c47;
-}
-
-.nv-banner {
-  margin-top: 12px;
-  background: #0e7a5f;
-  color: #ffffff;
-  border-radius: 10px;
-  padding: 14px 16px;
-  font-size: 0.88rem;
-  font-weight: 600;
-  line-height: 1.5;
-  box-shadow: 0 6px 18px rgba(14, 122, 95, 0.25);
-}
-
-.nv-stats-title {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--text);
-  margin: 4px 0 12px;
-}
-
-.nv-stats {
+.pretriage-stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  gap: 16px;
+  margin: 16px 0 20px;
 }
 
-.nv-stat {
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  padding: 18px;
+.pretriage-stat {
+  background: rgba(255, 255, 255, 0.66);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.07);
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   gap: 10px;
-  min-width: 0;
 }
 
-.nv-stat span {
-  font-size: 0.8rem;
-  font-weight: 600;
+.pretriage-stat.blue { border-left: 5px solid var(--blue, #2563eb); }
+.pretriage-stat.green { border-left: 5px solid var(--green); }
+.pretriage-stat.amber { border-left: 5px solid var(--amber); }
+
+.pretriage-stat span {
+  font-size: 0.78rem;
+  font-weight: 700;
   color: var(--text-muted);
   line-height: 1.45;
 }
 
-.nv-stat strong { font-size: 2rem; font-weight: 800; }
+.pretriage-stat strong {
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--text);
+}
 
-.nv-stat.green { border-top: 4px solid #0e7a5f; }
-.nv-stat.green strong { color: #0e7a5f; }
-.nv-stat.blue { border-top: 4px solid var(--blue); }
-.nv-stat.blue strong { color: var(--blue); }
-.nv-stat.red { border-top: 4px solid var(--red); }
-.nv-stat.red strong { color: var(--red); }
+.triage-report {
+  position: relative;
+  max-width: 640px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.1);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.triage-report.red { border-left: 6px solid var(--red); }
+.triage-report.yellow { border-left: 6px solid var(--amber); }
+.triage-report.green { border-left: 6px solid var(--green); }
+
+.triage-report-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.triage-report-title {
+  font-size: 0.85rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.triage-report-time {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.triage-report-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.triage-report-row.column {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.triage-report-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.triage-report-row p {
+  font-size: 0.83rem;
+  color: var(--text);
+  line-height: 1.55;
+}
+
+.triage-code-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.triage-code-badge.red { background: var(--red-soft, #fee2e2); color: var(--red); border: 1px solid #fecaca; }
+.triage-code-badge.yellow { background: var(--amber-soft, #fef3c7); color: #b45309; border: 1px solid #fde68a; }
+.triage-code-badge.green { background: var(--green-soft); color: var(--green); border: 1px solid #bbf7d0; }
+
+.triage-report-alert {
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 0.86rem;
+  font-weight: 800;
+  line-height: 1.55;
+}
+
+.triage-report-alert.red {
+  background: var(--red-soft, #fee2e2);
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  animation: triage-critical-pulse 1.6s ease-in-out infinite;
+}
+
+.triage-report-alert.yellow {
+  background: var(--amber-soft, #fef3c7);
+  border: 1px solid #fde68a;
+  color: #92400e;
+}
+
+.triage-report-alert.green {
+  background: var(--green-soft);
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+}
+
+@keyframes triage-critical-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.35); }
+  50% { box-shadow: 0 0 0 6px rgba(220, 38, 38, 0); }
+}
+
+.triage-report .chat-speak {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+.chat-mic-btn {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.85);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.chat-mic-btn:hover { transform: scale(1.06); }
+
+.chat-mic-btn.listening {
+  background: var(--red-soft, #fee2e2);
+  border-color: #fecaca;
+  animation: triage-critical-pulse 1.4s ease-in-out infinite;
+}
 
 @media (max-width: 1024px) {
-  .nv-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pretriage-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .pretriage-stat strong { font-size: 1.7rem; }
 }
 
 @media (max-width: 767px) {
-  .nv-module { padding: 18px; }
-  .nv-head { flex-direction: column; }
-  .nv-stats { grid-template-columns: 1fr; }
-  .nv-stat strong { font-size: 1.7rem; }
-  .nv-analysis-row .nv-risk-tag { align-self: flex-start; }
+  .pretriage-stats { grid-template-columns: 1fr; }
+  .triage-report { max-width: 100%; padding: 14px; }
+  .triage-report .chat-speak { top: 10px; right: 10px; }
 }
 
 @media (max-width: 480px) {
-  .nv-module { padding: 14px; }
-  .nv-analysis-card, .nv-mhrs-card { padding: 14px; }
-  .nv-head-brand h2 { font-size: 1rem; }
-  .nv-mhrs-btn { font-size: 0.85rem; }
+  .pretriage-stat { padding: 14px 16px; }
+  .pretriage-stat strong { font-size: 1.5rem; }
+  .triage-report-alert { font-size: 0.8rem; }
+  .chat-mic-btn { width: 40px; height: 40px; }
 }
