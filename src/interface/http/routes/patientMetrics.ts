@@ -5,12 +5,13 @@ import {
   repository,
   analyzer,
 } from '../../../infrastructure/config/dependencies.js';
+import { getJsonBody } from '../utils/request.js';
 
 const router = Router({ mergeParams: true });
 
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const body = (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) ? req.body : {};
+    const body = getJsonBody(req);
     const result = await registerPatient.execute(body);
     res.status(201).json({ success: true, message: 'Hasta kaydı başarıyla tamamlandı.', ...result });
   } catch (err) {
@@ -38,7 +39,7 @@ router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
 
 router.post('/:id/metrics', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const body = (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) ? req.body : {};
+    const body = getJsonBody(req);
     const result = await recordPatientMetrics.execute(req.params.id, body);
     res.status(201).json({ success: true, message: 'Vital ölçüm başarıyla kaydedildi.', ...result });
   } catch (err) {

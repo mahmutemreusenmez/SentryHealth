@@ -3,6 +3,8 @@ import type { Anonymizer, AnonymizedPatient } from '../ports/Anonymizer.js';
 import type { DataRepository } from '../ports/DataRepository.js';
 import { ValidationError } from '../errors/ValidationError.js';
 import { buildInteractionLog } from '../services/InteractionLogBuilder.js';
+import { parseCaregiver, parseSchedule } from '../services/patientPlanParsers.js';
+import { deriveAgeGroup } from '../../domain/services/deriveAgeGroup.js';
 
 export interface RegisterPatientInput {
   fullName: string;
@@ -59,7 +61,7 @@ export class RegisterPatient {
     }
 
     const displayCode = `H-${randomInt(10, 100)}${String.fromCharCode(65 + randomInt(0, 26))}`;
-    const ageGroup = this.deriveAgeGroup(new Date(input.dateOfBirth));
+    const ageGroup = deriveAgeGroup(new Date(input.dateOfBirth));
 
     const patient: AnonymizedPatient = {
       id: randomUUID(),
@@ -120,40 +122,10 @@ export class RegisterPatient {
     const rawContact = String(body.contactChannel ?? 'sms').trim();
     const contactChannel = ALLOWED_CONTACT_CHANNELS.includes(rawContact) ? rawContact : 'sms';
 
-    const caregiver = this.parseCaregiver(body.caregiver);
-    const schedule = this.parseSchedule(body.schedule);
+    const caregiver = parseCaregiver(body.caregiver);
+    const schedule = parseSchedule(body.schedule);
 
     return { fullName, nationalId, dateOfBirth, condition, contactChannel, caregiver, schedule };
-  }
-
-  private parseCaregiver(raw: unknown): RegisterPatientInput['caregiver'] | undefined {
-    if (!raw || typeof raw !== 'object') return undefined;
-    const c = raw as Record<string, unknown>;
-    const name = String(c.name ?? '').trim();
-    const relationship = String(c.relationship ?? '').trim();
-    const phone = String(c.phone ?? '').trim();
-    const email = String(c.email ?? '').trim();
-    if (name.length === 0 && phone.length === 0 && email.length === 0) return undefined;
-    return { name, relationship, phone, email };
-  }
-
-  private parseSchedule(raw: unknown): RegisterPatientInput['schedule'] | undefined {
-    if (!raw || typeof raw !== 'object') return undefined;
-    const s = raw as Record<string, unknown>;
-    const days = Array.isArray(s.days) ? s.days.map((d) => String(d).trim()).filter((d) => d.length > 0) : [];
-    const times = Array.isArray(s.times) ? s.times.map((t) => String(t).trim()).filter((t) => t.length > 0) : [];
-    const template = String(s.template ?? '').trim();
-    if (days.length === 0 && times.length === 0 && template.length === 0) return undefined;
-    return { days, times, template };
-  }
-
-  private deriveAgeGroup(dateOfBirth: Date): string {
-    const age = new Date().getFullYear() - dateOfBirth.getFullYear();
-    if (age < 18) return '0-17';
-    if (age < 35) return '18-34';
-    if (age < 50) return '35-49';
-    if (age < 65) return '50-64';
-    return '65+';
   }
 
   private maskName(name: string): string {

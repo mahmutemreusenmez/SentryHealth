@@ -1,5 +1,6 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
 import { repository } from '../../../infrastructure/config/dependencies.js';
+import { toISOString } from '../utils/datetime.js';
 
 const router = Router();
 
@@ -71,7 +72,7 @@ router.get('/patient/:id', async (req: Request, res: Response, next: NextFunctio
         respiratoryRate: getRespiratoryRate(h),
       });
       return {
-        timestamp: h.timestamp instanceof Date ? h.timestamp.toISOString() : String(h.timestamp),
+        timestamp: toISOString(h.timestamp),
         heartRate: h.heartRate,
         oxygenSaturation: h.oxygenSaturation,
         temperature: h.temperature,
@@ -103,7 +104,7 @@ router.get('/clinic', async (_req: Request, res: Response, next: NextFunction) =
 
     for (const patient of patients) {
       for (const h of patient.healthData) {
-        const date = h.timestamp instanceof Date ? h.timestamp.toISOString().slice(0, 10) : String(h.timestamp).slice(0, 10);
+        const date = toISOString(h.timestamp).slice(0, 10);
         const mews = computeMewsScore({
           heartRate: h.heartRate,
           oxygenSaturation: h.oxygenSaturation,

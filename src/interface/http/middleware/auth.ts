@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { userStore, sessions } from '../../../infrastructure/persistence/InMemoryUserStore.js';
 import type { User } from '../../../infrastructure/persistence/InMemoryUserStore.js';
+import { extractBearerToken } from '../utils/request.js';
 
 declare global {
   namespace Express {
@@ -13,13 +14,12 @@ declare global {
 const FALLBACK_TOKEN = 'sentryhealth-local-fallback-token';
 
 export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
-  const header = req.headers.authorization;
-  if (!header || !header.startsWith('Bearer ')) {
+  const token = extractBearerToken(req);
+  if (token === null) {
     res.status(401).json({ error: 'Kimlik doğrulama gerekli' });
     return;
   }
 
-  const token = header.slice(7).trim();
   if (token === FALLBACK_TOKEN) {
     req.user = userStore.findByUsername('yönetici') || {
       id: 'u-1',
@@ -55,4 +55,4 @@ export function generateToken(): string {
 }
 
 export { userStore, sessions };
-export { hashPassword } from '../../../infrastructure/persistence/InMemoryUserStore.js';
+export { hashPassword, toUserDto } from '../../../infrastructure/persistence/InMemoryUserStore.js';

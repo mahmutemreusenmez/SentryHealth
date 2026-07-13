@@ -20,6 +20,8 @@ import { repository } from '../config/dependencies.js';
 import { seedPatients } from '../config/seedPatients.js';
 import type { PatientThreshold } from '../../application/ports/Anonymizer.js';
 import { buildInteractionLog } from '../../application/services/InteractionLogBuilder.js';
+import { parseCaregiver, parseSchedule } from '../../application/services/patientPlanParsers.js';
+import { getJsonBody } from '../../interface/http/utils/request.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -172,25 +174,18 @@ export async function createServer() {
         delete patient.warningThreshold;
       }
       if (body.caregiver !== undefined) {
-        const c = body.caregiver;
-        const name = String(c.name ?? '').trim();
-        const relationship = String(c.relationship ?? '').trim();
-        const phone = String(c.phone ?? '').trim();
-        const email = String(c.email ?? '').trim();
-        if (name || phone || email) {
-          patient.caregiver = { name, relationship, phone, email };
+        const caregiver = parseCaregiver(body.caregiver);
+        if (caregiver) {
+          patient.caregiver = caregiver;
         } else {
           delete patient.caregiver;
         }
       }
       if (body.schedule !== undefined) {
-        const s = body.schedule;
-        const days = Array.isArray(s.days) ? s.days.map((d: unknown) => String(d).trim()).filter((d: string) => d.length > 0) : [];
-        const times = Array.isArray(s.times) ? s.times.map((t: unknown) => String(t).trim()).filter((t: string) => t.length > 0) : [];
-        const template = String(s.template ?? '').trim();
-        if (days.length || times.length || template) {
-          patient.schedule = { days, times, template };
-          patient.interactionLog = buildInteractionLog(patient.schedule, patient.healthData);
+        const schedule = parseSchedule(body.schedule);
+        if (schedule) {
+          patient.schedule = schedule;
+          patient.interactionLog = buildInteractionLog(schedule, patient.healthData);
         } else {
           delete patient.schedule;
           delete patient.interactionLog;
@@ -219,7 +214,7 @@ export async function createServer() {
 
   app.post('/api/voice-assistant', authMiddleware, (req: Request, res: Response, next: NextFunction) => {
     try {
-      const body = req.body as Record<string, unknown>;
+      const body = getJsonBody(req);
       const prompt = String(body.prompt || '').trim();
       const voiceKey = String(body.voiceKey || 'trF').trim();
       const rate = Math.min(2, Math.max(0.5, Number(body.rate || 1)));
