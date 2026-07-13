@@ -43,7 +43,7 @@ export default function DashboardScreen() {
         </View>
 
         {/* İlaç uyum özeti */}
-        <Card className="mb-5 bg-brand">
+        <View className="mb-5 rounded-2xl bg-brand p-4 shadow-sm">
           <View className="flex-row items-center justify-between">
             <View>
               <Text className="text-xs text-brand-light">Bugünkü İlaç Uyumu</Text>
@@ -54,7 +54,7 @@ export default function DashboardScreen() {
             </View>
             <Ionicons name="medkit" size={40} color="#e6f4f5" />
           </View>
-        </Card>
+        </View>
 
         {/* İlaç zaman çizelgesi */}
         <SectionHeader
