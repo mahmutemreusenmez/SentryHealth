@@ -19,7 +19,7 @@ export function hashPassword(password: string): string {
   return createHash('sha256').update(password).digest('hex');
 }
 
-function toDto(user: User): UserDto {
+export function toUserDto(user: User): UserDto {
   return { id: user.id, username: user.username, displayName: user.displayName, role: user.role };
 }
 
@@ -46,7 +46,7 @@ export class InMemoryUserStore {
   }
 
   findAll(): UserDto[] {
-    return Array.from(this.users.values()).map(toDto);
+    return Array.from(this.users.values()).map(toUserDto);
   }
 
   createDoctor(input: { username: string; displayName: string; password: string }): UserDto {
@@ -69,7 +69,7 @@ export class InMemoryUserStore {
       passwordHash: hashPassword(password),
     };
     this.users.set(username, user);
-    return toDto(user);
+    return toUserDto(user);
   }
 
   delete(username: string): boolean {

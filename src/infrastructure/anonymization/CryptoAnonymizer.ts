@@ -2,6 +2,7 @@ import { createHmac } from 'node:crypto';
 import type { Patient } from '../../domain/entities/Patient.js';
 import type { AnonymizedPatient, Anonymizer } from '../../application/ports/Anonymizer.js';
 import { AnonymizationError } from '../../application/errors/AnonymizationError.js';
+import { deriveAgeGroup } from '../../domain/services/deriveAgeGroup.js';
 
 export class CryptoAnonymizer implements Anonymizer {
   constructor(private readonly key: string) {
@@ -20,7 +21,7 @@ export class CryptoAnonymizer implements Anonymizer {
 
   anonymize(patient: Patient): AnonymizedPatient {
     const pseudonym = this.hash(patient.nationalId);
-    const ageGroup = this.deriveAgeGroup(patient.dateOfBirth);
+    const ageGroup = deriveAgeGroup(patient.dateOfBirth);
 
     return {
       id: patient.id.toString(),
@@ -39,14 +40,5 @@ export class CryptoAnonymizer implements Anonymizer {
         notes: h.notes,
       })),
     };
-  }
-
-  private deriveAgeGroup(dateOfBirth: Date): string {
-    const age = new Date().getFullYear() - dateOfBirth.getFullYear();
-    if (age < 18) return '0-17';
-    if (age < 35) return '18-34';
-    if (age < 50) return '35-49';
-    if (age < 65) return '50-64';
-    return '65+';
   }
 }

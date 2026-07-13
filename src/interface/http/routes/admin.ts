@@ -1,5 +1,6 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
 import { userStore } from '../middleware/auth.js';
+import { getJsonBody } from '../utils/request.js';
 
 const router = Router();
 
@@ -14,9 +15,7 @@ router.get('/doctors', async (_req: Request, res: Response, next: NextFunction) 
 
 router.post('/doctors', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const body = (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body))
-      ? (req.body as Record<string, unknown>)
-      : {};
+    const body = getJsonBody(req);
     const { username, displayName, password } = body;
     const doctor = userStore.createDoctor({
       username: String(username ?? ''),

@@ -1,11 +1,13 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
 import { submitUseCase, analyzeUseCase, repository } from '../../../infrastructure/config/dependencies.js';
+import { getJsonBody } from '../utils/request.js';
+import type { HealthDataDto } from '../../../application/dto/HealthDataDto.js';
 
 const router = Router();
 
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const body = (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) ? req.body : {};
+    const body = getJsonBody(req) as unknown as HealthDataDto;
     const result = await submitUseCase.execute(body);
     res.status(201).json({ success: true, message: 'Sağlık verisi başarıyla kaydedildi.', ...result });
   } catch (err) {

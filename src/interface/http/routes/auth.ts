@@ -1,39 +1,15 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
-import { userStore, sessions, generateToken, hashPassword } from '../middleware/auth.js';
+import { userStore, sessions, generateToken, hashPassword, toUserDto } from '../middleware/auth.js';
+import { parseJsonBody, extractBearerToken } from '../utils/request.js';
 
 const router = Router();
 
 const LOCKED_USERNAME = 'yönetici';
 const LOCKED_PASSWORD = 'yönetici123';
 
-async function parseBody(req: Request): Promise<Record<string, unknown>> {
-  if (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) {
-    return req.body as Record<string, unknown>;
-  }
-  if (typeof req.body === 'string') {
-    try { return JSON.parse(req.body); } catch { return {}; }
-  }
-  if (Buffer.isBuffer(req.body)) {
-    try { return JSON.parse(req.body.toString()); } catch { return {}; }
-  }
-  return new Promise((resolve) => {
-    let data = '';
-    req.setEncoding('utf8');
-    req.on('data', (chunk) => { data += chunk; });
-    req.on('end', () => {
-      try { resolve(JSON.parse(data)); } catch { resolve({}); }
-    });
-    req.on('error', () => resolve({}));
-  });
-}
-
-function userDto(user: { id: string; username: string; displayName: string; role: 'doctor' | 'admin' }) {
-  return { id: user.id, username: user.username, displayName: user.displayName, role: user.role };
-}
-
 router.post('/login', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const body = await parseBody(req);
+    const body = await parseJsonBody(req);
     const username = String(body.username ?? '');
     const password = String(body.password ?? '');
     const user = userStore.findByUsername(username);
@@ -45,7 +21,7 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
 
     const token = generateToken();
     sessions.set(token, user);
-    res.json({ token, user: userDto(user) });
+    res.json({ token, user: toUserDto(user) });
   } catch (err) {
     next(err);
   }
@@ -53,9 +29,9 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
 
 router.post('/logout', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const header = req.headers.authorization;
-    if (header?.startsWith('Bearer ')) {
-      sessions.delete(header.slice(7).trim());
+    const token = extractBearerToken(req);
+    if (token !== null) {
+      sessions.delete(token);
     }
     res.json({ ok: true });
   } catch (err) {
@@ -65,16 +41,15 @@ router.post('/logout', async (req: Request, res: Response, next: NextFunction) =
 
 router.get('/me', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const header = req.headers.authorization;
-    if (!header?.startsWith('Bearer ')) {
+    const token = extractBearerToken(req);
+    if (token === null) {
       res.status(401).json({ error: 'Kimlik doğrulama gerekli' });
       return;
     }
-    const token = header.slice(7).trim();
     if (token === 'sentryhealth-local-fallback-token') {
       const admin = userStore.findByUsername(LOCKED_USERNAME);
       if (admin) {
-        res.json({ user: userDto(admin) });
+        res.json({ user: toUserDto(admin) });
         return;
       }
     }
@@ -83,7 +58,7 @@ router.get('/me', async (req: Request, res: Response, next: NextFunction) => {
       res.status(401).json({ error: 'Oturum geçersiz' });
       return;
     }
-    res.json({ user: userDto(user) });
+    res.json({ user: toUserDto(user) });
   } catch (err) {
     next(err);
   }

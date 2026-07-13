@@ -2,6 +2,7 @@ import { Router, type Request, type Response, type NextFunction } from 'express'
 import { randomUUID } from 'node:crypto';
 import { repository, recordPatientMetrics } from '../../../infrastructure/config/dependencies.js';
 import { ValidationError } from '../../../application/errors/ValidationError.js';
+import { getJsonBody } from '../utils/request.js';
 
 const router = Router();
 
@@ -58,7 +59,7 @@ function simulateBotResponse(pseudonym: string, channel: 'voice' | 'sms', glucos
 
 router.post('/trigger', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const body = (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) ? req.body as Record<string, unknown> : {};
+    const body = getJsonBody(req);
     const pseudonym = String(body.pseudonym || '').trim();
     if (!pseudonym) throw new ValidationError('Hasta pseudonym gerekli');
 
@@ -90,7 +91,7 @@ router.post('/trigger', async (req: Request, res: Response, next: NextFunction) 
 
 router.post('/webhook', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const body = (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) ? req.body as Record<string, unknown> : {};
+    const body = getJsonBody(req);
     const pseudonym = String(body.pseudonym || '').trim();
     if (!pseudonym) throw new ValidationError('Hasta pseudonym gerekli');
 
