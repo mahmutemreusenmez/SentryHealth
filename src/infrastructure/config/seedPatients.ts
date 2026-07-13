@@ -147,6 +147,8 @@ function buildStaticPatient(index: number): AnonymizedPatient {
     displayCode,
     ageGroup: deriveAgeGroup(age),
     conditionGroup: condition,
+    maskedNationalId: `${nationalId.slice(0, 3)}*****${nationalId.slice(-3)}`,
+    phone: buildPhone(index),
     contactChannel: index % 5 === 0 ? 'ai' : 'sms',
     caregiver: buildCaregiver(index, fullName),
     schedule,
@@ -169,14 +171,14 @@ function buildStaticPatient(index: number): AnonymizedPatient {
   };
 }
 
-/** TÜSEB Sağlık Ağı Senkronize Klinik Veri Modeli — permanent 200-patient dataset embedded in codebase (deterministic, restart-safe). */
-export const STATIC_CLINICAL_PATIENTS: AnonymizedPatient[] = Array.from({ length: 200 }, (_, i) => buildStaticPatient(i));
+/** Permanent 300-patient seed dataset embedded in codebase (deterministic, restart-safe). */
+export const STATIC_MOCK_PATIENTS: AnonymizedPatient[] = Array.from({ length: 300 }, (_, i) => buildStaticPatient(i));
 
 export async function seedPatients(): Promise<void> {
   const existing = await repository.findAll();
-  if (existing.length >= 200) return;
+  if (existing.length >= 300) return;
 
-  for (const patient of STATIC_CLINICAL_PATIENTS) {
+  for (const patient of STATIC_MOCK_PATIENTS) {
     const current = await repository.findByPseudonym(patient.pseudonym);
     if (!current) {
       await repository.save(structuredClone(patient));

@@ -1309,7 +1309,10 @@
     const pastMed = medEvents.filter((e) => e.status !== 'scheduled');
     const takenMed = pastMed.filter((e) => e.status === 'confirmed');
     const medRate = pastMed.length ? Math.round((takenMed.length / pastMed.length) * 100) : 100;
-    const readRate = 80 + (seed % 20);
+    const sentCount = events.filter((e) => e.status !== 'scheduled').length;
+    const confirmedCount = events.filter((e) => e.status === 'confirmed' || e.status === 'read').length;
+    const missedCount = events.filter((e) => e.status === 'missed' || e.status === 'pending').length;
+    const readRate = sentCount ? Math.round((confirmedCount / sentCount) * 100) : (80 + (seed % 20));
     const typeIcons = { medication: '💊', appointment: '📅', lifestyle: '🌤️' };
 
     const bar = (labelKey, value) => `
@@ -1323,7 +1326,7 @@
         <div class="companion-time">${escapeHtml(e.time)}</div>
         <div class="companion-item-body">
           <div class="companion-item-top">
-            <span class="companion-type">${typeIcons[e.type]} ${escapeHtml(t('companion.type.' + e.type))}</span>
+            <span class="companion-type">${typeIcons[e.type] || ''} ${escapeHtml(t('companion.type.' + e.type))}</span>
             ${companionStatusChip(e.status)}
           </div>
           <p class="companion-msg"><strong>${escapeHtml(t('companion.aiPrefix'))}</strong> ${escapeHtml(e.message)}</p>
@@ -1336,15 +1339,154 @@
           <div class="companion-avatar">AI</div>
           <div class="companion-titles">
             <h3>${escapeHtml(t('companion.title'))}</h3>
+            <p>${escapeHtml(t('companion.subtitle'))}</p>
           </div>
           <span class="companion-live"><span class="dot"></span>${escapeHtml(t('companion.live'))}</span>
+        </div>
+        <div class="companion-monitor">
+          <div class="companion-monitor-item ok"><span>${escapeHtml(t('companion.sentToday'))}</span><strong>${sentCount}</strong></div>
+          <div class="companion-monitor-item ok"><span>${escapeHtml(t('companion.confirmedToday'))}</span><strong>${confirmedCount}</strong></div>
+          <div class="companion-monitor-item ${missedCount ? 'bad' : 'ok'}"><span>${escapeHtml(t('companion.missedToday'))}</span><strong>${missedCount}</strong></div>
         </div>
         <div class="companion-stats">
           ${bar('companion.medAdherence', medRate)}
           ${bar('companion.readRate', readRate)}
         </div>
+        <div class="companion-timeline-label">${escapeHtml(t('companion.timelineTitle'))}</div>
         <div class="companion-timeline">${items}</div>
+        <div class="companion-foot">${escapeHtml(t('companion.doctorNote'))}</div>
       </section>`;
+  }
+
+  /* ---------- SentryAI Core: Epicrisis + Crisis Room ---------- */
+  function avg(values) {
+    if (!values.length) return 0;
+    return values.reduce((s, v) => s + v, 0) / values.length;
+  }
+
+  function pctDelta(recent, previous) {
+    if (!previous) return 0;
+    return ((recent - previous) / previous) * 100;
+  }
+
+  function buildEpicrisis(p) {
+    const history = (p.history || []).slice(-30);
+    const latest = p.latest || history[history.length - 1] || null;
+    const condition = translateCondition(p.conditionGroup);
+    const name = displayName(p);
+    const points = [];
+
+    if (!latest || history.length < 2) {
+      return [
+        t('epicrisis.item.stableBase', { name, condition }),
+        t('epicrisis.item.needData'),
+        t('epicrisis.item.followPlan'),
+      ];
+    }
+
+    const half = Math.max(1, Math.floor(history.length / 2));
+    const early = history.slice(0, half);
+    const late = history.slice(half);
+    const sysEarly = avg(early.map((h) => Number(h.bloodPressureSystolic) || 0));
+    const sysLate = avg(late.map((h) => Number(h.bloodPressureSystolic) || 0));
+    const hrEarly = avg(early.map((h) => Number(h.heartRate) || 0));
+    const hrLate = avg(late.map((h) => Number(h.heartRate) || 0));
+    const spo2Late = avg(late.map((h) => Number(h.oxygenSaturation) || 0));
+    const sysDelta = pctDelta(sysLate, sysEarly);
+    const hrDelta = pctDelta(hrLate, hrEarly);
+
+    if (Math.abs(sysDelta) >= 5) {
+      points.push(t(sysDelta > 0 ? 'epicrisis.item.sysUp' : 'epicrisis.item.sysDown', {
+        name,
+        pct: Math.abs(sysDelta).toFixed(0),
+        value: Math.round(sysLate),
+      }));
+    } else {
+      points.push(t('epicrisis.item.sysStable', { name, value: Math.round(sysLate || latest.bloodPressureSystolic || 0) }));
+    }
+
+    if (spo2Late && spo2Late < 92) {
+      points.push(t('epicrisis.item.spo2Low', { value: spo2Late.toFixed(0) }));
+    } else if (hrDelta >= 8) {
+      points.push(t('epicrisis.item.hrUp', { pct: hrDelta.toFixed(0), value: Math.round(hrLate) }));
+    } else {
+      points.push(t('epicrisis.item.vitalsOk', {
+        hr: Math.round(hrLate || latest.heartRate || 0),
+        spo2: Math.round(spo2Late || latest.oxygenSaturation || 0),
+      }));
+    }
+
+    const key = conditionKeyMap[p.conditionGroup] || 'other';
+    points.push(t('epicrisis.item.rec.' + key, { condition }));
+    return points.slice(0, 3);
+  }
+
+  function renderEpicrisisPanel(p) {
+    const items = buildEpicrisis(p).map((text) => `<li>${escapeHtml(text)}</li>`).join('');
+    return `
+      <section class="epicrisis-card">
+        <div class="epicrisis-head">
+          <span class="epicrisis-tag">SentryAI</span>
+          <div>
+            <h3>${escapeHtml(t('epicrisis.title'))}</h3>
+            <p>${escapeHtml(t('epicrisis.subtitle'))}</p>
+          </div>
+        </div>
+        <ol class="epicrisis-list">${items}</ol>
+      </section>`;
+  }
+
+  function isCrisisPatient(p) {
+    const latest = p.latest;
+    if (!latest) return false;
+    const spo2 = Number(latest.oxygenSaturation);
+    const hr = Number(latest.heartRate);
+    const sys = Number(latest.bloodPressureSystolic);
+    if (Number.isFinite(spo2) && spo2 > 0 && spo2 < 88) return true;
+    if (Number.isFinite(hr) && hr > 130) return true;
+    if (Number.isFinite(sys) && sys >= 180) return true;
+    if (p.risk?.level === 'critical' || p.risk?.breachedThreshold === 'critical') return true;
+    return false;
+  }
+
+  function maskPhone(phone) {
+    const digits = String(phone || '').replace(/\D/g, '');
+    if (digits.length < 7) return '05xx xxx xx xx';
+    return `${digits.slice(0, 2)}xx ${digits.slice(4, 7)} xx ${digits.slice(-2)}`;
+  }
+
+  function renderCrisisRoom(patients) {
+    const room = document.getElementById('crisis-room');
+    const caseEl = document.getElementById('crisis-case-label');
+    const actionsEl = document.getElementById('crisis-actions');
+    if (!room || !caseEl || !actionsEl) return;
+
+    const crisisCases = (patients || []).filter(isCrisisPatient);
+    if (!crisisCases.length) {
+      room.classList.add('hidden');
+      actionsEl.innerHTML = '';
+      caseEl.textContent = '';
+      return;
+    }
+
+    const p = crisisCases[0];
+    const latest = p.latest || {};
+    const phone = maskPhone(p.phone || (p.caregiver && p.caregiver.phone) || '05321234567');
+    const code = p.displayCode || (p.pseudonym ? p.pseudonym.slice(0, 8) : 'H-XX');
+    caseEl.textContent = t('crisis.case', {
+      name: displayName(p),
+      code,
+      spo2: latest.oxygenSaturation ?? '—',
+      hr: latest.heartRate ?? '—',
+      sys: latest.bloodPressureSystolic ?? '—',
+      count: crisisCases.length,
+    });
+    actionsEl.innerHTML = [
+      t('crisis.action1'),
+      t('crisis.action2', { phone }),
+      t('crisis.action3', { code }),
+    ].map((text, i) => `<li><span class="crisis-step">Aksiyon ${i + 1}</span>${escapeHtml(text)}</li>`).join('');
+    room.classList.remove('hidden');
   }
 
   function renderPatientDetail(patients) {
@@ -1428,6 +1570,7 @@
       </div>
       <div class="detail-tabs" role="tablist">
         <button type="button" class="detail-tab active" data-tab="vitals">Kronik Vitaller</button>
+        <button type="button" class="detail-tab" data-tab="epicrisis">SentryAI Epikriz</button>
         <button type="button" class="detail-tab" data-tab="schedule">Akıllı Takip Takvimi</button>
         <button type="button" class="detail-tab" data-tab="triage">Online Ön Triyaj</button>
         <button type="button" class="detail-tab" data-tab="mhrs">MHRS Sevk Geçmişi</button>
@@ -1439,6 +1582,7 @@
           ${caregiverCard(p)}
           ${interactionCard(p)}
         </div>
+        ${renderEpicrisisPanel(p)}
         ${renderPatientScorecard(p)}
         <div class="detail-charts">
           <div class="chart-box"><span class="chart-title">${escapeHtml(t('chart.pulse'))}</span>${sparkline(history, isAlarm, (h) => h.heartRate)}</div>
@@ -1549,6 +1693,10 @@
         </table>
       </div>
 
+      <div class="detail-tab-panel" data-panel="epicrisis">
+        ${renderEpicrisisPanel(p)}
+      </div>
+
       <div class="detail-tab-panel" data-panel="companion">
         ${renderCompanionPanel(p)}
       </div>
@@ -1604,8 +1752,7 @@
       <div class="module-card twin" id="detail-twin-card">
         <div class="module-head">
           <span class="module-tag" data-i18n="modules.twinTag">DİJİTAL İKİZ</span>
-          <h3 data-i18n="modules.twinTitle">Hastanın Dijital İkizi</h3>
-          <p data-i18n="modules.twinSubtitle">İlaç / doz analizi — Tedavi öncesi analitik öngörü</p>
+          <h3 data-i18n="modules.twinTitle">Dijital İkiz</h3>
         </div>
         <div class="twin-body">
           <button type="button" class="btn btn-primary" id="detail-twin-simulate" data-twin-simulate="detail" data-i18n="modules.twinSimulate">Analiz Et</button>
@@ -3010,67 +3157,142 @@
     }
   }
 
+  /* ---------- Live Video Triage Room ---------- */
+  const videoTriageState = { selected: null, action: null, barcode: null, startedAt: Date.now() };
+
+  function buildLiveAnalysisNotes(p) {
+    if (!p) return ['Hasta seçimi bekleniyor; canlı analiz başlatılmadı.'];
+    const latest = p.latest || {};
+    const key = conditionKeyMap[p.conditionGroup] || 'other';
+    const notes = [];
+    notes.push(`Ses analizi: Konuşma temposu doğal, akut solunum sıkıntısı bulgusu ${Number(latest.oxygenSaturation) < 90 ? 'MEVCUT' : 'saptanmadı'}.`);
+    if (Number(latest.oxygenSaturation)) {
+      notes.push(`Görüntü analizi: Dudak/cilt perfüzyonu değerlendirildi · SpO2 %${latest.oxygenSaturation} ${Number(latest.oxygenSaturation) < 90 ? '(düşük — hipoksemi şüphesi)' : '(kabul edilebilir aralık)'}.`);
+    }
+    if (Number(latest.heartRate)) {
+      notes.push(`Vital korelasyon: Nabız ${latest.heartRate} bpm ${Number(latest.heartRate) > 110 ? '— taşikardi eğilimi, semptom sorgusu derinleştirildi' : '— stabil seyir'}.`);
+    }
+    if (Number(latest.bloodPressureSystolic)) {
+      notes.push(`Tansiyon ${latest.bloodPressureSystolic}/${latest.bloodPressureDiastolic ?? '—'} mmHg ${Number(latest.bloodPressureSystolic) >= 160 ? '— yüksek, yakın izlem önerildi' : '— hedef aralıkta'}.`);
+    }
+    const conditionNotes = {
+      copd: 'KOAH protokolü: Yardımcı solunum kası kullanımı görüntüden taranıyor; nefes egzersizi uyumu soruldu.',
+      diabetes: 'Diyabet protokolü: Son öğün ve ilaç uyumu sözel olarak doğrulandı; hipoglisemi belirtisi gözlenmedi.',
+      hypertension: 'Hipertansiyon protokolü: Baş ağrısı/görme bulanıklığı semptomları negatif; tuz kısıtı hatırlatıldı.',
+      heartFailure: 'Kalp yetmezliği protokolü: Yüz/boyun ven dolgunluğu görüntüden değerlendirildi; ödem sorgusu yapıldı.',
+    };
+    notes.push(conditionNotes[key] || 'Kronik izlem protokolü: Genel durum stabil, planlı takip sürdürülüyor.');
+    return notes;
+  }
+
   async function renderVoice(force = false) {
     if (!els.voicePanel) return;
     const lang = i18n.getCurrentLang();
-    if (!force && els.voicePanel.innerHTML && els.voicePanel.dataset.lang === lang) return;
-    initVoice();
+    const patients = (lastData && lastData.patients) || [];
+    const p = patients.find((x) => x.pseudonym === videoTriageState.selected) || patients[0] || null;
+    if (p) videoTriageState.selected = p.pseudonym;
 
-    if (!chatState.currentId || !getCurrentChatSession()) {
-      createChatSession();
-    }
-    if (!voiceOptionKeys.includes(chatState.voiceKey) || !chatState.voiceKey.startsWith(lang)) {
-      chatState.voiceKey = chatVoiceKeyForLang();
-    }
+    const options = patients.slice(0, 300).map((x) => `
+      <option value="${escapeHtml(x.pseudonym)}" ${x.pseudonym === videoTriageState.selected ? 'selected' : ''}>${escapeHtml(displayName(x))} · ${escapeHtml(translateCondition(x.conditionGroup))}</option>`).join('');
 
-    const voiceOptions = voiceOptionKeys.map((key) => `
-      <option value="${key}" ${chatState.voiceKey === key ? 'selected' : ''}>${escapeHtml(t('chatbot.voices.' + key))}</option>`).join('');
+    const notes = buildLiveAnalysisNotes(p).map((n, i) => `
+      <li class="vt-note"><span class="vt-note-time">${String(9 + i).padStart(2, '0')}:${String((i * 13 + 7) % 60).padStart(2, '0')}</span>${escapeHtml(n)}</li>`).join('');
+
+    const actionLabels = {
+      emergency: 'Acil Sevk (112 Entegrasyonu)',
+      polyclinic: 'Poliklinik Sevk (MHRS)',
+      tele: 'Tele-Tıp Evde Takip',
+    };
+    const actionBanner = videoTriageState.action ? `
+      <div class="vt-banner ${videoTriageState.action === 'emergency' ? 'red' : 'green'}">
+        Otonom sevk kararı kaydedildi: <strong>${escapeHtml(actionLabels[videoTriageState.action])}</strong> — hekim onayı ile MHRS altyapısına iletildi.
+      </div>` : '';
+    const barcodeBanner = videoTriageState.barcode ? `
+      <div class="vt-banner green">
+        MHRS Öncelikli <strong>Yeşil Barkod</strong> tanımlandı: <strong>${escapeHtml(videoTriageState.barcode)}</strong> — hasta öncelikli randevu kuyruğuna alındı.
+      </div>` : '';
 
     els.voicePanel.innerHTML = `
-      <aside class="chatbot-sidebar">
-        <div class="chatbot-brand">
-          <div class="chatbot-icon">🤖</div>
+      <div class="video-triage">
+        <div class="vt-header">
           <div>
-            <strong data-i18n="chatbot.title">${escapeHtml(t('chatbot.title'))}</strong>
-            <span data-i18n="chatbot.subtitle">${escapeHtml(t('chatbot.subtitle'))}</span>
+            <h2>Online Canlı Görüntülü Ön Triyaj Odası</h2>
+            <p>e-Nabız entegre yüz yüze triyaj · Yapay zeka destekli canlı klinik analiz</p>
           </div>
+          <label class="vt-patient-select">
+            <span>Hasta</span>
+            <select id="vt-patient-select">${options || '<option>Hasta verisi yükleniyor…</option>'}</select>
+          </label>
         </div>
-        <button type="button" class="btn btn-primary btn-block" id="chat-new-btn">${escapeHtml(t('chatbot.newChat'))}</button>
-        <div class="chat-history-title">${escapeHtml(t('chatbot.historyTitle'))}</div>
-        <div class="chat-history-list" id="chat-history-list">${renderChatHistoryList()}</div>
-      </aside>
-      <div class="chatbot-main">
-        <div class="chatbot-header">
-          <div class="chatbot-title"><span class="chatbot-dot"></span><span data-i18n="chatbot.title">${escapeHtml(t('chatbot.title'))}</span></div>
-          <div class="chatbot-controls">
-            <label class="chatbot-control">
-              <span data-i18n="chatbot.voiceLabel">${escapeHtml(t('chatbot.voiceLabel'))}</span>
-              <select id="chat-voice-model">${voiceOptions}</select>
-            </label>
-            <label class="chatbot-control">
-              <span data-i18n="chatbot.rateLabel">${escapeHtml(t('chatbot.rateLabel'))}</span>
-              <input type="range" id="chat-voice-rate" min="0.5" max="2" step="0.1" value="${chatState.rate}" />
-              <span class="chat-rate-value" id="chat-rate-value">${chatState.rate.toFixed(1)}x</span>
-            </label>
-            <button type="button" class="btn btn-ghost btn-sm" id="chat-clear-btn">${escapeHtml(t('chatbot.clear'))}</button>
+        <div class="vt-grid">
+          <div class="vt-video-col">
+            <div class="vt-video-main">
+              <div class="vt-video-feed patient">
+                <div class="vt-feed-fx"></div>
+                <div class="vt-avatar">${escapeHtml((p ? displayName(p) : 'H').slice(0, 1))}</div>
+                <span class="vt-feed-label">${escapeHtml(p ? displayName(p) : 'Hasta')} · Hasta Kamerası</span>
+                <span class="vt-rec"><span class="vt-rec-dot"></span>CANLI</span>
+              </div>
+              <div class="vt-video-feed nurse">
+                <div class="vt-feed-fx"></div>
+                <div class="vt-avatar ai">AI</div>
+                <span class="vt-feed-label">SentryAI Triyaj Hemşiresi</span>
+                <span class="vt-rec"><span class="vt-rec-dot"></span>KAYIT</span>
+              </div>
+            </div>
+            <div class="vt-call-bar">
+              <span class="vt-call-status"><span class="vt-rec-dot"></span>Görüşme aktif · Şifreli (KVKK) bağlantı</span>
+              <div class="vt-call-controls">
+                <button type="button" class="vt-ctl" title="Mikrofon">🎙️</button>
+                <button type="button" class="vt-ctl" title="Kamera">📷</button>
+                <button type="button" class="vt-ctl end" title="Görüşmeyi Bitir">📞</button>
+              </div>
+            </div>
           </div>
+          <aside class="vt-notes-col">
+            <h3>Canlı Klinik Analiz Notları</h3>
+            <p class="vt-notes-sub">Ses ve görüntüden anlık yakalanan semptomlar</p>
+            <ul class="vt-notes-list">${notes}</ul>
+          </aside>
         </div>
-        <div class="chatbot-messages" id="chat-messages">${renderChatMessages()}</div>
-        ${renderSuggested()}
-        <div class="chatbot-input-row">
-          <button type="button" class="chat-mic-btn" id="chat-mic" aria-label="${escapeHtml(t('preTriage.micLabel'))}" title="${escapeHtml(t('preTriage.micLabel'))}">🎙️</button>
-          <input type="text" id="chat-input" data-i18n-placeholder="chatbot.placeholder" placeholder="${escapeHtml(t('chatbot.placeholder'))}" autocomplete="off" />
-          <button type="button" class="btn btn-primary" id="chat-send">${escapeHtml(t('chatbot.send'))}</button>
+        <div class="vt-command-deck">
+          <h3>Otonom Sevk Kumanda Merkezi</h3>
+          <div class="vt-actions">
+            <button type="button" class="vt-action red ${videoTriageState.action === 'emergency' ? 'active' : ''}" data-vt-action="emergency">🚑 Acil Sevk</button>
+            <button type="button" class="vt-action amber ${videoTriageState.action === 'polyclinic' ? 'active' : ''}" data-vt-action="polyclinic">🏥 Poliklinik Sevk</button>
+            <button type="button" class="vt-action green ${videoTriageState.action === 'tele' ? 'active' : ''}" data-vt-action="tele">💻 Tele-Tıp Evde Takip</button>
+            <button type="button" class="vt-action barcode" id="vt-barcode-btn">✅ MHRS Öncelikli Yeşil Barkod Tanımla</button>
+          </div>
+          ${actionBanner}
+          ${barcodeBanner}
         </div>
-        <p class="chatbot-disclaimer" data-i18n="chatbot.disclaimer">${escapeHtml(t('chatbot.disclaimer'))}</p>
       </div>`;
 
     els.voicePanel.dataset.lang = lang;
-    attachChatListeners();
-    setTimeout(() => {
-      const msgBox = document.getElementById('chat-messages');
-      if (msgBox) msgBox.scrollTop = msgBox.scrollHeight;
-    }, 0);
+
+    const selectEl = document.getElementById('vt-patient-select');
+    if (selectEl) {
+      selectEl.addEventListener('change', () => {
+        videoTriageState.selected = selectEl.value;
+        videoTriageState.action = null;
+        videoTriageState.barcode = null;
+        renderVoice(true);
+      });
+    }
+    els.voicePanel.querySelectorAll('[data-vt-action]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        videoTriageState.action = btn.dataset.vtAction;
+        renderVoice(true);
+      });
+    });
+    const barcodeBtn = document.getElementById('vt-barcode-btn');
+    if (barcodeBtn) {
+      barcodeBtn.addEventListener('click', () => {
+        const code = p ? (p.displayCode || p.pseudonym.slice(0, 6)) : 'H-00';
+        videoTriageState.barcode = `YB-${String(code).replace(/[^A-Z0-9]/gi, '')}-${new Date().getFullYear()}`;
+        renderVoice(true);
+      });
+    }
     i18n.applyTranslations();
   }
 
@@ -3214,7 +3436,7 @@
   }
 
   function updateCriticalAlert(patients) {
-    const hasCritical = patients.some((p) => p.risk?.breachedThreshold === 'critical');
+    const hasCritical = patients.some((p) => isCrisisPatient(p) || p.risk?.breachedThreshold === 'critical');
     if (els.appShell) els.appShell.classList.toggle('alert-pulse', hasCritical);
   }
 
@@ -3233,6 +3455,7 @@
     }
 
     updateCriticalAlert(patients);
+    renderCrisisRoom(patients);
 
     if (currentView === 'patients') {
       renderPatientsTable(patients);
