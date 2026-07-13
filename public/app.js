@@ -148,7 +148,7 @@
 
   function maskNationalId(nationalId) {
     const s = String(nationalId);
-    return s.length >= 6 ? `${s.slice(0, 3)}*****${s.slice(-3)}` : '***********';
+    return s.length >= 4 ? `${s.slice(0, 2)}*******${s.slice(-2)}` : '***********';
   }
 
   function createLocalPatient(payload) {
@@ -238,8 +238,8 @@
     viewAnalytics: document.getElementById('view-analytics'),
     viewReports: document.getElementById('view-reports'),
     viewTelemedicine: document.getElementById('view-telemedicine'),
+    viewConnect: document.getElementById('view-connect'),
     viewVoice: document.getElementById('view-voice'),
-    viewNeyimvar: document.getElementById('view-neyimvar'),
     aiSmsPanel: document.getElementById('ai-sms-panel'),
     voicePanel: document.getElementById('voice-panel'),
     futureViewGrid: document.getElementById('future-view-grid'),
@@ -449,7 +449,6 @@
     showLogin();
   }
 
-
   async function initAuth() {
     const token = getToken();
     if (!token) {
@@ -534,7 +533,7 @@
     if (els.viewReports) els.viewReports.classList.toggle('hidden', view !== 'reports');
     if (els.viewTelemedicine) els.viewTelemedicine.classList.toggle('hidden', view !== 'telemedicine');
     if (els.viewVoice) els.viewVoice.classList.toggle('hidden', view !== 'voice');
-    if (els.viewNeyimvar) els.viewNeyimvar.classList.toggle('hidden', view !== 'neyimvar');
+    if (els.viewConnect) els.viewConnect.classList.toggle('hidden', view !== 'connect');
     if (els.pageTitle) els.pageTitle.textContent = t('page.' + view) || 'SentryHealth';
     document.querySelectorAll('.nav-item').forEach((item) => {
       item.classList.toggle('active', item.dataset.view === view);
@@ -543,6 +542,7 @@
     if (view === 'settings') loadSettings();
     if (view === 'telemedicine') { renderTelemedicine(true); startTeleSim(); } else { stopTeleSim(); }
     if (view === 'voice') renderVoice(true);
+    if (view === 'connect') { startConnectStream(); } else { stopConnectStream(); }
     if (lastData) render(lastData);
   }
 
@@ -553,94 +553,77 @@
     });
   });
 
-  /* ---------- Neyim Var? & MHRS Klinik Karar Destek ---------- */
-  function nextMhrsSlot() {
-    const d = new Date(Date.now() + 30 * 60 * 1000);
-    const rounded = 15 - (d.getMinutes() % 15);
-    if (rounded !== 15) d.setMinutes(d.getMinutes() + rounded);
-    d.setSeconds(0, 0);
-    return d.toLocaleTimeString(i18n.getCurrentLang() === 'tr' ? 'tr-TR' : undefined, { hour: '2-digit', minute: '2-digit' });
+  /* ---------- SentryConnect: FHIR Interoperability Stream ---------- */
+  let connectInterval = null;
+  let connectMsgCount = 14382;
+
+  function buildFhirEntry() {
+    const patients = (lastData && lastData.patients) || [];
+    const p = patients.length ? patients[Math.floor(Math.random() * Math.min(patients.length, 300))] : null;
+    const latest = (p && p.latest) || {};
+    const sources = ['video-triage', 'sentry-companion-ai', 'home-vitals'];
+    const kinds = [
+      { code: 'Blood Pressure', loinc: '85354-9', value: Number(latest.bloodPressureSystolic) || 120, unit: 'mmHg' },
+      { code: 'Heart Rate', loinc: '8867-4', value: Number(latest.heartRate) || 76, unit: 'beats/min' },
+      { code: 'Oxygen Saturation', loinc: '2708-6', value: Number(latest.oxygenSaturation) || 96, unit: '%' },
+      { code: 'Body Temperature', loinc: '8310-5', value: Number(latest.temperature) || 36.6, unit: 'Cel' },
+    ];
+    const kind = kinds[Math.floor(Math.random() * kinds.length)];
+    return {
+      resourceType: 'Observation',
+      status: 'final',
+      code: kind.code,
+      loinc: kind.loinc,
+      subject: p ? `Patient/${p.displayCode || p.pseudonym.slice(0, 8)}` : 'Patient/H-00',
+      source: sources[Math.floor(Math.random() * sources.length)],
+      valueQuantity: { value: kind.value, unit: kind.unit },
+    };
   }
 
-  function wireMhrsActions(scope) {
-    (scope || document).querySelectorAll('[data-nv-mhrs]').forEach((btn) => {
-      if (btn.dataset.nvWired) return;
-      btn.dataset.nvWired = '1';
-      btn.addEventListener('click', () => {
-        const card = btn.closest('.nv-mhrs-card') || btn.parentElement;
-        const appointment = card ? card.querySelector('[data-nv-appointment]') : null;
-        const banner = card ? card.querySelector('[data-nv-banner]') : null;
-        if (appointment) {
-          appointment.textContent = t('neyimvar.mhrsAppointment')
-            .replace('{clinic}', t('neyimvar.mhrsClinic'))
-            .replace('{time}', nextMhrsSlot());
-          appointment.classList.remove('hidden');
-        }
-        if (banner) {
-          banner.textContent = t('neyimvar.mhrsBanner');
-          banner.classList.remove('hidden');
-        }
-        btn.disabled = true;
-      });
-    });
+  function pushFhirLog() {
+    const consoleEl = document.getElementById('fhir-console');
+    if (!consoleEl) return;
+    const entry = buildFhirEntry();
+    const time = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const json = JSON.stringify({
+      resourceType: entry.resourceType,
+      status: entry.status,
+      code: entry.code,
+      valueQuantity: entry.valueQuantity,
+    }, null, 2);
+    const block = document.createElement('div');
+    block.className = 'fhir-log-entry';
+    block.innerHTML = `
+      <div class="fhir-log-meta">
+        <span class="fhir-log-time">${escapeHtml(time)}</span>
+        <span class="fhir-log-source">${escapeHtml(entry.source)}</span>
+        <span class="fhir-log-subject">${escapeHtml(entry.subject)}</span>
+        <span class="fhir-log-ok">HL7 FHIR v4.0 ✓</span>
+      </div>
+      <pre>${escapeHtml(json)}</pre>`;
+    consoleEl.prepend(block);
+    while (consoleEl.children.length > 6) consoleEl.removeChild(consoleEl.lastChild);
+
+    connectMsgCount += 1;
+    const msgEl = document.getElementById('connect-msg-count');
+    const latEl = document.getElementById('connect-latency');
+    const upEl = document.getElementById('connect-uptime');
+    if (msgEl) msgEl.textContent = connectMsgCount.toLocaleString('tr-TR');
+    if (latEl) latEl.textContent = `${38 + Math.floor(Math.random() * 24)} ms`;
+    if (upEl) upEl.textContent = '%99,98';
   }
 
-  wireMhrsActions(document);
+  function startConnectStream() {
+    stopConnectStream();
+    pushFhirLog();
+    connectInterval = setInterval(pushFhirLog, 2600);
+  }
 
-  function neyimVarDetailCard() {
-    return `
-      <div class="nv-module nv-detail-card">
-        <div class="nv-head">
-          <div class="nv-head-brand">
-            <span class="nv-logo" aria-hidden="true">
-              <svg viewBox="0 0 72 72"><circle cx="36" cy="36" r="34" fill="none" stroke="#2563eb" stroke-width="2"/><path d="M24 44c2 6 8 10 12 10s12-4 12-10c0-7-7-8-12-12-5-4-5-8 0-12 5-4 10-3 12 0" fill="none" stroke="#dc2626" stroke-width="3" stroke-linecap="round"/><polygon points="52,22 54,28 60,28 55,32 57,38 52,34 47,38 49,32 44,28 50,28" fill="#dc2626"/></svg>
-            </span>
-            <div>
-              <h2>${escapeHtml(t('neyimvar.title'))}</h2>
-              <p class="nv-subtitle">${escapeHtml(t('neyimvar.subtitle'))}</p>
-            </div>
-          </div>
-          <span class="nv-badge">${escapeHtml(t('neyimvar.badge'))}</span>
-        </div>
-        <div class="nv-analysis-card">
-          <div class="nv-analysis-head">
-            <span class="nv-tag">${escapeHtml(t('neyimvar.analysisTag'))}</span>
-            <h3>${escapeHtml(t('neyimvar.analysisTitle'))}</h3>
-            <p>${escapeHtml(t('neyimvar.analysisSubtitle'))}</p>
-          </div>
-          <div class="nv-analysis-body">
-            <div class="nv-analysis-row complaint">
-              <span class="nv-row-icon">🗨️</span>
-              <div>
-                <strong>${escapeHtml(t('neyimvar.complaintLabel'))}</strong>
-                <span>${escapeHtml(t('neyimvar.complaintValue'))}</span>
-              </div>
-            </div>
-            <div class="nv-analysis-row history">
-              <span class="nv-row-icon">📉</span>
-              <div>
-                <strong>${escapeHtml(t('neyimvar.historyLabel'))}</strong>
-                <span>${escapeHtml(t('neyimvar.historyValue'))}</span>
-              </div>
-            </div>
-            <div class="nv-analysis-row api">
-              <span class="nv-row-icon">⚠️</span>
-              <div>
-                <strong>${escapeHtml(t('neyimvar.apiLabel'))}</strong>
-                <span>${escapeHtml(t('neyimvar.apiValue'))}</span>
-              </div>
-              <span class="nv-risk-tag">${escapeHtml(t('neyimvar.riskTag'))}</span>
-            </div>
-          </div>
-        </div>
-        <div class="nv-mhrs-card">
-          <h3>${escapeHtml(t('neyimvar.mhrsTitle'))}</h3>
-          <p>${escapeHtml(t('neyimvar.mhrsSubtitle'))}</p>
-          <button type="button" class="btn nv-mhrs-btn" data-nv-mhrs>${escapeHtml(t('neyimvar.mhrsBtn'))}</button>
-          <div class="nv-appointment hidden" data-nv-appointment role="status"></div>
-          <div class="nv-banner hidden" data-nv-banner role="status"></div>
-        </div>
-      </div>`;
+  function stopConnectStream() {
+    if (connectInterval) {
+      clearInterval(connectInterval);
+      connectInterval = null;
+    }
   }
 
   /* ---------- Tele-Tıp Canlı İzlem ---------- */
@@ -1758,11 +1741,7 @@
           <button type="button" class="btn btn-primary" id="detail-twin-simulate" data-twin-simulate="detail" data-i18n="modules.twinSimulate">Analiz Et</button>
           <div class="twin-output hidden" id="detail-twin-output"></div>
         </div>
-      </div>
-
-      ${neyimVarDetailCard()}`;
-
-    wireMhrsActions(els.patientDetail);
+      </div>`;
 
     els.patientDetail.querySelectorAll('.detail-tab').forEach((tab) => {
       tab.addEventListener('click', () => {

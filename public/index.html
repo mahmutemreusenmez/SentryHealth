@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SentryHealth v2.0 — TÜSEB Uzaktan Kronik Hasta Takip ve Proaktif Sağlık Yönetim Sistemi Katmanı</title>
-  <meta name="description" content="SentryHealth v2.0 — TÜSEB Uzaktan Kronik Hasta Takip ve Proaktif Sağlık Yönetim Sistemi Katmanı" />
+  <title>SentryHealth v2.0 — Kronik Hasta Takip Platformu</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet" />
@@ -71,7 +70,6 @@
           <a href="#" class="nav-item" data-view="patients"><span class="nav-icon">🧑‍⚕️</span> <span data-i18n="nav.patients">Hastalar</span></a>
           <a href="#" class="nav-item" data-view="telemedicine"><span class="nav-icon">📡</span> <span data-i18n="nav.telemedicine">Tele-Tıp (Canlı)</span></a>
           <a href="#" class="nav-item" data-view="voice"><span class="nav-icon">🎙️</span> <span data-i18n="nav.aiAssistant">YZ Sesli Asistan</span></a>
-          <a href="#" class="nav-item nav-item-neyimvar" data-view="neyimvar"><span class="nav-icon nv-nav-logo"><svg viewBox="0 0 72 72" aria-hidden="true"><circle cx="36" cy="36" r="34" fill="none" stroke="#2563eb" stroke-width="4"/><path d="M24 44c2 6 8 10 12 10s12-4 12-10c0-7-7-8-12-12-5-4-5-8 0-12 5-4 10-3 12 0" fill="none" stroke="#dc2626" stroke-width="5" stroke-linecap="round"/><polygon points="52,22 54,28 60,28 55,32 57,38 52,34 47,38 49,32 44,28 50,28" fill="#dc2626"/></svg></span> <span data-i18n="nav.neyimvar">Neyim Var? &amp; MHRS</span></a>
           <a href="#" class="nav-item" data-view="dashboard"><span class="nav-icon">🔔</span> <span data-i18n="nav.alarms">Alarmlar</span> <span class="nav-badge" id="nav-alarm-count">0</span></a>
           <span class="nav-section" data-i18n="nav.management">Yönetim</span>
           <a href="#" class="nav-item hidden" data-view="admin" id="nav-admin"><span class="nav-icon">⚙</span> <span data-i18n="nav.admin">Yönetici Paneli</span></a>
@@ -79,6 +77,7 @@
           <span class="nav-section" data-i18n="nav.future">İleri Modüller</span>
           <a href="#" class="nav-item" data-view="future"><span class="nav-icon">🌐</span> <span data-i18n="nav.future">İleri Modüller</span></a>
           <span class="nav-section" data-i18n="analytics.title">Analitik &amp; Raporlar</span>
+          <a href="#" class="nav-item" data-view="connect"><span class="nav-icon">🔗</span> <span data-i18n="nav.connect">SentryConnect | Veri Entegrasyon Katmanı</span></a>
           <a href="#" class="nav-item" data-view="analytics"><span class="nav-icon">📊</span> <span data-i18n="nav.analytics">Analitik</span></a>
           <a href="#" class="nav-item" data-view="reports"><span class="nav-icon">📄</span> <span data-i18n="nav.reports">Raporlar</span></a>
         </nav>
@@ -207,10 +206,93 @@
               </div>
             </section>
 
+            <section class="analytics-section" id="analytics-section">
+              <h2 data-i18n="analytics.title">Analitik &amp; İstatistikler</h2>
+              <div class="analytics-grid">
+                <div class="chart-card">
+                  <span class="chart-title" data-i18n="analytics.monthlyTrend">Aylık Yanıt Trendi</span>
+                  <div class="chart-svg" id="chart-trend"></div>
+                </div>
+                <div class="chart-card">
+                  <span class="chart-title" data-i18n="analytics.monthlyAlarms">Aylık Alarm Sayısı</span>
+                  <div class="chart-svg" id="chart-alarms"></div>
+                </div>
+                <div class="chart-card">
+                  <span class="chart-title" data-i18n="analytics.diseaseDistribution">Hastalık Dağılımı</span>
+                  <div class="chart-svg" id="chart-distribution"></div>
+                </div>
+              </div>
+            </section>
+
+            <h2 class="future-title" data-i18n="future.title">İleri Sağlık Modülleri</h2>
+            <section class="global-modules" id="global-modules">
+              <div class="module-card sepsis">
+                <div class="module-head">
+                  <span class="module-tag" data-i18n="modules.sepsisTag">ERKEN UYARI</span>
+                  <h3 data-i18n="modules.sepsisTitle">YZ Destekli Erken Sepsis ve Çoklu Organ Yetmezliği Tahmini</h3>
+                  <p data-i18n="modules.sepsisSubtitle">qSOFA / MEWS Skor Kartı — 48 saat öncesi risk uyarısı</p>
+                </div>
+                <div class="sepsis-body">
+                  <div class="sepsis-score-row">
+                    <div class="sepsis-score">
+                      <span data-i18n="modules.sepsisRisk">Sepsis Risk Skoru</span>
+                      <strong id="sepsis-score">0</strong>
+                    </div>
+                    <small data-i18n="modules.sepsisRisk48">48 saat öncesi tahmin</small>
+                  </div>
+                  <div class="sepsis-bars">
+                    <div class="sepsis-bar">
+                      <span data-i18n="modules.sepsisQsofa">qSOFA</span>
+                      <div class="sepsis-bar-bg"><div class="sepsis-bar-fill" id="sepsis-qsofa"></div></div>
+                      <em id="sepsis-qsofa-val">0</em>
+                    </div>
+                    <div class="sepsis-bar">
+                      <span data-i18n="modules.sepsisMews">MEWS</span>
+                      <div class="sepsis-bar-bg"><div class="sepsis-bar-fill" id="sepsis-mews"></div></div>
+                      <em id="sepsis-mews-val">0</em>
+                    </div>
+                  </div>
+                  <div class="sepsis-alarm hidden" id="sepsis-alarm" data-i18n="modules.sepsisAlarm">KRİTİK SEPSİS RİSKİ: Erken Müdahale Önerilir</div>
+                </div>
+              </div>
+
+              <div class="module-card twin">
+                <div class="module-head">
+                  <span class="module-tag" data-i18n="modules.twinTag">DİJİTAL İKİZ</span>
+                  <h3 data-i18n="modules.twinTitle">Hastanın Dijital İkizi</h3>
+                  <p data-i18n="modules.twinSubtitle">İlaç / doz analizi — Tedavi öncesi analitik öngörü</p>
+                </div>
+                <div class="twin-body">
+                  <button type="button" class="btn btn-primary" id="global-twin-simulate" data-twin-simulate="global" data-i18n="modules.twinSimulate">Analiz Et</button>
+                  <div class="twin-output hidden" id="global-twin-output"></div>
+                </div>
+              </div>
+
+              <div class="module-card sdoh">
+                <div class="module-head">
+                  <span class="module-tag" data-i18n="modules.sdohTag">ÇEVRESEL RİSK</span>
+                  <h3 data-i18n="modules.sdohTitle">Sosyal Sağlık Belirleyicileri (SDOH) ve Çevresel Risk Haritası</h3>
+                  <p data-i18n="modules.sdohSubtitle">Coğrafi ve çevresel verilerle klinik risk profili</p>
+                </div>
+                <div class="sdoh-body">
+                  <div class="sdoh-map">
+                    <canvas id="sdoh-map" width="340" height="170"></canvas>
+                  </div>
+                  <div class="sdoh-metrics">
+                    <div class="sdoh-metric"><span data-i18n="modules.sdohAqi">Hava Kalitesi (AQI)</span><strong id="sdoh-aqi">—</strong></div>
+                    <div class="sdoh-metric"><span data-i18n="modules.sdohPollen">Polen Yoğunluğu</span><strong id="sdoh-pollen">—</strong></div>
+                    <div class="sdoh-metric"><span data-i18n="modules.sdohInfluenza">Mevsimsel Influenza</span><strong id="sdoh-influenza">—</strong></div>
+                  </div>
+                  <div class="sdoh-risk" id="sdoh-risk" data-i18n="modules.sdohRisk">Çevresel Risk İndeksi: <strong id="sdoh-risk-value">—</strong></div>
+                  <div class="sdoh-legend" id="sdoh-legend" data-i18n="modules.sdohLegend">Risk haritası: hasta bölgesi ve kronik durum etkisi</div>
+                </div>
+              </div>
+            </section>
+
             <section id="alerts" class="alerts"></section>
 
             <section class="patients-header">
-              <h2 data-i18n="page.telemedicine">Tele-Tıp Konsolu</h2>
+              <h2 data-i18n="telemedicine.title">Tele-Tıp — Canlı Hasta İzleme</h2>
               <span class="kvkk-badge" title="Hasta kimlikleri HMAC-SHA256 ile anonimleştirilmiştir" data-i18n="telemedicine.kvkkBadge">🔒 KVKK Uyumlu — Anonimleştirilmiş Veri</span>
             </section>
             <section id="patients" class="patients-grid">
@@ -619,83 +701,6 @@
             </section>
           </div>
 
-          <div id="view-neyimvar" class="view hidden">
-            <section class="nv-module" id="nv-module">
-              <div class="nv-head">
-                <div class="nv-head-brand">
-                  <span class="nv-logo" aria-hidden="true">
-                    <svg viewBox="0 0 72 72" aria-label="T.C. Sağlık Bakanlığı Logosu">
-                      <circle cx="36" cy="36" r="34" fill="none" stroke="#2563eb" stroke-width="2"/>
-                      <path d="M24 44c2 6 8 10 12 10s12-4 12-10c0-7-7-8-12-12-5-4-5-8 0-12 5-4 10-3 12 0" fill="none" stroke="#dc2626" stroke-width="3" stroke-linecap="round"/>
-                      <polygon points="52,22 54,28 60,28 55,32 57,38 52,34 47,38 49,32 44,28 50,28" fill="#dc2626"/>
-                    </svg>
-                  </span>
-                  <div>
-                    <h2 data-i18n="neyimvar.title">Neyim Var? &amp; MHRS Klinik Karar Destek</h2>
-                    <p class="nv-subtitle" data-i18n="neyimvar.subtitle">Sağlık Bakanlığı "Neyim Var?" semptom sorgulama altyapısı ile kronik hasta takip verilerinin klinik entegrasyonu</p>
-                  </div>
-                </div>
-                <span class="nv-badge" data-i18n="neyimvar.badge">T.C. Sağlık Bakanlığı Entegre Servisi</span>
-              </div>
-
-              <div class="nv-analysis-card">
-                <div class="nv-analysis-head">
-                  <span class="nv-tag" data-i18n="neyimvar.analysisTag">KLİNİK ANALİZ</span>
-                  <h3 data-i18n="neyimvar.analysisTitle">AI Semptom Eşleştirme ve Risk Analizi</h3>
-                  <p data-i18n="neyimvar.analysisSubtitle">Yapay zeka chatbotunun topladığı anlık semptomlar, hastanın kayıtlı geçmiş vitalleri ile birleştirilerek klinik risk analizi üretilir.</p>
-                </div>
-                <div class="nv-analysis-body">
-                  <div class="nv-analysis-row complaint">
-                    <span class="nv-row-icon">🗨️</span>
-                    <div>
-                      <strong data-i18n="neyimvar.complaintLabel">Hasta Şikayeti</strong>
-                      <span data-i18n="neyimvar.complaintValue">Şiddetli nefes darlığı ve halsizlik</span>
-                    </div>
-                  </div>
-                  <div class="nv-analysis-row history">
-                    <span class="nv-row-icon">📉</span>
-                    <div>
-                      <strong data-i18n="neyimvar.historyLabel">SentryHealth Geçmiş Verisi</strong>
-                      <span data-i18n="neyimvar.historyValue">Son 3 gündür SpO2 (Oksijen) seviyesi %91'e gerilemiş (KOAH Protokolü)</span>
-                    </div>
-                  </div>
-                  <div class="nv-analysis-row api">
-                    <span class="nv-row-icon">⚠️</span>
-                    <div>
-                      <strong data-i18n="neyimvar.apiLabel">Neyim Var? API Çıktısı</strong>
-                      <span data-i18n="neyimvar.apiValue">%92 Akut KOAH Atağı Riski</span>
-                    </div>
-                    <span class="nv-risk-tag" data-i18n="neyimvar.riskTag">YÜKSEK RİSK</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="nv-mhrs-card">
-                <h3 data-i18n="neyimvar.mhrsTitle">MHRS Öncelikli Sevk ve Yeşil Barkod Onay Mekanizması</h3>
-                <p data-i18n="neyimvar.mhrsSubtitle">Risk analizi doğrultusunda hastaya ilgili poliklinikte fiziki olarak en yakın saate "Öncelikli Vaka" statüsünde randevu tanımlanır.</p>
-                <button type="button" class="btn nv-mhrs-btn" data-nv-mhrs data-i18n="neyimvar.mhrsBtn">MHRS Öncelikli Poliklinik Randevusu Tanımla (Yeşil Barkod)</button>
-                <div class="nv-appointment hidden" data-nv-appointment role="status"></div>
-                <div class="nv-banner hidden" data-nv-banner role="status"></div>
-              </div>
-
-              <h3 class="nv-stats-title" data-i18n="neyimvar.statsTitle">Kurumsal Randevu ve Sevk Optimizasyon İstatistikleri</h3>
-              <div class="nv-stats">
-                <div class="nv-stat green">
-                  <span data-i18n="neyimvar.statHome">Neyim Var? Üzerinden Evde Takibi Önerilen (Hastaneye Gitmeyen) Vaka</span>
-                  <strong>142</strong>
-                </div>
-                <div class="nv-stat blue">
-                  <span data-i18n="neyimvar.statMhrs">MHRS Üzerinden Doğrudan Doğru Polikliniğe Sevk Edilen (Zaman Kazanan) Vaka</span>
-                  <strong>48</strong>
-                </div>
-                <div class="nv-stat red">
-                  <span data-i18n="neyimvar.statEms">Acil Servise (112) Paslanan Kritik Vaka</span>
-                  <strong>10</strong>
-                </div>
-              </div>
-            </section>
-          </div>
-
           <div id="view-telemedicine" class="view hidden">
             <section class="patients-header">
               <h2 data-i18n="teletip.consoleTitle">Tele-Tıp Konsolu — Canlı Konsültasyon</h2>
@@ -815,7 +820,7 @@
             </section>
 
             <section class="patients-header" style="margin-top:24px">
-              <h2 data-i18n="telemedicine.title">Tıbbi Değerlendirme ve Ölçüm Takvimi</h2>
+              <h2 data-i18n="telemedicine.title">Yapay Zeka Destekli Klinik SMS Asistanı</h2>
             </section>
             <section class="ai-sms-panel" id="ai-sms-panel"></section>
           </div>
@@ -842,6 +847,71 @@
               </div>
             </section>
             <section class="chatbot-grid" id="voice-panel"></section>
+          </div>
+
+          <div id="view-connect" class="view hidden">
+            <section class="connect-header">
+              <div>
+                <h2 data-i18n="connect.title">SentryConnect — Entegrasyon ve API Yönetim Merkezi</h2>
+                <p data-i18n="connect.subtitle">Evrensel Sağlık Verisi Entegrasyon Katmanı · Canlı İş Akışı Motoru</p>
+              </div>
+              <span class="connect-prod-badge" data-i18n="connect.badge">Üretim Dağıtım Sürümü (Production Layer)</span>
+            </section>
+
+            <section class="connect-grid">
+              <div class="connect-panel fhir">
+                <div class="connect-panel-head">
+                  <h3 data-i18n="connect.fhirTitle">HL7 FHIR v4.0 Standartları Doğrulama Konsolu</h3>
+                  <span class="connect-live"><span class="connect-live-dot"></span><span data-i18n="connect.fhirLive">CANLI AKIŞ</span></span>
+                </div>
+                <p class="connect-panel-sub" data-i18n="connect.fhirSub">Görüntülü triyaj ve SentryCompanion AI verilerinin anlık FHIR dönüşümü</p>
+                <div class="fhir-console" id="fhir-console" aria-live="polite"></div>
+              </div>
+
+              <div class="connect-panel workflow">
+                <div class="connect-panel-head">
+                  <h3 data-i18n="connect.workflowTitle">Canlı İş Akışı Entegrasyon Durumu</h3>
+                </div>
+                <p class="connect-panel-sub" data-i18n="connect.workflowSub">Yapay zeka sevk kararlarının HBYS ve bakanlık sunucularına gömülme durumu</p>
+                <ul class="connect-signals">
+                  <li class="connect-signal">
+                    <span class="signal-dot"></span>
+                    <div>
+                      <strong data-i18n="connect.sig1">T.C. Sağlık Bakanlığı e-Nabız Senkronizasyonu</strong>
+                      <em data-i18n="connect.sig1Status">AKTİF (HL7 FHIR)</em>
+                    </div>
+                  </li>
+                  <li class="connect-signal">
+                    <span class="signal-dot"></span>
+                    <div>
+                      <strong data-i18n="connect.sig2">Merkezi Hekim Randevu Sistemi (MHRS) Öncelik Atama Hattı</strong>
+                      <em data-i18n="connect.sig2Status">BAĞLANDI</em>
+                    </div>
+                  </li>
+                  <li class="connect-signal">
+                    <span class="signal-dot"></span>
+                    <div>
+                      <strong data-i18n="connect.sig3">Hastane Bilgi Yönetim Sistemi (HBYS) Canlı Entegrasyon Katmanı</strong>
+                      <em data-i18n="connect.sig3Status">AKTİF</em>
+                    </div>
+                  </li>
+                </ul>
+                <div class="connect-metrics">
+                  <div class="connect-metric">
+                    <span data-i18n="connect.metricMsgs">Bugün İşlenen FHIR Mesajı</span>
+                    <strong id="connect-msg-count">—</strong>
+                  </div>
+                  <div class="connect-metric">
+                    <span data-i18n="connect.metricLatency">Ortalama Senkronizasyon Gecikmesi</span>
+                    <strong id="connect-latency">—</strong>
+                  </div>
+                  <div class="connect-metric">
+                    <span data-i18n="connect.metricUptime">Entegrasyon Hattı Çalışma Oranı</span>
+                    <strong id="connect-uptime">—</strong>
+                  </div>
+                </div>
+              </div>
+            </section>
           </div>
         </main>
 
@@ -964,7 +1034,7 @@
         </div>
 
         <div class="schedule-block">
-          <h4 data-i18n="interaction.title">Tıbbi Değerlendirme ve Ölçüm Takvimi</h4>
+          <h4 data-i18n="interaction.title">Akıllı Takip Takvimi</h4>
           <label class="field">
             <span data-i18n="interaction.scheduleDays">Günler</span>
             <div class="day-checkbox-group" id="schedule-day-boxes">
