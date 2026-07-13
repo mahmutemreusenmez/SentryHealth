@@ -3523,3 +3523,285 @@ body {
   .optimizer-panel { padding: 16px; }
   .prescription-patient { flex-direction: column; align-items: flex-start; }
 }
+
+/* ---------- Neyim Var? & MHRS Klinik Karar Destek ---------- */
+.nv-module {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 26px;
+  margin-bottom: 24px;
+}
+
+.nv-detail-card { margin-top: 20px; }
+
+.nv-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 18px;
+  margin-bottom: 20px;
+}
+
+.nv-head-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.nv-logo {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  padding: 6px;
+}
+
+.nv-logo svg { width: 100%; height: 100%; }
+
+.nv-nav-logo svg { width: 18px; height: 18px; vertical-align: middle; }
+
+.nv-head-brand h2 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0f2f6d;
+}
+
+.nv-subtitle {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+  max-width: 640px;
+}
+
+.nv-badge {
+  flex-shrink: 0;
+  background: #eff6ff;
+  color: #0f2f6d;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  white-space: normal;
+}
+
+.nv-analysis-card {
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--blue);
+  border-radius: 12px;
+  background: var(--surface-2);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.nv-analysis-head h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 8px 0 4px;
+}
+
+.nv-analysis-head p {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+}
+
+.nv-tag {
+  display: inline-block;
+  background: #0f2f6d;
+  color: #ffffff;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+}
+
+.nv-analysis-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nv-analysis-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  flex-wrap: wrap;
+}
+
+.nv-analysis-row > div { flex: 1; min-width: 200px; }
+
+.nv-analysis-row strong {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 2px;
+}
+
+.nv-analysis-row span:not(.nv-row-icon):not(.nv-risk-tag) {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.nv-analysis-row.complaint { border-left: 3px solid var(--blue); }
+.nv-analysis-row.history { border-left: 3px solid #0e7a5f; }
+.nv-analysis-row.api { border-left: 3px solid var(--red); }
+
+.nv-row-icon { font-size: 1.1rem; line-height: 1.4; }
+
+.nv-risk-tag {
+  align-self: center;
+  background: var(--red-soft);
+  color: var(--red);
+  border: 1px solid #fecaca;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  white-space: nowrap;
+}
+
+.nv-mhrs-card {
+  border: 1px solid #c7e3d4;
+  border-left: 4px solid #0e7a5f;
+  border-radius: 12px;
+  background: #f4faf7;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.nv-mhrs-card h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0b5c47;
+  margin-bottom: 4px;
+}
+
+.nv-mhrs-card p {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+}
+
+.nv-mhrs-btn {
+  background: linear-gradient(180deg, #12866a, #0e7a5f);
+  color: #ffffff;
+  font-weight: 700;
+  border: 1px solid #0b5c47;
+  border-radius: 10px;
+  padding: 12px 18px;
+  width: 100%;
+  max-width: 560px;
+  white-space: normal;
+  line-height: 1.35;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.nv-mhrs-btn:hover:not(:disabled) { filter: brightness(1.06); }
+.nv-mhrs-btn:disabled { opacity: 0.65; cursor: default; }
+
+.nv-appointment {
+  margin-top: 14px;
+  background: #ffffff;
+  border: 1px dashed #0e7a5f;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0b5c47;
+}
+
+.nv-banner {
+  margin-top: 12px;
+  background: #0e7a5f;
+  color: #ffffff;
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.5;
+  box-shadow: 0 6px 18px rgba(14, 122, 95, 0.25);
+}
+
+.nv-stats-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 4px 0 12px;
+}
+
+.nv-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.nv-stat {
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.nv-stat span {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.nv-stat strong { font-size: 2rem; font-weight: 800; }
+
+.nv-stat.green { border-top: 4px solid #0e7a5f; }
+.nv-stat.green strong { color: #0e7a5f; }
+.nv-stat.blue { border-top: 4px solid var(--blue); }
+.nv-stat.blue strong { color: var(--blue); }
+.nv-stat.red { border-top: 4px solid var(--red); }
+.nv-stat.red strong { color: var(--red); }
+
+@media (max-width: 1024px) {
+  .nv-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 767px) {
+  .nv-module { padding: 18px; }
+  .nv-head { flex-direction: column; }
+  .nv-stats { grid-template-columns: 1fr; }
+  .nv-stat strong { font-size: 1.7rem; }
+  .nv-analysis-row .nv-risk-tag { align-self: flex-start; }
+}
+
+@media (max-width: 480px) {
+  .nv-module { padding: 14px; }
+  .nv-analysis-card, .nv-mhrs-card { padding: 14px; }
+  .nv-head-brand h2 { font-size: 1rem; }
+  .nv-mhrs-btn { font-size: 0.85rem; }
+}

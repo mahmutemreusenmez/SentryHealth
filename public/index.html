@@ -76,6 +76,7 @@
           <a href="#" class="nav-item" data-view="patients"><span class="nav-icon">🧑‍⚕️</span> <span data-i18n="nav.patients">Hastalar</span></a>
           <a href="#" class="nav-item" data-view="telemedicine"><span class="nav-icon">📡</span> <span data-i18n="nav.telemedicine">Tele-Tıp (Canlı)</span></a>
           <a href="#" class="nav-item" data-view="voice"><span class="nav-icon">🎙️</span> <span data-i18n="nav.aiAssistant">YZ Sesli Asistan</span></a>
+          <a href="#" class="nav-item nav-item-neyimvar" data-view="neyimvar"><span class="nav-icon nv-nav-logo"><svg viewBox="0 0 72 72" aria-hidden="true"><circle cx="36" cy="36" r="34" fill="none" stroke="#2563eb" stroke-width="4"/><path d="M24 44c2 6 8 10 12 10s12-4 12-10c0-7-7-8-12-12-5-4-5-8 0-12 5-4 10-3 12 0" fill="none" stroke="#dc2626" stroke-width="5" stroke-linecap="round"/><polygon points="52,22 54,28 60,28 55,32 57,38 52,34 47,38 49,32 44,28 50,28" fill="#dc2626"/></svg></span> <span data-i18n="nav.neyimvar">Neyim Var? &amp; MHRS</span></a>
           <a href="#" class="nav-item" data-view="dashboard"><span class="nav-icon">🔔</span> <span data-i18n="nav.alarms">Alarmlar</span> <span class="nav-badge" id="nav-alarm-count">0</span></a>
           <span class="nav-section" data-i18n="nav.management">Yönetim</span>
           <a href="#" class="nav-item hidden" data-view="admin" id="nav-admin"><span class="nav-icon">⚙</span> <span data-i18n="nav.admin">Yönetici Paneli</span></a>
@@ -682,6 +683,83 @@
                 <p data-i18n="reports.subtitle">Otomatik üretilmiş klinik özet ve trend raporları.</p>
                 <div class="report-summary" id="report-summary"></div>
                 <div class="report-breakdown" id="report-breakdown"></div>
+              </div>
+            </section>
+          </div>
+
+          <div id="view-neyimvar" class="view hidden">
+            <section class="nv-module" id="nv-module">
+              <div class="nv-head">
+                <div class="nv-head-brand">
+                  <span class="nv-logo" aria-hidden="true">
+                    <svg viewBox="0 0 72 72" aria-label="T.C. Sağlık Bakanlığı Logosu">
+                      <circle cx="36" cy="36" r="34" fill="none" stroke="#2563eb" stroke-width="2"/>
+                      <path d="M24 44c2 6 8 10 12 10s12-4 12-10c0-7-7-8-12-12-5-4-5-8 0-12 5-4 10-3 12 0" fill="none" stroke="#dc2626" stroke-width="3" stroke-linecap="round"/>
+                      <polygon points="52,22 54,28 60,28 55,32 57,38 52,34 47,38 49,32 44,28 50,28" fill="#dc2626"/>
+                    </svg>
+                  </span>
+                  <div>
+                    <h2 data-i18n="neyimvar.title">Neyim Var? &amp; MHRS Klinik Karar Destek</h2>
+                    <p class="nv-subtitle" data-i18n="neyimvar.subtitle">Sağlık Bakanlığı "Neyim Var?" semptom sorgulama altyapısı ile kronik hasta takip verilerinin klinik entegrasyonu</p>
+                  </div>
+                </div>
+                <span class="nv-badge" data-i18n="neyimvar.badge">T.C. Sağlık Bakanlığı Entegre Servisi</span>
+              </div>
+
+              <div class="nv-analysis-card">
+                <div class="nv-analysis-head">
+                  <span class="nv-tag" data-i18n="neyimvar.analysisTag">KLİNİK ANALİZ</span>
+                  <h3 data-i18n="neyimvar.analysisTitle">AI Semptom Eşleştirme ve Risk Analizi</h3>
+                  <p data-i18n="neyimvar.analysisSubtitle">Yapay zeka chatbotunun topladığı anlık semptomlar, hastanın kayıtlı geçmiş vitalleri ile birleştirilerek klinik risk analizi üretilir.</p>
+                </div>
+                <div class="nv-analysis-body">
+                  <div class="nv-analysis-row complaint">
+                    <span class="nv-row-icon">🗨️</span>
+                    <div>
+                      <strong data-i18n="neyimvar.complaintLabel">Hasta Şikayeti</strong>
+                      <span data-i18n="neyimvar.complaintValue">Şiddetli nefes darlığı ve halsizlik</span>
+                    </div>
+                  </div>
+                  <div class="nv-analysis-row history">
+                    <span class="nv-row-icon">📉</span>
+                    <div>
+                      <strong data-i18n="neyimvar.historyLabel">SentryHealth Geçmiş Verisi</strong>
+                      <span data-i18n="neyimvar.historyValue">Son 3 gündür SpO2 (Oksijen) seviyesi %91'e gerilemiş (KOAH Protokolü)</span>
+                    </div>
+                  </div>
+                  <div class="nv-analysis-row api">
+                    <span class="nv-row-icon">⚠️</span>
+                    <div>
+                      <strong data-i18n="neyimvar.apiLabel">Neyim Var? API Çıktısı</strong>
+                      <span data-i18n="neyimvar.apiValue">%92 Akut KOAH Atağı Riski</span>
+                    </div>
+                    <span class="nv-risk-tag" data-i18n="neyimvar.riskTag">YÜKSEK RİSK</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="nv-mhrs-card">
+                <h3 data-i18n="neyimvar.mhrsTitle">MHRS Öncelikli Sevk ve Yeşil Barkod Onay Mekanizması</h3>
+                <p data-i18n="neyimvar.mhrsSubtitle">Risk analizi doğrultusunda hastaya ilgili poliklinikte fiziki olarak en yakın saate "Öncelikli Vaka" statüsünde randevu tanımlanır.</p>
+                <button type="button" class="btn nv-mhrs-btn" data-nv-mhrs data-i18n="neyimvar.mhrsBtn">MHRS Öncelikli Poliklinik Randevusu Tanımla (Yeşil Barkod)</button>
+                <div class="nv-appointment hidden" data-nv-appointment role="status"></div>
+                <div class="nv-banner hidden" data-nv-banner role="status"></div>
+              </div>
+
+              <h3 class="nv-stats-title" data-i18n="neyimvar.statsTitle">Kurumsal Randevu ve Sevk Optimizasyon İstatistikleri</h3>
+              <div class="nv-stats">
+                <div class="nv-stat green">
+                  <span data-i18n="neyimvar.statHome">Neyim Var? Üzerinden Evde Takibi Önerilen (Hastaneye Gitmeyen) Vaka</span>
+                  <strong>142</strong>
+                </div>
+                <div class="nv-stat blue">
+                  <span data-i18n="neyimvar.statMhrs">MHRS Üzerinden Doğrudan Doğru Polikliniğe Sevk Edilen (Zaman Kazanan) Vaka</span>
+                  <strong>48</strong>
+                </div>
+                <div class="nv-stat red">
+                  <span data-i18n="neyimvar.statEms">Acil Servise (112) Paslanan Kritik Vaka</span>
+                  <strong>10</strong>
+                </div>
               </div>
             </section>
           </div>
