@@ -279,6 +279,13 @@
     settingsCopyApi: document.getElementById('settings-copy-api'),
     settingsApiStatus: document.getElementById('settings-api-status'),
     langSwitcher: document.getElementById('lang-switcher'),
+    scorecardCountLow: document.getElementById('scorecard-count-low'),
+    scorecardCountMedium: document.getElementById('scorecard-count-medium'),
+    scorecardCountHigh: document.getElementById('scorecard-count-high'),
+    scorecardClinicChart: document.getElementById('scorecard-clinic-chart'),
+    scorecardTableBody: document.getElementById('scorecard-table-body'),
+    botTriggerBtn: document.getElementById('bot-trigger-btn'),
+    botTriggerStatus: document.getElementById('bot-trigger-status'),
   };
 
   const conditionKeyMap = {
@@ -1241,6 +1248,7 @@
         ${caregiverCard(p)}
         ${interactionCard(p)}
       </div>
+      ${renderPatientScorecard(p)}
       <div class="detail-charts">
         <div class="chart-box"><span class="chart-title">${escapeHtml(t('chart.pulse'))}</span>${sparkline(history, isAlarm, (h) => h.heartRate)}</div>
         <div class="chart-box"><span class="chart-title">${escapeHtml(t('chart.spo2'))}</span>${sparkline(history, isAlarm, (h) => h.oxygenSaturation)}</div>
@@ -1314,6 +1322,17 @@
         </fieldset>
         ${thresholdFields('critical', critical, t('clinical.criticalThreshold'))}
         ${thresholdFields('warning', warning, t('clinical.warningThreshold'))}
+        <div class="bot-trigger-row">
+          <label class="field small">
+            <span data-i18n="bot.channel">Bot Kanalı</span>
+            <select id="bot-trigger-channel">
+              <option value="voice" data-i18n="bot.voice">🎙️ Sesli Arama (Vapi)</option>
+              <option value="sms" data-i18n="bot.sms">💬 SMS (Twilio)</option>
+            </select>
+          </label>
+          <button type="button" class="btn btn-primary" id="bot-trigger-btn">${escapeHtml(t('bot.triggerBtn'))}</button>
+          <span id="bot-trigger-status" class="bot-trigger-status hidden"></span>
+        </div>
         <div class="clinical-actions">
           <button type="submit" class="btn btn-primary">${escapeHtml(t('clinical.save'))}</button>
           <span id="clinical-status" class="clinical-status hidden"></span>
@@ -1440,6 +1459,15 @@
         }
       });
       setupScheduleEditor(clinicalForm, schedule.times, schedule.template);
+    }
+
+    const botTriggerBtn = document.getElementById('bot-trigger-btn');
+    if (botTriggerBtn) {
+      botTriggerBtn.addEventListener('click', () => {
+        const channelSelect = document.getElementById('bot-trigger-channel');
+        const channel = channelSelect ? channelSelect.value : 'voice';
+        triggerBot(p.pseudonym, channel);
+      });
     }
 
     renderPatientModules(p);
@@ -1921,6 +1949,167 @@
 
   function renderFutureView() {
     if (els.futureViewGrid) els.futureViewGrid.classList.remove('hidden');
+  }
+
+  /* ---------- Scorecard & Bot Integration ---------- */
+  function getRespiratoryRate(h) {
+    if (h && h.respiratoryRate) return Number(h.respiratoryRate);
+    return 0;
+  }
+
+  function computeMewsScore(h) {
+    const hr = Number(h.heartRate || 0);
+    const sys = Number(h.bloodPressureSystolic || 0);
+    const temp = Number(h.temperature || 0);
+    const spo2 = Number(h.oxygenSaturation || 0);
+    const rr = getRespiratoryRate(h);
+
+    let score = 0;
+    if (hr >= 130 || hr < 40) score += 2;
+    else if (hr >= 110 || hr < 50) score += 1;
+    else if (hr >= 100) score += 1;
+
+    if (sys >= 200 || sys < 70) score += 2;
+    else if (sys >= 160 || sys < 90) score += 1;
+
+    if (spo2 < 90) score += 2;
+    else if (spo2 < 93) score += 1;
+
+    if (temp >= 38.5 || temp < 35.0) score += 1;
+
+    if (rr >= 30 || rr < 9) score += 2;
+    else if (rr >= 21) score += 1;
+
+    let level = 'low';
+    if (score >= 5) level = 'high';
+    else if (score >= 3) level = 'medium';
+    return { score, level };
+  }
+
+  function mewsLevelLabel(level) {
+    return t('scorecard.level.' + level);
+  }
+
+  function mewsLevelClass(level) {
+    return level === 'high' ? 'mews-high' : level === 'medium' ? 'mews-medium' : 'mews-low';
+  }
+
+  function patientScoreHistory(p) {
+    const history = p.history || p.healthData || [];
+    return history.map((h) => ({ ...computeMewsScore(h), timestamp: h.timestamp }));
+  }
+
+  function drawScorecardChart(container, entries) {
+    if (!container || entries.length < 2) {
+      if (container) container.innerHTML = `<span class="empty-chart" style="color:var(--text-muted);font-size:0.8rem;">${escapeHtml(t('analytics.noData'))}</span>`;
+      return;
+    }
+    const labels = entries.map((e) => fmtTime(e.timestamp));
+    const values = entries.map((e) => e.score);
+    drawLineChart(container, labels, values, 'var(--indigo)');
+  }
+
+  function renderPatientScorecard(p) {
+    const history = patientScoreHistory(p);
+    const latest = history.at(-1) || { score: 0, level: 'low' };
+    const entries = history.slice(-12);
+    const chartId = `scorecard-patient-chart-${p.pseudonym.slice(0, 8)}`;
+    setTimeout(() => {
+      drawScorecardChart(document.getElementById(chartId), entries);
+    }, 0);
+    return `
+      <div class="scorecard-patient-card">
+        <div class="scorecard-patient-head">
+          <div>
+            <h4 data-i18n="scorecard.patientTitle">AI Klinik Risk Skor Kartı</h4>
+            <small data-i18n="scorecard.mewsStandard">MEWS (Modified Early Warning Score)</small>
+          </div>
+          <div class="scorecard-patient-score ${mewsLevelClass(latest.level)}">
+            <span>MEWS</span>
+            <strong>${latest.score}</strong>
+            <em>${escapeHtml(mewsLevelLabel(latest.level))}</em>
+          </div>
+        </div>
+        <div class="scorecard-patient-chart" id="${chartId}"></div>
+        <div class="scorecard-patient-legend">
+          <span class="mews-legend low">● ${escapeHtml(t('scorecard.low'))}</span>
+          <span class="mews-legend medium">● ${escapeHtml(t('scorecard.medium'))}</span>
+          <span class="mews-legend high">● ${escapeHtml(t('scorecard.high'))}</span>
+        </div>
+      </div>`;
+  }
+
+  async function renderScorecard() {
+    if (!els.scorecardTableBody) return;
+    const patients = (lastData?.patients || []);
+    const counts = { low: 0, medium: 0, high: 0 };
+    const rows = [];
+
+    for (const p of patients) {
+      if (!p.latest) continue;
+      const mews = computeMewsScore(p.latest);
+      counts[mews.level]++;
+      rows.push({
+        p,
+        mews,
+        vitals: `${p.latest.heartRate} bpm / %${p.latest.oxygenSaturation} / ${p.latest.bloodPressureSystolic}/${p.latest.bloodPressureDiastolic}`,
+        time: fmtTime(p.latest.timestamp),
+      });
+    }
+
+    if (els.scorecardCountLow) els.scorecardCountLow.textContent = String(counts.low);
+    if (els.scorecardCountMedium) els.scorecardCountMedium.textContent = String(counts.medium);
+    if (els.scorecardCountHigh) els.scorecardCountHigh.textContent = String(counts.high);
+
+    rows.sort((a, b) => b.mews.score - a.mews.score);
+    els.scorecardTableBody.innerHTML = rows.length
+      ? rows.map((r) => `
+        <tr data-pseudonym="${escapeHtml(r.p.pseudonym)}">
+          <td>${escapeHtml(displayName(r.p))}</td>
+          <td><strong class="${mewsLevelClass(r.mews.level)}">${r.mews.score}</strong></td>
+          <td><span class="mews-chip ${mewsLevelClass(r.mews.level)}">${escapeHtml(mewsLevelLabel(r.mews.level))}</span></td>
+          <td>${escapeHtml(r.vitals)}</td>
+          <td>${escapeHtml(r.time)}</td>
+        </tr>`).join('')
+      : `<tr><td colspan="5" class="table-empty">${escapeHtml(t('scorecard.empty'))}</td></tr>`;
+
+    els.scorecardTableBody.querySelectorAll('tr[data-pseudonym]').forEach((row) => {
+      row.addEventListener('click', () => {
+        selectedPseudonym = row.dataset.pseudonym;
+        switchView('patients');
+      });
+    });
+
+    try {
+      const res = await api('/api/scorecard/clinic');
+      const data = res.ok ? await safeJson(res) : { snapshots: [] };
+      const snapshots = data.snapshots || [];
+      const labels = snapshots.map((s) => s.date.slice(5));
+      const values = snapshots.map((s) => s.avgScore);
+      drawLineChart(els.scorecardClinicChart, labels, values, 'var(--indigo)');
+    } catch (err) {
+      if (els.scorecardClinicChart) {
+        els.scorecardClinicChart.innerHTML = `<span class="empty-chart" style="color:var(--text-muted);font-size:0.8rem;">${escapeHtml(t('analytics.noData'))}</span>`;
+      }
+    }
+  }
+
+  async function triggerBot(pseudonym, channel = 'voice') {
+    if (!els.botTriggerStatus) return;
+    els.botTriggerStatus.textContent = t('bot.triggering');
+    els.botTriggerStatus.classList.remove('hidden');
+    try {
+      const res = await api('/api/bot/trigger', {
+        method: 'POST',
+        body: JSON.stringify({ pseudonym, channel }),
+      });
+      const body = await safeJson(res);
+      if (!res.ok) throw new Error(body.error || t('bot.error'));
+      els.botTriggerStatus.textContent = t('bot.triggered', { values: body.transcript });
+      await poll();
+    } catch (err) {
+      els.botTriggerStatus.textContent = err.message;
+    }
   }
 
   /* ---------- AI Clinical SMS Assistant ---------- */
@@ -2624,6 +2813,7 @@
 
     renderAnalytics(data);
     renderModules();
+    renderScorecard();
 
     if (withData.length === 0) {
       els.patients.innerHTML = `<div class="empty-state">

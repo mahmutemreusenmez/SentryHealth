@@ -165,6 +165,43 @@
               </div>
             </section>
 
+            <section class="scorecard-section" id="scorecard-section">
+              <h2 data-i18n="scorecard.title">AI Klinik Risk Skor Tablosu</h2>
+              <p class="scorecard-subtitle" data-i18n="scorecard.subtitle">Botun topladığı vital veriler MEWS kriterlerine göre puanlanır. Kırmızı alanlar acil müdahaleyi, sarı alanlar yakın takibi gösterir.</p>
+              <div class="scorecard-grid">
+                <div class="scorecard-card low">
+                  <span class="scorecard-card-label" data-i18n="scorecard.low">Risk Yok (Yeşil)</span>
+                  <strong class="scorecard-card-value" id="scorecard-count-low">—</strong>
+                </div>
+                <div class="scorecard-card medium">
+                  <span class="scorecard-card-label" data-i18n="scorecard.medium">Yakın Takip (Sarı)</span>
+                  <strong class="scorecard-card-value" id="scorecard-count-medium">—</strong>
+                </div>
+                <div class="scorecard-card high">
+                  <span class="scorecard-card-label" data-i18n="scorecard.high">Kritik Alarm (Kırmızı)</span>
+                  <strong class="scorecard-card-value" id="scorecard-count-high">—</strong>
+                </div>
+              </div>
+              <div class="scorecard-chart-wrap">
+                <span class="chart-title" data-i18n="scorecard.clinicTrend">Klinik Ortalama MEWS Trendi</span>
+                <div class="chart-svg" id="scorecard-clinic-chart"></div>
+              </div>
+              <div class="scorecard-table-wrap">
+                <table class="scorecard-table">
+                  <thead>
+                    <tr>
+                      <th data-i18n="scorecard.patient">Hasta</th>
+                      <th data-i18n="scorecard.score">MEWS</th>
+                      <th data-i18n="scorecard.level">Risk</th>
+                      <th data-i18n="scorecard.vitals">Nabız / SpO2 / Tansiyon</th>
+                      <th data-i18n="scorecard.time">Son Ölçüm</th>
+                    </tr>
+                  </thead>
+                  <tbody id="scorecard-table-body"><tr><td colspan="5" data-i18n="scorecard.empty">Veri yükleniyor...</td></tr></tbody>
+                </table>
+              </div>
+            </section>
+
             <section class="analytics-section" id="analytics-section">
               <h2 data-i18n="analytics.title">Analitik &amp; İstatistikler</h2>
               <div class="analytics-grid">
