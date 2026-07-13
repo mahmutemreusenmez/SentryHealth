@@ -118,11 +118,10 @@ export async function createServer() {
   const allowedOrigins = env.CORS_ORIGINS;
   app.use(cors({
     origin(origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-        return;
-      }
-      callback(new Error('Origin not allowed by CORS'));
+      // No Origin header (same-origin / non-browser) or an allow-listed origin
+      // gets CORS headers; any other cross-origin browser request simply does
+      // not receive them, so the browser blocks it client-side.
+      callback(null, !origin || allowedOrigins.includes(origin));
     },
     credentials: true,
   }));
