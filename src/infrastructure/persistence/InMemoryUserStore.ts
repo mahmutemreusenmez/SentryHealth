@@ -1,4 +1,5 @@
-import { createHash, randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID, scryptSync, timingSafeEqual } from 'node:crypto';
+import { env } from '../config/env.js';
 
 export interface User {
   id: string;
@@ -15,8 +16,26 @@ export interface UserDto {
   role: 'doctor' | 'admin';
 }
 
+const SCRYPT_KEYLEN = 64;
+
 export function hashPassword(password: string): string {
-  return createHash('sha256').update(password).digest('hex');
+  const salt = randomBytes(16);
+  const derived = scryptSync(password, salt, SCRYPT_KEYLEN);
+  return `scrypt$${salt.toString('hex')}$${derived.toString('hex')}`;
+}
+
+export function verifyPassword(password: string, stored: string): boolean {
+  const parts = stored.split('$');
+  if (parts.length !== 3 || parts[0] !== 'scrypt') {
+    return false;
+  }
+  const salt = Buffer.from(parts[1], 'hex');
+  const expected = Buffer.from(parts[2], 'hex');
+  const derived = scryptSync(password, salt, expected.length);
+  if (derived.length !== expected.length) {
+    return false;
+  }
+  return timingSafeEqual(derived, expected);
 }
 
 function toDto(user: User): UserDto {
@@ -24,18 +43,18 @@ function toDto(user: User): UserDto {
 }
 
 export class InMemoryUserStore {
-  private users = new Map<string, User>([
-    [
-      'yönetici',
-      {
-        id: 'u-1',
-        username: 'yönetici',
-        displayName: 'Prof. Dr. Ayşe Yılmaz',
-        role: 'admin',
-        passwordHash: hashPassword('yönetici123'),
-      },
-    ],
-  ]);
+  private users = new Map<string, User>();
+
+  constructor() {
+    const adminUsername = env.ADMIN_USERNAME;
+    this.users.set(adminUsername, {
+      id: 'u-1',
+      username: adminUsername,
+      displayName: env.ADMIN_DISPLAY_NAME,
+      role: 'admin',
+      passwordHash: hashPassword(env.ADMIN_PASSWORD),
+    });
+  }
 
   findByUsername(username: string): User | undefined {
     return this.users.get(username);
@@ -58,8 +77,8 @@ export class InMemoryUserStore {
       throw new Error('Bu kullanıcı adı zaten kullanımda');
     }
     const password = input.password.trim();
-    if (!password || password.length < 4) {
-      throw new Error('Şifre en az 4 karakter olmalıdır');
+    if (!password || password.length < 8) {
+      throw new Error('Şifre en az 8 karakter olmalıdır');
     }
     const user: User = {
       id: randomUUID(),

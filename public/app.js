@@ -443,33 +443,10 @@
     showLogin();
   }
 
-  const LOCKED_USERNAME = 'yönetici';
-  const LOCKED_PASSWORD = 'yönetici123';
-  const FALLBACK_TOKEN = 'sentryhealth-local-fallback-token';
-  const FALLBACK_USER = {
-    id: 'u-1',
-    username: 'yönetici',
-    displayName: 'Prof. Dr. Ayşe Yılmaz',
-    role: 'admin',
-  };
-
-  function applyFallbackLogin() {
-    localStorage.setItem('token', FALLBACK_TOKEN);
-    setStoredUser(FALLBACK_USER);
-    addLog(t('log.login', { who: FALLBACK_USER.displayName, role: FALLBACK_USER.role }));
-    showApp();
-  }
-
   async function initAuth() {
     const token = getToken();
     if (!token) {
       showLogin();
-      return;
-    }
-    if (token === FALLBACK_TOKEN) {
-      const stored = getStoredUser();
-      setStoredUser(stored || FALLBACK_USER);
-      showApp();
       return;
     }
     try {
@@ -494,11 +471,6 @@
     const username = String(fd.get('username') || '').trim();
     const password = String(fd.get('password') || '');
     const payload = { username, password };
-
-    if (username === LOCKED_USERNAME && password === LOCKED_PASSWORD) {
-      applyFallbackLogin();
-      return;
-    }
 
     try {
       const res = await fetch('/api/auth/login', {

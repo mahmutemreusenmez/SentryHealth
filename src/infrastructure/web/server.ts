@@ -16,6 +16,7 @@ import { scorecardRouter } from '../../interface/http/routes/scorecard.js';
 import { optimizerRouter } from '../../interface/http/routes/optimizer.js';
 import { authMiddleware, adminMiddleware } from '../../interface/http/middleware/auth.js';
 import { ValidationError } from '../../application/errors/ValidationError.js';
+import { env } from '../config/env.js';
 import { repository } from '../config/dependencies.js';
 import { seedPatients } from '../config/seedPatients.js';
 import type { PatientThreshold } from '../../application/ports/Anonymizer.js';
@@ -114,7 +115,17 @@ export async function createServer() {
     },
     crossOriginEmbedderPolicy: false,
   }));
-  app.use(cors());
+  const allowedOrigins = env.CORS_ORIGINS;
+  app.use(cors({
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(new Error('Origin not allowed by CORS'));
+    },
+    credentials: true,
+  }));
   app.use(express.json({ limit: '1mb' }));
 
   if (publicDir) {
@@ -248,8 +259,12 @@ export async function createServer() {
   });
 
   app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err instanceof ValidationError ? 400 : 500;
-    res.status(status).json({ error: err.message });
+    if (err instanceof ValidationError) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    console.error('Unhandled error:', err);
+    res.status(500).json({ error: 'Sunucu hatası' });
   });
 
   return app;
