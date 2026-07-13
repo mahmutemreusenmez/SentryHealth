@@ -811,8 +811,25 @@
           </div>
 
           <div id="view-voice" class="view hidden">
-            <section class="patients-header">
-              <h2 data-i18n="chatbot.title">Klinik YZ Canlı Chatbot</h2>
+            <section class="patients-header pretriage-header">
+              <div>
+                <h2 data-i18n="preTriage.pageTitle">Neyim Var? — Online Akıllı Triyaj Asistanı</h2>
+                <span class="pretriage-live-badge"><span class="chatbot-dot"></span> <span data-i18n="preTriage.liveSession">Canlı Triyaj Görüşmesi</span></span>
+              </div>
+            </section>
+            <section class="pretriage-stats" id="pretriage-stats">
+              <div class="pretriage-stat blue">
+                <span data-i18n="preTriage.statFiltered">Online Triyaj Tarafından Süzülen Toplam Vaka</span>
+                <strong>200</strong>
+              </div>
+              <div class="pretriage-stat green">
+                <span data-i18n="preTriage.statPrevented">Acil Servise Gitmesi Engellenen (Evde/Tele-Tıpta Çözülen) Hasta Oranı</span>
+                <strong>%68</strong>
+              </div>
+              <div class="pretriage-stat amber">
+                <span data-i18n="preTriage.statFastTrack">Doğrudan Doğru Branşa Sevk Edilerek Vakit Kazanan Hasta Sayısı</span>
+                <strong>64</strong>
+              </div>
             </section>
             <section class="chatbot-grid" id="voice-panel"></section>
           </div>
