@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "SentryCompanion AI",
+    "slug": "sentry-companion-ai",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "sentrycompanion",
+    "newArchEnabled": false,
+    "splash": {
+      "backgroundColor": "#0a7c86"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "tr.gov.saglik.sentrycompanion"
+    },
+    "android": {
+      "package": "tr.gov.saglik.sentrycompanion",
+      "adaptiveIcon": {
+        "backgroundColor": "#0a7c86"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "color": "#0a7c86"
+        }
+      ]
+    ]
+  }
+}
