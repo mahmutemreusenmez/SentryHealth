@@ -113,6 +113,17 @@
 
         <main>
           <div id="view-dashboard" class="view">
+            <section id="crisis-room" class="crisis-room hidden" aria-live="assertive">
+              <div class="crisis-room-inner">
+                <div class="crisis-room-head">
+                  <span class="crisis-pulse-dot"></span>
+                  <h2 data-i18n="crisis.title">Otonom Kriz Odası Aktif</h2>
+                  <span class="crisis-badge" data-i18n="crisis.badge">KIRMIZI KOD</span>
+                </div>
+                <p class="crisis-case" id="crisis-case-label"></p>
+                <ul class="crisis-actions" id="crisis-actions"></ul>
+              </div>
+            </section>
             <section class="summary" id="summary">
               <div class="summary-card">
                 <div class="summary-icon blue">👥</div>
@@ -313,6 +324,17 @@
                   <span data-i18n="optimizer.statCriticalTitle">Öncelikli Hastaneye Çağrılan Kritik Vaka Sayısı</span>
                   <strong id="optimizer-stat-critical">—</strong>
                 </div>
+              </div>
+              <div class="savings-metric-card" id="savings-metric-card">
+                <div class="savings-metric-head">
+                  <span class="savings-tag" data-i18n="savings.tag">TÜSEB FİNANSAL ETKİ</span>
+                  <h3 data-i18n="savings.title">SentryHealth Algoritmik Finansal Tasarruf Metriği</h3>
+                </div>
+                <div class="savings-metric-body">
+                  <p data-i18n="savings.desc">Erken teşhis ve evde triyaj sayesinde önlenen gereksiz hastane/acil yatışlarının devlete sağladığı tahmini yıllık tasarruf</p>
+                  <strong class="savings-value" id="savings-value">1.240.000 ₺</strong>
+                </div>
+                <div class="savings-bar" aria-hidden="true"><span></span></div>
               </div>
 
               <div class="optimizer-grid">

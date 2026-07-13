@@ -1275,6 +1275,137 @@
       </section>`;
   }
 
+  /* ---------- SentryAI Core: Epicrisis + Crisis Room ---------- */
+  function avg(values) {
+    if (!values.length) return 0;
+    return values.reduce((s, v) => s + v, 0) / values.length;
+  }
+
+  function pctDelta(recent, previous) {
+    if (!previous) return 0;
+    return ((recent - previous) / previous) * 100;
+  }
+
+  function buildEpicrisis(p) {
+    const history = (p.history || []).slice(-30);
+    const latest = p.latest || history[history.length - 1] || null;
+    const condition = translateCondition(p.conditionGroup);
+    const name = displayName(p);
+    const points = [];
+
+    if (!latest || history.length < 2) {
+      return [
+        t('epicrisis.item.stableBase', { name, condition }),
+        t('epicrisis.item.needData'),
+        t('epicrisis.item.followPlan'),
+      ];
+    }
+
+    const half = Math.max(1, Math.floor(history.length / 2));
+    const early = history.slice(0, half);
+    const late = history.slice(half);
+    const sysEarly = avg(early.map((h) => Number(h.bloodPressureSystolic) || 0));
+    const sysLate = avg(late.map((h) => Number(h.bloodPressureSystolic) || 0));
+    const hrEarly = avg(early.map((h) => Number(h.heartRate) || 0));
+    const hrLate = avg(late.map((h) => Number(h.heartRate) || 0));
+    const spo2Late = avg(late.map((h) => Number(h.oxygenSaturation) || 0));
+    const sysDelta = pctDelta(sysLate, sysEarly);
+    const hrDelta = pctDelta(hrLate, hrEarly);
+
+    if (Math.abs(sysDelta) >= 5) {
+      points.push(t(sysDelta > 0 ? 'epicrisis.item.sysUp' : 'epicrisis.item.sysDown', {
+        name,
+        pct: Math.abs(sysDelta).toFixed(0),
+        value: Math.round(sysLate),
+      }));
+    } else {
+      points.push(t('epicrisis.item.sysStable', { name, value: Math.round(sysLate || latest.bloodPressureSystolic || 0) }));
+    }
+
+    if (spo2Late && spo2Late < 92) {
+      points.push(t('epicrisis.item.spo2Low', { value: spo2Late.toFixed(0) }));
+    } else if (hrDelta >= 8) {
+      points.push(t('epicrisis.item.hrUp', { pct: hrDelta.toFixed(0), value: Math.round(hrLate) }));
+    } else {
+      points.push(t('epicrisis.item.vitalsOk', {
+        hr: Math.round(hrLate || latest.heartRate || 0),
+        spo2: Math.round(spo2Late || latest.oxygenSaturation || 0),
+      }));
+    }
+
+    const key = conditionKeyMap[p.conditionGroup] || 'other';
+    points.push(t('epicrisis.item.rec.' + key, { condition }));
+    return points.slice(0, 3);
+  }
+
+  function renderEpicrisisPanel(p) {
+    const items = buildEpicrisis(p).map((text) => `<li>${escapeHtml(text)}</li>`).join('');
+    return `
+      <section class="epicrisis-card">
+        <div class="epicrisis-head">
+          <span class="epicrisis-tag">SentryAI</span>
+          <div>
+            <h3>${escapeHtml(t('epicrisis.title'))}</h3>
+            <p>${escapeHtml(t('epicrisis.subtitle'))}</p>
+          </div>
+        </div>
+        <ol class="epicrisis-list">${items}</ol>
+      </section>`;
+  }
+
+  function isCrisisPatient(p) {
+    const latest = p.latest;
+    if (!latest) return false;
+    const spo2 = Number(latest.oxygenSaturation);
+    const hr = Number(latest.heartRate);
+    const sys = Number(latest.bloodPressureSystolic);
+    if (Number.isFinite(spo2) && spo2 > 0 && spo2 < 88) return true;
+    if (Number.isFinite(hr) && hr > 130) return true;
+    if (Number.isFinite(sys) && sys >= 180) return true;
+    if (p.risk?.level === 'critical' || p.risk?.breachedThreshold === 'critical') return true;
+    return false;
+  }
+
+  function maskPhone(phone) {
+    const digits = String(phone || '').replace(/\D/g, '');
+    if (digits.length < 7) return '05xx xxx xx xx';
+    return `${digits.slice(0, 2)}xx ${digits.slice(4, 7)} xx ${digits.slice(-2)}`;
+  }
+
+  function renderCrisisRoom(patients) {
+    const room = document.getElementById('crisis-room');
+    const caseEl = document.getElementById('crisis-case-label');
+    const actionsEl = document.getElementById('crisis-actions');
+    if (!room || !caseEl || !actionsEl) return;
+
+    const crisisCases = (patients || []).filter(isCrisisPatient);
+    if (!crisisCases.length) {
+      room.classList.add('hidden');
+      actionsEl.innerHTML = '';
+      caseEl.textContent = '';
+      return;
+    }
+
+    const p = crisisCases[0];
+    const latest = p.latest || {};
+    const phone = maskPhone(p.phone || (p.caregiver && p.caregiver.phone) || '05321234567');
+    const code = p.displayCode || (p.pseudonym ? p.pseudonym.slice(0, 8) : 'H-XX');
+    caseEl.textContent = t('crisis.case', {
+      name: displayName(p),
+      code,
+      spo2: latest.oxygenSaturation ?? '—',
+      hr: latest.heartRate ?? '—',
+      sys: latest.bloodPressureSystolic ?? '—',
+      count: crisisCases.length,
+    });
+    actionsEl.innerHTML = [
+      t('crisis.action1'),
+      t('crisis.action2', { phone }),
+      t('crisis.action3', { code }),
+    ].map((text, i) => `<li><span class="crisis-step">Aksiyon ${i + 1}</span>${escapeHtml(text)}</li>`).join('');
+    room.classList.remove('hidden');
+  }
+
   function renderPatientDetail(patients) {
     const p = patients.find((x) => x.pseudonym === selectedPseudonym);
     if (!p) {
@@ -1356,6 +1487,7 @@
       </div>
       <div class="detail-tabs" role="tablist">
         <button type="button" class="detail-tab active" data-tab="vitals">Kronik Vitaller</button>
+        <button type="button" class="detail-tab" data-tab="epicrisis">SentryAI Epikriz</button>
         <button type="button" class="detail-tab" data-tab="schedule">Akıllı Takip Takvimi</button>
         <button type="button" class="detail-tab" data-tab="triage">Online Ön Triyaj</button>
         <button type="button" class="detail-tab" data-tab="mhrs">MHRS Sevk Geçmişi</button>
@@ -1367,6 +1499,7 @@
           ${caregiverCard(p)}
           ${interactionCard(p)}
         </div>
+        ${renderEpicrisisPanel(p)}
         ${renderPatientScorecard(p)}
         <div class="detail-charts">
           <div class="chart-box"><span class="chart-title">${escapeHtml(t('chart.pulse'))}</span>${sparkline(history, isAlarm, (h) => h.heartRate)}</div>
@@ -1475,6 +1608,10 @@
             <tr><td>${escapeHtml(new Date(Date.now() - 86400000 * 30).toLocaleDateString('tr-TR'))}</td><td>Dahiliye</td><td>MHRS-${escapeHtml((p.pseudonym || 'PSN').slice(-6).toUpperCase())}</td><td>Tamamlandı</td></tr>
           </tbody>
         </table>
+      </div>
+
+      <div class="detail-tab-panel" data-panel="epicrisis">
+        ${renderEpicrisisPanel(p)}
       </div>
 
       <div class="detail-tab-panel" data-panel="companion">
@@ -3137,7 +3274,7 @@
   }
 
   function updateCriticalAlert(patients) {
-    const hasCritical = patients.some((p) => p.risk?.breachedThreshold === 'critical');
+    const hasCritical = patients.some((p) => isCrisisPatient(p) || p.risk?.breachedThreshold === 'critical');
     if (els.appShell) els.appShell.classList.toggle('alert-pulse', hasCritical);
   }
 
@@ -3156,6 +3293,7 @@
     }
 
     updateCriticalAlert(patients);
+    renderCrisisRoom(patients);
 
     if (currentView === 'patients') {
       renderPatientsTable(patients);
