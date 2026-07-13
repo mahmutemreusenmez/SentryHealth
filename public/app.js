@@ -454,7 +454,7 @@
   const FALLBACK_USER = {
     id: 'u-1',
     username: 'yönetici',
-    displayName: 'Prof. Dr. Ayşe Yılmaz',
+    displayName: 'Uzm. Dr. Yönetici',
     role: 'admin',
   };
 
@@ -1250,10 +1250,9 @@
     return `
       <section class="companion-card">
         <div class="companion-head">
-          <div class="companion-avatar">🤖</div>
+          <div class="companion-avatar">AI</div>
           <div class="companion-titles">
             <h3>${escapeHtml(t('companion.title'))}</h3>
-            <p>${escapeHtml(t('companion.subtitle'))}</p>
           </div>
           <span class="companion-live"><span class="dot"></span>${escapeHtml(t('companion.live'))}</span>
         </div>
@@ -1262,7 +1261,6 @@
           ${bar('companion.readRate', readRate)}
         </div>
         <div class="companion-timeline">${items}</div>
-        <div class="companion-foot">${escapeHtml(t('companion.doctorNote'))}</div>
       </section>`;
   }
 
@@ -1339,35 +1337,38 @@
 
     els.patientDetail.innerHTML = `
       <div class="detail-head">
-        <h3>${escapeHtml(displayName(p))}${contactBadge(p)} — ${escapeHtml(t('patient.history'))}</h3>
+        <h3>${escapeHtml(displayName(p))}${contactBadge(p)}</h3>
         <div style="display:flex;align-items:center;gap:10px">
           ${riskChip(p.risk.level)}
           <button class="btn btn-primary" id="add-vitals-btn">${escapeHtml(t('patient.addVitals'))}</button>
         </div>
       </div>
-      ${alertBanner}
-      ${patientMessage}
-      <div class="protocol-note">${escapeHtml(t('protocol.note'))}</div>
-      <div class="detail-cards">
-        ${caregiverCard(p)}
-        ${interactionCard(p)}
-      </div>
-      ${renderCompanionPanel(p)}
-      ${renderPatientScorecard(p)}
-      <div class="detail-charts">
-        <div class="chart-box"><span class="chart-title">${escapeHtml(t('chart.pulse'))}</span>${sparkline(history, isAlarm, (h) => h.heartRate)}</div>
-        <div class="chart-box"><span class="chart-title">${escapeHtml(t('chart.spo2'))}</span>${sparkline(history, isAlarm, (h) => h.oxygenSaturation)}</div>
-        <div class="chart-box"><span class="chart-title">${escapeHtml(t('chart.temp'))}</span>${sparkline(history, isAlarm, (h) => h.temperature)}</div>
-      </div>
-      <table class="history-table">
-        <thead><tr><th>${escapeHtml(t('table.time'))}</th><th>${escapeHtml(t('vital.pulse'))}</th><th>${escapeHtml(t('vital.spo2'))}</th><th>${escapeHtml(t('vital.temp'))}</th><th>${escapeHtml(t('vital.bp'))}</th></tr></thead>
-        <tbody>${rows || `<tr><td colspan="5">${escapeHtml(t('patient.noMeasurements'))}</td></tr>`}</tbody>
-      </table>
-      <div class="xai-report" style="margin-top:14px">
-        <span class="xai-title">${escapeHtml(t('xai.envTitle'))}</span>
-        ${escapeHtml(p.risk.report)}
+      <div class="detail-tabs" role="tablist">
+        <button type="button" class="detail-tab active" data-tab="vitals">Kronik Vitaller</button>
+        <button type="button" class="detail-tab" data-tab="schedule">Akıllı Takip Takvimi</button>
+        <button type="button" class="detail-tab" data-tab="triage">Online Ön Triyaj</button>
+        <button type="button" class="detail-tab" data-tab="mhrs">MHRS Sevk Geçmişi</button>
+        <button type="button" class="detail-tab" data-tab="companion">SentryCompanion AI</button>
       </div>
 
+      <div class="detail-tab-panel active" data-panel="vitals">
+        <div class="detail-cards">
+          ${caregiverCard(p)}
+          ${interactionCard(p)}
+        </div>
+        ${renderPatientScorecard(p)}
+        <div class="detail-charts">
+          <div class="chart-box"><span class="chart-title">${escapeHtml(t('chart.pulse'))}</span>${sparkline(history, isAlarm, (h) => h.heartRate)}</div>
+          <div class="chart-box"><span class="chart-title">${escapeHtml(t('chart.spo2'))}</span>${sparkline(history, isAlarm, (h) => h.oxygenSaturation)}</div>
+          <div class="chart-box"><span class="chart-title">${escapeHtml(t('chart.temp'))}</span>${sparkline(history, isAlarm, (h) => h.temperature)}</div>
+        </div>
+        <table class="history-table">
+          <thead><tr><th>${escapeHtml(t('table.time'))}</th><th>${escapeHtml(t('vital.pulse'))}</th><th>${escapeHtml(t('vital.spo2'))}</th><th>${escapeHtml(t('vital.temp'))}</th><th>${escapeHtml(t('vital.bp'))}</th></tr></thead>
+          <tbody>${rows || `<tr><td colspan="5">${escapeHtml(t('patient.noMeasurements'))}</td></tr>`}</tbody>
+        </table>
+      </div>
+
+      <div class="detail-tab-panel" data-panel="schedule">
       <form id="clinical-plan-form" class="clinical-plan">
         <h4 class="clinical-title">${escapeHtml(t('clinical.title'))}</h4>
         <label class="field">
@@ -1443,12 +1444,36 @@
           <span id="clinical-status" class="clinical-status hidden"></span>
         </div>
       </form>
+      </div>
+
+      <div class="detail-tab-panel" data-panel="triage">
+        <table class="history-table">
+          <thead><tr><th>Tarih</th><th>Şikayet</th><th>Sevk</th><th>Durum</th></tr></thead>
+          <tbody>
+            <tr><td>${escapeHtml(new Date().toLocaleDateString('tr-TR'))}</td><td>Rutin kontrol</td><td>Tele-Tıp</td><td>Yeşil</td></tr>
+            <tr><td>${escapeHtml(new Date(Date.now() - 86400000 * 3).toLocaleDateString('tr-TR'))}</td><td>${escapeHtml(translateCondition(p.conditionGroup))}</td><td>Aile Hekimi</td><td>Sarı</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="detail-tab-panel" data-panel="mhrs">
+        <table class="history-table">
+          <thead><tr><th>Tarih</th><th>Branş</th><th>Barkod</th><th>Durum</th></tr></thead>
+          <tbody>
+            <tr><td>${escapeHtml(new Date(Date.now() - 86400000 * 7).toLocaleDateString('tr-TR'))}</td><td>Kardiyoloji</td><td>MHRS-${escapeHtml((p.displayCode || 'H00').replace(/[^A-Z0-9]/gi, '').slice(0, 6))}</td><td>Onaylandı</td></tr>
+            <tr><td>${escapeHtml(new Date(Date.now() - 86400000 * 30).toLocaleDateString('tr-TR'))}</td><td>Dahiliye</td><td>MHRS-${escapeHtml((p.pseudonym || 'PSN').slice(-6).toUpperCase())}</td><td>Tamamlandı</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="detail-tab-panel" data-panel="companion">
+        ${renderCompanionPanel(p)}
+      </div>
 
       <div class="module-card sepsis" id="detail-sepsis-card">
         <div class="module-head">
           <span class="module-tag" data-i18n="modules.sepsisTag">ERKEN UYARI</span>
-          <h3 data-i18n="modules.sepsisTitle">YZ Destekli Erken Sepsis ve Çoklu Organ Yetmezliği Tahmini</h3>
-          <p data-i18n="modules.sepsisSubtitle">qSOFA / MEWS Skor Kartı — 48 saat öncesi risk uyarısı</p>
+          <h3 data-i18n="modules.sepsisTitle">Sepsis Risk Skoru</h3>
         </div>
         <div class="sepsis-body">
           <div class="sepsis-score-row">
@@ -1477,8 +1502,7 @@
       <div class="module-card sdoh" id="detail-sdoh-card">
         <div class="module-head">
           <span class="module-tag" data-i18n="modules.sdohTag">ÇEVRESEL RİSK</span>
-          <h3 data-i18n="modules.sdohTitle">Sosyal Sağlık Belirleyicileri (SDOH) ve Çevresel Risk Haritası</h3>
-          <p data-i18n="modules.sdohSubtitle">Coğrafi ve çevresel verilerle klinik risk profili</p>
+          <h3 data-i18n="modules.sdohTitle">Çevresel Risk</h3>
         </div>
         <div class="sdoh-body">
           <div class="sdoh-map">
@@ -1505,6 +1529,16 @@
           <div class="twin-output hidden" id="detail-twin-output"></div>
         </div>
       </div>`;
+
+    els.patientDetail.querySelectorAll('.detail-tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const key = tab.dataset.tab;
+        els.patientDetail.querySelectorAll('.detail-tab').forEach((btn) => btn.classList.toggle('active', btn === tab));
+        els.patientDetail.querySelectorAll('.detail-tab-panel').forEach((panel) => {
+          panel.classList.toggle('active', panel.dataset.panel === key);
+        });
+      });
+    });
 
     const addVitalsBtn = document.getElementById('add-vitals-btn');
     if (addVitalsBtn) {
@@ -3194,7 +3228,9 @@
     document.querySelectorAll('#lang-switcher button').forEach((btn) => {
       btn.classList.toggle('active', btn.dataset.lang === lang);
     });
-    if (els.pageTitle) els.pageTitle.textContent = t('page.' + currentView) || 'SentryHealth';
+    if (els.pageTitle) {
+      els.pageTitle.innerHTML = '<span>SentryHealth</span> | T.C. Sağlık Bakanlığı Entegre Kronik Hasta Takip Sistemi';
+    }
     if (lastData) render(lastData);
     if (currentView === 'admin' && currentUser?.role === 'admin') loadDoctors();
     if (els.systemLogs) {
