@@ -4,6 +4,7 @@ import type { LinkingOptions } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import type { LucideIcon } from "lucide-react-native";
 import {
+  Baby,
   HeartPulse,
   Home,
   MapPin,
@@ -15,11 +16,14 @@ import React from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 
 import { useAuth } from "../context/AuthContext";
+import { useBaby } from "../context/BabyContext";
 import type { RootStackParamList, RootTabParamList } from "../data/types";
 import AuthScreen from "../screens/AuthScreen";
+import BabyScreen from "../screens/BabyScreen";
 import ChatScreen from "../screens/ChatScreen";
 import DashboardScreen from "../screens/DashboardScreen";
 import DoctorPanelScreen from "../screens/DoctorPanelScreen";
+import NursePanelScreen from "../screens/NursePanelScreen";
 import PharmacyScreen from "../screens/PharmacyScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import VideoTriageScreen from "../screens/VideoTriageScreen";
@@ -32,6 +36,7 @@ const TABS: Record<
   Triage: { icon: Video, label: "Canlı Triyaj" },
   Chat: { icon: MessageCircle, label: "AI Sohbet" },
   Pharmacy: { icon: MapPin, label: "Eczane" },
+  Baby: { icon: Baby, label: "Yeni Doğan" },
   Profile: { icon: User, label: "Profil" },
 };
 
@@ -47,10 +52,12 @@ const linking: LinkingOptions<RootStackParamList> = {
           Triage: "triyaj",
           Chat: "sohbet",
           Pharmacy: "eczane",
+          Baby: "yeni-dogan",
           Profile: "profil",
         },
       },
       DoctorPanel: "doctor-panel",
+      NursePanel: "nurse-panel",
     },
   },
 };
@@ -59,6 +66,8 @@ const Tab = createBottomTabNavigator<RootTabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function MainTabs() {
+  // Yeni Doğan sekmesi yalnızca profilde bebek tanımlıysa gösterilir.
+  const { hasNewborn } = useBaby();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -82,6 +91,9 @@ function MainTabs() {
       <Tab.Screen name="Triage" component={VideoTriageScreen} />
       <Tab.Screen name="Chat" component={ChatScreen} />
       <Tab.Screen name="Pharmacy" component={PharmacyScreen} />
+      {hasNewborn ? (
+        <Tab.Screen name="Baby" component={BabyScreen} />
+      ) : null}
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
@@ -116,6 +128,8 @@ export default function RootNavigator() {
         )}
         {/* SentryMD hekim paneli: /doctor-panel derin bağlantısıyla erişilir. */}
         <Stack.Screen name="DoctorPanel" component={DoctorPanelScreen} />
+        {/* SentryBaby ebe/hemşire paneli: /nurse-panel derin bağlantısı. */}
+        <Stack.Screen name="NursePanel" component={NursePanelScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

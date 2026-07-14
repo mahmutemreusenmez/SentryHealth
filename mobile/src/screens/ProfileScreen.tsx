@@ -1,5 +1,6 @@
 import {
   Activity,
+  Baby,
   CheckCircle2,
   ClipboardList,
   CreditCard,
@@ -24,6 +25,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Card, EmptyState, SectionHeader, StatusBadge } from "../components/ui";
 import { useAuth } from "../context/AuthContext";
+import { useBaby } from "../context/BabyContext";
 import { usePatient } from "../context/PatientContext";
 import {
   CHRONIC_CONDITIONS,
@@ -31,7 +33,7 @@ import {
   type Gender,
   type VitalEntry,
 } from "../data/types";
-import { formatClock } from "../utils/format";
+import { formatClock, formatDateShort } from "../utils/format";
 import {
   isValidTcKimlik,
   vitalsSchema,
@@ -52,6 +54,7 @@ export default function ProfileScreen() {
   const { profile, recommendations, vitals, updateProfile, saveVitals } =
     usePatient();
   const { logout } = useAuth();
+  const { hasNewborn, baby, ageMonths, setHasNewborn } = useBaby();
 
   const [fullName, setFullName] = useState(profile.fullName);
   const [nationalId, setNationalId] = useState(profile.nationalId);
@@ -247,6 +250,52 @@ export default function ProfileScreen() {
                 </View>
               ))
             )}
+          </Card>
+
+          {/* Yeni Doğan Bebek — tanımlıysa "Yeni Doğan" sekmesi aktifleşir */}
+          <Card className="mt-5">
+            <SectionHeader
+              title="Yeni Doğan Bebek"
+              subtitle="Tanımlıysa 'Yeni Doğan' takip sekmesi açılır"
+              icon={Baby}
+            />
+            {hasNewborn ? (
+              <View className="mb-3 flex-row items-center rounded-xl bg-brand-light px-3 py-2.5">
+                <View className="mr-3 h-9 w-9 items-center justify-center rounded-full bg-white">
+                  <Baby size={18} color="#059669" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-sm font-bold text-ink">
+                    {baby.fullName}
+                  </Text>
+                  <Text className="text-[11px] text-muted">
+                    {ageMonths} aylık · Doğum: {formatDateShort(baby.birthDate)}
+                  </Text>
+                </View>
+              </View>
+            ) : (
+              <Text className="mb-3 text-xs text-muted">
+                Profilde tanımlı yeni doğan bebek yok. Eklerseniz aşı takvimi,
+                gelişim grafiği ve ebe/hemşire triyajı aktifleşir.
+              </Text>
+            )}
+            <Pressable
+              onPress={() => setHasNewborn(!hasNewborn)}
+              className={`flex-row items-center justify-center rounded-xl py-3 ${
+                hasNewborn ? "border border-danger bg-white" : "bg-brand"
+              }`}
+            >
+              <Baby size={16} color={hasNewborn ? "#dc2626" : "#ffffff"} />
+              <Text
+                className={`ml-2 text-sm font-bold ${
+                  hasNewborn ? "text-danger" : "text-white"
+                }`}
+              >
+                {hasNewborn
+                  ? "Yeni Doğan Takibini Kaldır"
+                  : "Yeni Doğan Bebek Ekle"}
+              </Text>
+            </Pressable>
           </Card>
 
           {/* Günlük vital girişi — güvenli (şifreli) kayıt + akıllı sınırlar */}

@@ -248,12 +248,85 @@ export interface TriageReferral {
   issuedAt: number;
 }
 
+/* ------------------------------------------------------------------ */
+/* SentryBaby — Yeni Doğan Takip ve Canlı Ebe/Hemşire Triyajı          */
+/* ------------------------------------------------------------------ */
+
+export type BabyGender = "female" | "male";
+
+/** Profilde tanımlı yeni doğan bebek. Kronik hasta profilinden ayrık tutulur. */
+export interface BabyProfile {
+  fullName: string;
+  /** Doğum tarihi ISO (YYYY-MM-DD). Aşı ve gelişim hesapları buna dayanır. */
+  birthDate: string;
+  gender: BabyGender;
+}
+
+/** Bebeğin bir gelişim (persentil) ölçümü. */
+export interface GrowthMeasurement {
+  /** Ölçüm yaşı (ay, 0-24). */
+  ageMonths: number;
+  /** Boy (cm). */
+  heightCm: number;
+  /** Kilo (kg). */
+  weightKg: number;
+  /** Baş çevresi (cm). */
+  headCm: number;
+}
+
+/** Persentil grafiğinde ölçülebilen gelişim metriği. */
+export type GrowthMetric = "weightKg" | "heightCm" | "headCm";
+
+/** Bir yaş (ay) için P3 / P50 / P97 referans değerleri. */
+export interface GrowthReferencePoint {
+  ageMonths: number;
+  p3: number;
+  p50: number;
+  p97: number;
+}
+
+/** Sağlık Bakanlığı çocukluk çağı aşı takvimi kaydı. */
+export interface VaccineEntry {
+  id: string;
+  name: string;
+  /** Doğumdan itibaren gün (0 = doğumda). */
+  dueDayOffset: number;
+  /** Doz açıklaması (ör. "1. Doz"). */
+  dose: string;
+}
+
+/** Ebe/Hemşire triyajı sonrası 3 yönlü sevk/yönlendirme seviyesi. */
+export type NurseReferralLevel = "pediatric" | "family-health" | "home";
+
+/** Ebe/Hemşireden anneye canlı iletilen yönlendirme kaydı. */
+export interface NurseReferral {
+  id: string;
+  level: NurseReferralLevel;
+  /** Ekranda gösterilecek sevk/randevu barkodu. */
+  code: string;
+  title: string;
+  /** Anneye yönelik açıklama. */
+  message: string;
+  issuedAt: number;
+}
+
+/** Ebe/Hemşire paneline canlı aktarılan bebek vital metadatası. */
+export interface BabyVitals {
+  /** Son ölçülen ateş (°C). */
+  temperature: number;
+  /** Son tartılan kilo (kg). */
+  weightKg: number;
+  /** Günlük emzirme sıklığı (24 saatte). */
+  feedingsPerDay: number;
+}
+
 /** Alt sekme (bottom tab) navigasyon parametre listesi. */
 export type RootTabParamList = {
   Dashboard: undefined;
   Triage: undefined;
   Chat: undefined;
   Pharmacy: undefined;
+  Baby: undefined;
   Profile: undefined;
 };
 
@@ -262,6 +335,7 @@ export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
   DoctorPanel: undefined;
+  NursePanel: undefined;
 };
 
 export type ChatRole = "user" | "assistant";

@@ -54,6 +54,11 @@ export function relativeDay(iso: string): string {
   return `${diffDays} gün sonra`;
 }
 
+export function formatDateShort(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getDate()} ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
+}
+
 export function formatClock(epochMs: number): string {
   const d = new Date(epochMs);
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;

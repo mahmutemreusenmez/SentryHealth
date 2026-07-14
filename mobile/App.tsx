@@ -6,6 +6,7 @@ import "./global.css";
 import NotificationBanner from "./src/components/NotificationBanner";
 import OfflineBar from "./src/components/OfflineBar";
 import { AuthProvider } from "./src/context/AuthContext";
+import { BabyProvider } from "./src/context/BabyContext";
 import { PatientProvider } from "./src/context/PatientContext";
 import RootNavigator from "./src/navigation/RootNavigator";
 
@@ -14,10 +15,12 @@ export default function App() {
     <SafeAreaProvider>
       <AuthProvider>
         <PatientProvider>
-          <StatusBar style="light" backgroundColor="#10b981" />
-          <RootNavigator />
-          <OfflineBar />
-          <NotificationBanner />
+          <BabyProvider>
+            <StatusBar style="light" backgroundColor="#10b981" />
+            <RootNavigator />
+            <OfflineBar />
+            <NotificationBanner />
+          </BabyProvider>
         </PatientProvider>
       </AuthProvider>
     </SafeAreaProvider>

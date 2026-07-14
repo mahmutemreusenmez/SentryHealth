@@ -26,6 +26,7 @@ export const STORAGE_KEYS = {
   vitals: "sentry_vitals",
   syncQueue: "sentry_sync_queue",
   medicationStock: "sentry_med_stock",
+  baby: "sentry_baby",
 } as const;
 
 /** Web AES anahtar materyalinin saklandığı localStorage anahtarı (yalnızca web). */
