@@ -36,6 +36,13 @@ import {
   saveJSON,
   todayKey,
 } from "../services/storageService";
+import {
+  clearSyncQueue,
+  enqueueSyncItem,
+  fetchConnectivity,
+  loadSyncQueue,
+  subscribeConnectivity,
+} from "../services/syncService";
 
 interface PatientContextValue {
   profile: PatientProfile;
@@ -53,6 +60,10 @@ interface PatientContextValue {
   sendTestNotification: () => void;
   /** Refakatçiye kritik triyaj (kırmızı kod) SMS taslağı üretir. */
   raiseCriticalAlert: () => void;
+  /** Cihaz internete bağlı mı? (offline-first bar için) */
+  online: boolean;
+  /** Çevrimdışı alınıp henüz senkronize edilmemiş onay sayısı. */
+  pendingSyncCount: number;
 }
 
 /** Görev onaylarının o güne ait kalıcı hali. */
@@ -73,6 +84,9 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
   const [guardianAlerts, setGuardianAlerts] = useState<GuardianAlert[]>([]);
   const [vitals, setVitals] = useState<VitalEntry | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [online, setOnline] = useState(true);
+  const [pendingSyncCount, setPendingSyncCount] = useState(0);
+  const onlineRef = useRef(true);
   const simIndexRef = useRef(0);
 
   const recommendations = useMemo(
@@ -103,6 +117,43 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
     });
     return () => {
       cancelled = true;
+    };
+  }, []);
+
+  // Bağlantı durumunu dinle; çevrimiçi olununca bekleyen kuyruğu boşalt.
+  useEffect(() => {
+    let cancelled = false;
+
+    const flushQueue = async () => {
+      const queue = await loadSyncQueue();
+      if (queue.length === 0) return;
+      // Gerçek dünyada burada backend'e POST edilir; simülasyonda güvenli
+      // yerel kuyruğu boşaltıp senkronize edildi sayıyoruz.
+      await clearSyncQueue();
+      if (!cancelled) setPendingSyncCount(0);
+    };
+
+    void fetchConnectivity().then((connected) => {
+      if (cancelled) return;
+      onlineRef.current = connected;
+      setOnline(connected);
+      if (connected) void flushQueue();
+    });
+    void loadSyncQueue().then((queue) => {
+      if (!cancelled) setPendingSyncCount(queue.length);
+    });
+
+    const unsubscribe = subscribeConnectivity((connected) => {
+      if (cancelled) return;
+      const wasOffline = !onlineRef.current;
+      onlineRef.current = connected;
+      setOnline(connected);
+      if (connected && wasOffline) void flushQueue();
+    });
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
     };
   }, []);
 
@@ -141,13 +192,23 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const completeTask = useCallback((id: string) => {
+    let nextStatus: HealthTask["status"] = "done";
     setTasks((prev) =>
-      prev.map((task) =>
-        task.id === id
-          ? { ...task, status: task.status === "done" ? "pending" : "done" }
-          : task,
-      ),
+      prev.map((task) => {
+        if (task.id !== id) return task;
+        nextStatus = task.status === "done" ? "pending" : "done";
+        return { ...task, status: nextStatus };
+      }),
     );
+    // Çevrimdışıyken onayı güvenli kuyruğa al; bağlantı gelince senkronize edilir.
+    if (!onlineRef.current) {
+      void enqueueSyncItem({
+        id: `${id}-${Date.now()}`,
+        taskId: id,
+        status: nextStatus,
+        queuedAt: Date.now(),
+      }).then((queue) => setPendingSyncCount(queue.length));
+    }
   }, []);
 
   const sendTestNotification = useCallback(() => {
@@ -194,6 +255,8 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       completeTask,
       sendTestNotification,
       raiseCriticalAlert,
+      online,
+      pendingSyncCount,
     }),
     [
       profile,
@@ -208,6 +271,8 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       completeTask,
       sendTestNotification,
       raiseCriticalAlert,
+      online,
+      pendingSyncCount,
     ],
   );
 

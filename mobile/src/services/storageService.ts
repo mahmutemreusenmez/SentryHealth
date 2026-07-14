@@ -24,6 +24,7 @@ export const STORAGE_KEYS = {
   profile: "sentry_profile",
   tasks: "sentry_tasks",
   vitals: "sentry_vitals",
+  syncQueue: "sentry_sync_queue",
 } as const;
 
 /** Web AES anahtar materyalinin saklandığı localStorage anahtarı (yalnızca web). */

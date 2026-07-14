@@ -8,17 +8,21 @@ import {
   Footprints,
   HeartPulse,
   Pill,
+  Volume2,
   Wind,
 } from "lucide-react-native";
 import type { LucideIcon } from "lucide-react-native";
-import React from "react";
+import React, { useCallback } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import GuardianPanel from "../components/GuardianPanel";
+import WeeklyCompliance from "../components/WeeklyCompliance";
 import { SectionHeader, StatusBadge } from "../components/ui";
 import { usePatient } from "../context/PatientContext";
+import { WEEKLY_COMPLIANCE } from "../data/mockData";
 import type { HealthTask, ScreeningRecommendation } from "../data/types";
+import { speak } from "../services/speechService";
 import { formatDateLong } from "../utils/format";
 
 const CATEGORY_ICON: Record<HealthTask["category"], LucideIcon> = {
@@ -45,6 +49,26 @@ export default function DashboardScreen() {
     sendTestNotification,
   } = usePatient();
   const firstName = profile.fullName.split(" ")[0];
+  const title = honorific(profile.gender);
+
+  const speakAppointment = useCallback(() => {
+    speak(
+      `${firstName} ${title}, ${appointment.dayLabel} saat ${appointment.time} ${appointment.department} kontrolünüz var. MHRS öncelikli sıra numaranız ${appointment.queueNo}.`,
+    );
+  }, [firstName, title, appointment]);
+
+  const speakScreening = useCallback((rec: ScreeningRecommendation) => {
+    speak(`${rec.title}. ${rec.cadence}. ${rec.reason}.`);
+  }, []);
+
+  const speakTask = useCallback(
+    (task: HealthTask) => {
+      speak(
+        `${firstName} ${title}, ${task.time} ${task.title} vaktiniz geldi. ${task.detail}. Lütfen alıp onaylayın.`,
+      );
+    },
+    [firstName, title],
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={["top"]}>
@@ -101,7 +125,26 @@ export default function DashboardScreen() {
                 {appointment.queueNo}
               </Text>
             </View>
+            <Pressable
+              onPress={speakAppointment}
+              accessibilityRole="button"
+              accessibilityLabel="Randevuyu sesli oku"
+              hitSlop={8}
+              className="ml-2 h-9 w-9 items-center justify-center rounded-full bg-white/20"
+            >
+              <Volume2 size={18} color="#ffffff" />
+            </Pressable>
           </View>
+        </View>
+
+        {/* Haftalık ilaç uyum çizelgesi ve dinamik sağlık skoru */}
+        <View className="mb-6">
+          <SectionHeader
+            title="Haftalık Uyum Çizelgesi"
+            subtitle="Pazartesi - Pazar ilaç uyumunuz"
+            icon={Activity}
+          />
+          <WeeklyCompliance days={WEEKLY_COMPLIANCE} />
         </View>
 
         {/* Bugünkü sağlık görevleri zaman tüneli */}
@@ -117,6 +160,7 @@ export default function DashboardScreen() {
               task={task}
               isLast={index === tasks.length - 1}
               onComplete={completeTask}
+              onSpeak={speakTask}
             />
           ))}
         </View>
@@ -135,7 +179,9 @@ export default function DashboardScreen() {
               </Text>
             </View>
           ) : (
-            recommendations.map((rec) => <ScreeningCard key={rec.id} rec={rec} />)
+            recommendations.map((rec) => (
+              <ScreeningCard key={rec.id} rec={rec} onSpeak={speakScreening} />
+            ))
           )}
         </View>
 
@@ -150,8 +196,10 @@ export default function DashboardScreen() {
 
 const ScreeningCard = React.memo(function ScreeningCard({
   rec,
+  onSpeak,
 }: {
   rec: ScreeningRecommendation;
+  onSpeak: (rec: ScreeningRecommendation) => void;
 }) {
   return (
     <View className="mb-3 rounded-2xl border border-line bg-white p-4 shadow-sm">
@@ -166,6 +214,15 @@ const ScreeningCard = React.memo(function ScreeningCard({
           </Text>
         </View>
         <StatusBadge recommendation={rec} />
+        <Pressable
+          onPress={() => onSpeak(rec)}
+          accessibilityRole="button"
+          accessibilityLabel={`${rec.title} tetkikini sesli oku`}
+          hitSlop={8}
+          className="ml-2 h-8 w-8 items-center justify-center rounded-full bg-blue-light"
+        >
+          <Volume2 size={15} color="#0369a1" />
+        </Pressable>
       </View>
     </View>
   );
@@ -175,13 +232,16 @@ const TaskRow = React.memo(function TaskRow({
   task,
   isLast,
   onComplete,
+  onSpeak,
 }: {
   task: HealthTask;
   isLast: boolean;
   onComplete: (id: string) => void;
+  onSpeak: (task: HealthTask) => void;
 }) {
   const Icon = CATEGORY_ICON[task.category];
   const done = task.status === "done";
+  const canSpeak = task.category === "medication" || task.category === "measurement";
 
   return (
     <View className="flex-row">
@@ -214,6 +274,18 @@ const TaskRow = React.memo(function TaskRow({
               <Text className="text-xs text-muted">{task.detail}</Text>
             ) : null}
           </View>
+
+          {canSpeak ? (
+            <Pressable
+              onPress={() => onSpeak(task)}
+              accessibilityRole="button"
+              accessibilityLabel={`${task.title} hatırlatıcısını sesli oku`}
+              hitSlop={8}
+              className="mr-2 h-8 w-8 items-center justify-center rounded-full bg-brand-light"
+            >
+              <Volume2 size={15} color="#059669" />
+            </Pressable>
+          ) : null}
 
           {done ? (
             <View className="flex-row items-center">

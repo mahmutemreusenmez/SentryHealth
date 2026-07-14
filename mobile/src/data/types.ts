@@ -139,6 +139,27 @@ export interface SimNotification {
   timestamp: number;
 }
 
+/** Haftalık uyum çizelgesindeki tek bir günün durumu. */
+export type ComplianceStatus = "done" | "missed" | "upcoming";
+
+export interface DailyCompliance {
+  /** Kısa gün etiketi (Pzt, Sal, ...) */
+  label: string;
+  status: ComplianceStatus;
+}
+
+/**
+ * Çevrimdışıyken kuyruğa alınan (offline-first) görev onayı.
+ * Cihaz tekrar çevrimiçi olduğunda arka planda senkronize edilir.
+ */
+export interface SyncQueueItem {
+  id: string;
+  taskId: string;
+  status: HealthTaskStatus;
+  /** onayın yerelde alındığı epoch ms */
+  queuedAt: number;
+}
+
 export type ChatRole = "user" | "assistant";
 
 export interface ChatMessage {

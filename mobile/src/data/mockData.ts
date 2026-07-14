@@ -1,4 +1,5 @@
 import type {
+  DailyCompliance,
   FeaturedAppointment,
   Guardian,
   HealthTask,
@@ -58,6 +59,20 @@ export const FEATURED_APPOINTMENT: FeaturedAppointment = {
   time: "10:30",
   queueNo: 12,
 };
+
+/**
+ * Haftalık ilaç/tetkik uyum çizelgesi (Pzt-Paz).
+ * Geçmiş günler onaylandı/kaçırıldı, bugün ve sonrası "yaklaşan".
+ */
+export const WEEKLY_COMPLIANCE: DailyCompliance[] = [
+  { label: "Pzt", status: "done" },
+  { label: "Sal", status: "done" },
+  { label: "Çar", status: "missed" },
+  { label: "Per", status: "done" },
+  { label: "Cum", status: "done" },
+  { label: "Cmt", status: "upcoming" },
+  { label: "Paz", status: "upcoming" },
+];
 
 /** Kronik tansiyon geçmişi — AI'ın proaktif analizi için */
 export const BP_HISTORY: VitalReading[] = [

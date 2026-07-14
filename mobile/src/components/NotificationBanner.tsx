@@ -1,4 +1,11 @@
-import { AlertTriangle, Bell, HeartPulse, Pill, X } from "lucide-react-native";
+import {
+  AlertTriangle,
+  Bell,
+  HeartPulse,
+  Pill,
+  Volume2,
+  X,
+} from "lucide-react-native";
 import type { LucideIcon } from "lucide-react-native";
 import React, { useEffect, useRef, useState } from "react";
 import { Animated, Easing, Platform, Pressable, Text, View } from "react-native";
@@ -6,6 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { SimNotification, SimNotificationKind } from "../data/types";
 import { reminderService } from "../services/notificationService";
+import { speak } from "../services/speechService";
 
 const KIND_STYLE: Record<
   SimNotificationKind,
@@ -137,6 +145,15 @@ export default function NotificationBanner() {
             <Text className="text-sm font-bold text-white">{active.title}</Text>
             <Text className={`text-xs ${style.sub}`}>{active.body}</Text>
           </View>
+          <Pressable
+            onPress={() => speak(`${active.title}. ${active.body}`)}
+            accessibilityRole="button"
+            accessibilityLabel="Bildirimi sesli oku"
+            hitSlop={8}
+            className="mr-1 h-8 w-8 items-center justify-center rounded-full bg-white/20"
+          >
+            <Volume2 size={16} color="#ffffff" />
+          </Pressable>
           <X size={18} color="#ffffff" />
         </Pressable>
       </Animated.View>
