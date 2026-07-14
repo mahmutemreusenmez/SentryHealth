@@ -21,6 +21,7 @@ import type {
   HealthTask,
   PatientProfile,
   ScreeningRecommendation,
+  VitalEntry,
 } from "../data/types";
 import {
   buildCriticalAlert,
@@ -43,7 +44,10 @@ interface PatientContextValue {
   recommendations: ScreeningRecommendation[];
   guardian: Guardian;
   guardianAlerts: GuardianAlert[];
+  /** Güvenli hafızada şifreli saklanan en güncel vital ölçümü. */
+  vitals: VitalEntry | null;
   updateProfile: (patch: Partial<PatientProfile>) => void;
+  saveVitals: (entry: VitalEntry) => void;
   completeTask: (id: string) => void;
   /** Jüri sunumu: duruma göre canlı bir push bildirimi tetikler. */
   sendTestNotification: () => void;
@@ -67,6 +71,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
   const [appointment] = useState<FeaturedAppointment>(FEATURED_APPOINTMENT);
   const [guardian] = useState<Guardian>(INITIAL_GUARDIAN);
   const [guardianAlerts, setGuardianAlerts] = useState<GuardianAlert[]>([]);
+  const [vitals, setVitals] = useState<VitalEntry | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const simIndexRef = useRef(0);
 
@@ -81,9 +86,11 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
     void Promise.all([
       loadJSON<PatientProfile>(STORAGE_KEYS.profile),
       loadJSON<PersistedTasks>(STORAGE_KEYS.tasks),
-    ]).then(([storedProfile, storedTasks]) => {
+      loadJSON<VitalEntry>(STORAGE_KEYS.vitals),
+    ]).then(([storedProfile, storedTasks, storedVitals]) => {
       if (cancelled) return;
       if (storedProfile) setProfile(storedProfile);
+      if (storedVitals) setVitals(storedVitals);
       if (storedTasks && storedTasks.day === todayKey()) {
         setTasks((prev) =>
           prev.map((task) => {
@@ -125,6 +132,12 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
 
   const updateProfile = useCallback((patch: Partial<PatientProfile>) => {
     setProfile((prev) => ({ ...prev, ...patch }));
+  }, []);
+
+  // Vital ölçümü güvenli (şifreli) hafızaya yazar ve state'i günceller.
+  const saveVitals = useCallback((entry: VitalEntry) => {
+    setVitals(entry);
+    void saveJSON<VitalEntry>(STORAGE_KEYS.vitals, entry);
   }, []);
 
   const completeTask = useCallback((id: string) => {
@@ -175,7 +188,9 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       recommendations,
       guardian,
       guardianAlerts: displayedAlerts,
+      vitals,
       updateProfile,
+      saveVitals,
       completeTask,
       sendTestNotification,
       raiseCriticalAlert,
@@ -187,7 +202,9 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       recommendations,
       guardian,
       displayedAlerts,
+      vitals,
       updateProfile,
+      saveVitals,
       completeTask,
       sendTestNotification,
       raiseCriticalAlert,

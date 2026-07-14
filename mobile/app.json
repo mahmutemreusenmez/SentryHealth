@@ -10,16 +10,27 @@
     "splash": {
       "backgroundColor": "#0a7c86"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "tr.gov.saglik.sentrycompanion"
+      "bundleIdentifier": "tr.gov.saglik.sentrycompanion",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Canlı görüntülü triyaj görüşmesi için kameranıza erişim gerekir.",
+        "NSMicrophoneUsageDescription": "Canlı görüntülü triyaj görüşmesi için mikrofonunuza erişim gerekir."
+      }
     },
     "android": {
       "package": "tr.gov.saglik.sentrycompanion",
       "adaptiveIcon": {
         "backgroundColor": "#0a7c86"
-      }
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "web": {
       "bundler": "metro"
@@ -30,7 +41,8 @@
         {
           "color": "#0a7c86"
         }
-      ]
+      ],
+      "expo-secure-store"
     ]
   }
 }

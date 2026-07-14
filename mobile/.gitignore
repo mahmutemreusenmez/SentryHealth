@@ -5,7 +5,6 @@ node_modules/
 .expo/
 dist/
 web-build/
-expo-env.d.ts
 
 # Native
 *.orig.*
@@ -27,4 +26,6 @@ yarn-error.*
 .DS_Store
 
 # local env files
+.env
 .env*.local
+!.env.example

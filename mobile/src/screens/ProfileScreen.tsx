@@ -3,11 +3,14 @@ import {
   CheckCircle2,
   ClipboardList,
   CreditCard,
+  HeartPulse,
   LogOut,
   PlusCircle,
+  Save,
   User,
 } from "lucide-react-native";
 import React, { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -26,7 +29,14 @@ import {
   CHRONIC_CONDITIONS,
   type ChronicCondition,
   type Gender,
+  type VitalEntry,
 } from "../data/types";
+import { formatClock } from "../utils/format";
+import {
+  isValidTcKimlik,
+  vitalsSchema,
+  type VitalsFormValues,
+} from "../utils/validation";
 
 const GENDERS: { value: Gender; label: string }[] = [
   { value: "female", label: "Kadın" },
@@ -35,11 +45,12 @@ const GENDERS: { value: Gender; label: string }[] = [
 ];
 
 function isValidNationalId(id: string): boolean {
-  return /^\d{11}$/.test(id) && id[0] !== "0";
+  return isValidTcKimlik(id);
 }
 
 export default function ProfileScreen() {
-  const { profile, recommendations, updateProfile } = usePatient();
+  const { profile, recommendations, vitals, updateProfile, saveVitals } =
+    usePatient();
   const { logout } = useAuth();
 
   const [fullName, setFullName] = useState(profile.fullName);
@@ -238,6 +249,16 @@ export default function ProfileScreen() {
             )}
           </Card>
 
+          {/* Günlük vital girişi — güvenli (şifreli) kayıt + akıllı sınırlar */}
+          <View className="mt-5">
+            <VitalsForm
+              lastVitals={vitals}
+              onSave={(values) =>
+                saveVitals({ ...values, recordedAt: Date.now() })
+              }
+            />
+          </View>
+
           {/* e-Devlet oturumunu kapat */}
           <Pressable
             onPress={logout}
@@ -269,5 +290,124 @@ function Field({
       {children}
       {error ? <Text className="mt-1 text-[11px] text-danger">{error}</Text> : null}
     </View>
+  );
+}
+
+type VitalsFieldValues = {
+  systolic: string;
+  diastolic: string;
+  pulse: string;
+  glucose: string;
+};
+
+const VITAL_FIELDS: {
+  name: keyof VitalsFieldValues;
+  label: string;
+  placeholder: string;
+}[] = [
+  { name: "systolic", label: "Büyük Tansiyon (mmHg)", placeholder: "120" },
+  { name: "diastolic", label: "Küçük Tansiyon (mmHg)", placeholder: "80" },
+  { name: "pulse", label: "Nabız (atım/dk)", placeholder: "72" },
+  { name: "glucose", label: "Kan Şekeri (mg/dL)", placeholder: "110" },
+];
+
+function VitalsForm({
+  lastVitals,
+  onSave,
+}: {
+  lastVitals: VitalEntry | null;
+  onSave: (values: Omit<VitalEntry, "recordedAt">) => void;
+}) {
+  const [saved, setSaved] = useState(false);
+  const {
+    control,
+    handleSubmit,
+    setError,
+    reset,
+    formState: { errors },
+  } = useForm<VitalsFieldValues>({
+    defaultValues: { systolic: "", diastolic: "", pulse: "", glucose: "" },
+  });
+
+  const submit = handleSubmit((raw) => {
+    const parsed = vitalsSchema.safeParse(raw);
+    if (!parsed.success) {
+      parsed.error.issues.forEach((issue) => {
+        const path = issue.path[0];
+        if (typeof path === "string") {
+          setError(path as keyof VitalsFieldValues, { message: issue.message });
+        }
+      });
+      setSaved(false);
+      return;
+    }
+    const values: VitalsFormValues = parsed.data;
+    onSave(values);
+    reset({ systolic: "", diastolic: "", pulse: "", glucose: "" });
+    setSaved(true);
+  });
+
+  return (
+    <Card>
+      <SectionHeader
+        title="Günlük Vital Girişi"
+        subtitle="Güvenli (AES) şifreli kayıt · mantıksız değerler engellenir"
+        icon={HeartPulse}
+      />
+      {lastVitals ? (
+        <View className="mb-3 rounded-xl bg-brand-light px-3 py-2">
+          <Text className="text-[11px] font-semibold text-brand-dark">
+            Son kayıt · {formatClock(lastVitals.recordedAt)}
+          </Text>
+          <Text className="text-[11px] text-ink">
+            Tansiyon {lastVitals.systolic}/{lastVitals.diastolic} mmHg · Nabız{" "}
+            {lastVitals.pulse}/dk · Şeker {lastVitals.glucose} mg/dL
+          </Text>
+        </View>
+      ) : null}
+
+      <View className="flex-row flex-wrap justify-between">
+        {VITAL_FIELDS.map((f) => (
+          <View key={f.name} style={{ width: "48%" }}>
+            <Field label={f.label} error={errors[f.name]?.message}>
+              <Controller
+                control={control}
+                name={f.name}
+                render={({ field: { value, onChange, onBlur } }) => (
+                  <TextInput
+                    value={value}
+                    onChangeText={(t) => onChange(t.replace(/[^0-9]/g, ""))}
+                    onBlur={onBlur}
+                    keyboardType="number-pad"
+                    maxLength={3}
+                    placeholder={f.placeholder}
+                    placeholderTextColor="#9ca3af"
+                    className={`rounded-xl border bg-surface px-3 py-2 text-ink ${
+                      errors[f.name] ? "border-danger" : "border-line"
+                    }`}
+                  />
+                )}
+              />
+            </Field>
+          </View>
+        ))}
+      </View>
+
+      {saved ? (
+        <Text className="mb-2 text-[11px] font-semibold text-success">
+          Vital ölçümünüz güvenli hafızaya şifreli olarak kaydedildi.
+        </Text>
+      ) : null}
+
+      <Pressable
+        onPress={submit}
+        className="flex-row items-center justify-center rounded-xl bg-brand py-3"
+      >
+        <Save size={16} color="#ffffff" />
+        <Text className="ml-2 text-sm font-bold text-white">
+          Güvenli Kaydet
+        </Text>
+      </Pressable>
+    </Card>
   );
 }

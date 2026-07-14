@@ -15,6 +15,7 @@ import {
   removeKey,
   saveJSON,
 } from "../services/storageService";
+import { isValidTcKimlik } from "../utils/validation";
 
 const INITIAL_AUTH: AuthenticationState = {
   isAuthenticated: false,
@@ -36,10 +37,6 @@ interface AuthContextValue {
   /** e-Devlet Kapısı ile sahte giriş: doğrula → yükleniyor → Giriş Başarılı. */
   login: (nationalId: string, password: string) => void;
   logout: () => void;
-}
-
-function isValidNationalId(id: string): boolean {
-  return /^\d{11}$/.test(id) && id[0] !== "0";
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -70,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback((nationalId: string, password: string) => {
-    if (!isValidNationalId(nationalId)) {
+    if (!isValidTcKimlik(nationalId)) {
       setAuth((prev) => ({
         ...prev,
         error: "Geçerli bir T.C. Kimlik Numarası girin (11 hane).",

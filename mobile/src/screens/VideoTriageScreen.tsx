@@ -8,10 +8,11 @@ import {
   Video,
   VideoOff,
 } from "lucide-react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import LiveVideoPanel from "../components/LiveVideoPanel";
 import { usePatient } from "../context/PatientContext";
 
 const ANALYSIS_LINES = [
@@ -21,16 +22,51 @@ const ANALYSIS_LINES = [
   "Analiz Ediliyor: Kalp atım sesleri stabil, tansiyon geçmişiyle karşılaştırılıyor.",
 ];
 
+/** Hasta adından güvenli bir canlı oda anahtarı üretir. */
+function slugify(name: string): string {
+  return name
+    .toLocaleLowerCase("tr-TR")
+    .replace(/ç/g, "c")
+    .replace(/ğ/g, "g")
+    .replace(/ı/g, "i")
+    .replace(/ö/g, "o")
+    .replace(/ş/g, "s")
+    .replace(/ü/g, "u")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 export default function VideoTriageScreen() {
-  const { raiseCriticalAlert } = usePatient();
+  const { profile, raiseCriticalAlert } = usePatient();
   const [active, setActive] = useState(false);
   const [muted, setMuted] = useState(false);
   const [lineIndex, setLineIndex] = useState(0);
   const [redCode, setRedCode] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Görüşme başına benzersiz, canlı bir oda anahtarı (Room ID).
+  const roomId = useMemo(
+    () =>
+      `sentry-triage-${slugify(profile.fullName.split(" ")[0] || "hasta")}-${Math.floor(
+        1000 + Math.random() * 9000,
+      )}`,
+    [profile.fullName],
+  );
 
   const onRedCode = () => {
     setRedCode(true);
     raiseCriticalAlert();
+  };
+
+  const startCall = () => {
+    setError(null);
+    setActive(true);
+  };
+
+  const endCall = () => {
+    setActive(false);
+    setMuted(false);
+    setRedCode(false);
   };
 
   // Görüşme aktifken klinik analiz notu altyazı gibi akar.
@@ -58,14 +94,37 @@ export default function VideoTriageScreen() {
               Canlı Triyaj Odası
             </Text>
             <Text className="text-xs text-muted">
-              Yapay Zeka Hekimi Bağlantısı
+              Yapay Zeka Hekimi Bağlantısı · WebRTC
             </Text>
           </View>
         </View>
 
         {/* Video görünümü penceresi */}
         <View className="flex-1 justify-end overflow-hidden rounded-3xl bg-ink p-4">
-          {/* Üst durum çubuğu */}
+          {/* Gerçek canlı kamera akışı (aktifken) */}
+          <LiveVideoPanel
+            active={active}
+            muted={muted}
+            roomId={roomId}
+            onError={setError}
+          />
+
+          {/* Merkezdeki durum (yalnızca görüşme başlamadan) */}
+          {!active ? (
+            <View className="flex-1 items-center justify-center">
+              <View className="h-24 w-24 items-center justify-center rounded-full bg-white/10">
+                <VideoOff size={44} color="#9ca3af" />
+              </View>
+              <Text className="mt-4 text-sm font-semibold text-white">
+                Görüşme başlatılmadı
+              </Text>
+              <Text className="mt-1 px-6 text-center text-xs text-white/60">
+                {error ?? "Başlatmak için aşağıdaki butona dokunun (kamera ve mikrofon izni istenecektir)."}
+              </Text>
+            </View>
+          ) : null}
+
+          {/* Üst durum çubuğu (video üzerinde) */}
           <View className="absolute left-4 right-4 top-4 flex-row items-center justify-between">
             <View
               className={`flex-row items-center rounded-full px-3 py-1 ${
@@ -87,38 +146,11 @@ export default function VideoTriageScreen() {
             </View>
           </View>
 
-          {/* Merkezdeki kamera simülasyonu */}
-          <View className="flex-1 items-center justify-center">
-            <View
-              className={`h-24 w-24 items-center justify-center rounded-full ${
-                active ? "bg-brand" : "bg-white/10"
-              }`}
-            >
-              {active ? (
-                <Video size={44} color="#ffffff" />
-              ) : (
-                <VideoOff size={44} color="#9ca3af" />
-              )}
-            </View>
-            <Text className="mt-4 text-sm font-semibold text-white">
-              {active
-                ? "Yapay Zeka Hekimi bağlı"
-                : "Görüşme başlatılmadı"}
-            </Text>
-            <Text className="mt-1 text-xs text-white/60">
-              {active
-                ? muted
-                  ? "Mikrofonunuz kapalı"
-                  : "Mikrofonunuz açık — konuşabilirsiniz"
-                : "Başlatmak için aşağıdaki butona dokunun"}
-            </Text>
-          </View>
-
-          {/* Akan klinik not altyazısı */}
+          {/* Akan klinik not altyazısı (video üzerinde) */}
           {active ? (
-            <View className="rounded-2xl bg-black/40 px-4 py-3">
+            <View className="rounded-2xl bg-black/50 px-4 py-3">
               <Text className="text-[11px] font-semibold text-brand">
-                Klinik Not (Otomatik)
+                Klinik Not (Otomatik) · Oda: {roomId}
               </Text>
               <Text className="mt-1 text-xs leading-5 text-white">
                 {ANALYSIS_LINES[lineIndex]}
@@ -164,11 +196,7 @@ export default function VideoTriageScreen() {
 
           {active ? (
             <Pressable
-              onPress={() => {
-                setActive(false);
-                setMuted(false);
-                setRedCode(false);
-              }}
+              onPress={endCall}
               className="flex-row items-center rounded-full bg-danger px-6 py-4"
             >
               <PhoneOff size={20} color="#ffffff" />
@@ -178,7 +206,7 @@ export default function VideoTriageScreen() {
             </Pressable>
           ) : (
             <Pressable
-              onPress={() => setActive(true)}
+              onPress={startCall}
               className="flex-row items-center rounded-full bg-brand px-6 py-4"
             >
               <Video size={20} color="#ffffff" />
@@ -190,7 +218,8 @@ export default function VideoTriageScreen() {
         </View>
 
         <Text className="mt-3 text-center text-[11px] text-muted">
-          Bu ekran bir simülasyondur; gerçek tıbbi teşhis yerine geçmez.
+          Görüntülü görüşme WebRTC (Jitsi Meet) altyapısı ile sağlanır. Yapay
+          zeka analizi bir simülasyondur; gerçek tıbbi teşhis yerine geçmez.
         </Text>
       </View>
     </SafeAreaView>

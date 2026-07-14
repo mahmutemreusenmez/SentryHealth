@@ -77,6 +77,20 @@ export interface VitalReading {
   diastolic: number;
 }
 
+/** Hastanın güvenli hafızada şifreli saklanan günlük vital ölçümü */
+export interface VitalEntry {
+  /** Sistolik (büyük) tansiyon — mmHg */
+  systolic: number;
+  /** Diyastolik (küçük) tansiyon — mmHg */
+  diastolic: number;
+  /** Nabız — atım/dk */
+  pulse: number;
+  /** Kan şekeri — mg/dL */
+  glucose: number;
+  /** kayıt zamanı epoch ms */
+  recordedAt: number;
+}
+
 /** Yaş/kronik duruma göre üretilen dinamik tetkik önerisi */
 export interface ScreeningRecommendation {
   id: string;

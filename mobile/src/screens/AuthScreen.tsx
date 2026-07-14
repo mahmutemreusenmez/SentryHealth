@@ -1,3 +1,4 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Eye,
   EyeOff,
@@ -8,6 +9,7 @@ import {
   ShieldCheck,
 } from "lucide-react-native";
 import React, { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -21,14 +23,25 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAuth } from "../context/AuthContext";
+import { loginSchema, type LoginFormValues } from "../utils/validation";
 
 export default function AuthScreen() {
   const { auth, login } = useAuth();
-  const [nationalId, setNationalId] = useState("");
-  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const onSubmit = () => login(nationalId, password);
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { nationalId: "", password: "" },
+    mode: "onTouched",
+  });
+
+  const onSubmit = handleSubmit((values) =>
+    login(values.nationalId, values.password),
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={["top", "bottom"]}>
@@ -73,48 +86,84 @@ export default function AuthScreen() {
             <Text className="mb-1 text-xs font-medium text-muted">
               T.C. Kimlik Numarası
             </Text>
-            <View className="mb-3 flex-row items-center rounded-xl border border-line bg-surface px-3">
-              <ShieldCheck size={18} color="#6b7280" />
-              <TextInput
-                value={nationalId}
-                onChangeText={(t) => setNationalId(t.replace(/[^0-9]/g, ""))}
-                keyboardType="number-pad"
-                maxLength={11}
-                placeholder="XXXXXXXXXXX"
-                placeholderTextColor="#9ca3af"
-                className="ml-2 flex-1 py-3 text-ink"
-                editable={!auth.isLoading}
-              />
-            </View>
+            <Controller
+              control={control}
+              name="nationalId"
+              render={({ field: { value, onChange, onBlur } }) => (
+                <View
+                  className={`mb-1 flex-row items-center rounded-xl border bg-surface px-3 ${
+                    errors.nationalId ? "border-danger" : "border-line"
+                  }`}
+                >
+                  <ShieldCheck size={18} color="#6b7280" />
+                  <TextInput
+                    value={value}
+                    onChangeText={(t) => onChange(t.replace(/[^0-9]/g, ""))}
+                    onBlur={onBlur}
+                    keyboardType="number-pad"
+                    maxLength={11}
+                    placeholder="XXXXXXXXXXX"
+                    placeholderTextColor="#9ca3af"
+                    className="ml-2 flex-1 py-3 text-ink"
+                    editable={!auth.isLoading}
+                  />
+                </View>
+              )}
+            />
+            {errors.nationalId ? (
+              <Text className="mb-2 text-[11px] text-danger">
+                {errors.nationalId.message}
+              </Text>
+            ) : (
+              <View className="mb-2" />
+            )}
 
             <Text className="mb-1 text-xs font-medium text-muted">
               e-Devlet Şifresi
             </Text>
-            <View className="mb-2 flex-row items-center rounded-xl border border-line bg-surface px-3">
-              <Lock size={18} color="#6b7280" />
-              <TextInput
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                placeholder="••••••••"
-                placeholderTextColor="#9ca3af"
-                className="ml-2 flex-1 py-3 text-ink"
-                editable={!auth.isLoading}
-                onSubmitEditing={onSubmit}
-                returnKeyType="go"
-              />
-              <Pressable
-                onPress={() => setShowPassword((s) => !s)}
-                hitSlop={8}
-                accessibilityLabel="Şifreyi göster/gizle"
-              >
-                {showPassword ? (
-                  <EyeOff size={18} color="#6b7280" />
-                ) : (
-                  <Eye size={18} color="#6b7280" />
-                )}
-              </Pressable>
-            </View>
+            <Controller
+              control={control}
+              name="password"
+              render={({ field: { value, onChange, onBlur } }) => (
+                <View
+                  className={`mb-1 flex-row items-center rounded-xl border bg-surface px-3 ${
+                    errors.password ? "border-danger" : "border-line"
+                  }`}
+                >
+                  <Lock size={18} color="#6b7280" />
+                  <TextInput
+                    value={value}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    secureTextEntry={!showPassword}
+                    placeholder="••••••••"
+                    placeholderTextColor="#9ca3af"
+                    className="ml-2 flex-1 py-3 text-ink"
+                    editable={!auth.isLoading}
+                    onSubmitEditing={onSubmit}
+                    returnKeyType="go"
+                  />
+                  <Pressable
+                    onPress={() => setShowPassword((s) => !s)}
+                    hitSlop={8}
+                    accessibilityLabel="Şifreyi göster/gizle"
+                  >
+                    {showPassword ? (
+                      <EyeOff size={18} color="#6b7280" />
+                    ) : (
+                      <Eye size={18} color="#6b7280" />
+                    )}
+                  </Pressable>
+                </View>
+              )}
+            />
+            {errors.password ? (
+              <Text className="mb-2 text-[11px] text-danger">
+                {errors.password.message}
+              </Text>
+            ) : (
+              <View className="mb-2" />
+            )}
 
             {auth.error ? (
               <Text className="mb-2 text-[11px] text-danger">{auth.error}</Text>
