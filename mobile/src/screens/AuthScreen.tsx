@@ -80,9 +80,11 @@ export default function AuthScreen() {
           </View>
 
           {/* Giriş formu */}
-          <View className="rounded-2xl border border-line bg-white p-5 shadow-sm">
-            <Text className="mb-1 text-lg font-bold text-ink">Güvenli Giriş</Text>
-            <Text className="mb-4 text-xs text-muted">
+          <View className="rounded-3xl border border-line bg-white p-6 shadow-sm">
+            <Text className="mb-1 text-xl font-bold tracking-tight text-ink">
+              Güvenli Giriş
+            </Text>
+            <Text className="mb-5 text-xs leading-5 text-muted">
               Sağlık kaydınıza erişmek için e-Devlet Kapısı ile kimliğinizi
               doğrulayın.
             </Text>
@@ -95,7 +97,7 @@ export default function AuthScreen() {
               name="nationalId"
               render={({ field: { value, onChange, onBlur } }) => (
                 <View
-                  className={`mb-1 flex-row items-center rounded-xl border bg-surface px-3 ${
+                  className={`mb-1 flex-row items-center rounded-2xl border bg-surface px-4 ${
                     errors.nationalId ? "border-danger" : "border-line"
                   }`}
                 >
@@ -130,7 +132,7 @@ export default function AuthScreen() {
               name="password"
               render={({ field: { value, onChange, onBlur } }) => (
                 <View
-                  className={`mb-1 flex-row items-center rounded-xl border bg-surface px-3 ${
+                  className={`mb-1 flex-row items-center rounded-2xl border bg-surface px-4 ${
                     errors.password ? "border-danger" : "border-line"
                   }`}
                 >
@@ -177,7 +179,7 @@ export default function AuthScreen() {
             <Pressable
               onPress={onSubmit}
               disabled={auth.isLoading}
-              className={`mt-2 flex-row items-center justify-center overflow-hidden rounded-xl py-3.5 ${
+              className={`mt-2 flex-row items-center justify-center overflow-hidden rounded-2xl py-4 shadow-sm ${
                 auth.isLoading ? "bg-edevlet/70" : "bg-edevlet"
               }`}
             >
@@ -207,21 +209,34 @@ export default function AuthScreen() {
           </View>
 
           {/* Demo/test giriş bilgileri */}
-          <View className="mt-4 rounded-2xl border border-line bg-white p-4">
-            <Text className="mb-2 text-xs font-bold text-ink">
-              Test Giriş Bilgileri
+          <View className="mt-4 rounded-3xl border border-line bg-white p-5">
+            <Text className="mb-1 text-xs font-bold text-ink">
+              Test Giriş Bilgisi
+            </Text>
+            <Text className="mb-3 text-[11px] leading-4 text-muted">
+              Aşağıdaki bilgilerle doğrudan giriş yapabilirsiniz.
             </Text>
             {TEST_ACCOUNTS.map((account) => (
               <View
                 key={account.nationalId}
-                className="mb-1.5 flex-row items-center justify-between rounded-lg bg-surface px-3 py-2"
+                className="flex-row items-center justify-between rounded-2xl bg-brand-light px-4 py-3"
               >
-                <Text className="text-[11px] font-medium text-ink">
-                  {account.nationalId}
-                </Text>
-                <Text className="text-[11px] text-muted">
-                  {account.password}
-                </Text>
+                <View>
+                  <Text className="text-[10px] font-medium text-muted">
+                    T.C. Kimlik No
+                  </Text>
+                  <Text className="text-[13px] font-bold text-ink">
+                    {account.nationalId}
+                  </Text>
+                </View>
+                <View className="items-end">
+                  <Text className="text-[10px] font-medium text-muted">
+                    e-Devlet Şifresi
+                  </Text>
+                  <Text className="text-[13px] font-bold text-ink">
+                    {account.password}
+                  </Text>
+                </View>
               </View>
             ))}
           </View>

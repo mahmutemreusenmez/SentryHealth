@@ -43,8 +43,7 @@ export interface TestAccount {
 }
 
 export const TEST_ACCOUNTS: readonly TestAccount[] = [
-  { nationalId: "12345678901", password: "Sentry123!", fullName: "Mahmut Yılmaz" },
-  { nationalId: "98765432109", password: "Companion123!", fullName: "Ayşe Demir" },
+  { nationalId: "11111111111", password: "1234", fullName: "Mahmut Yılmaz" },
 ] as const;
 
 /** Verilen T.C. numarası tanımlı bir test hesabına ait mi? */
