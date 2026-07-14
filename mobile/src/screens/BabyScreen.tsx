@@ -16,7 +16,7 @@ import {
   TrendingUp,
   Video,
 } from "lucide-react-native";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -29,7 +29,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import GrowthChart from "../components/GrowthChart";
-import LiveVideoPanel from "../components/LiveVideoPanel";
+import LiveVideoPanel, { type IncomingReferral } from "../components/LiveVideoPanel";
 import VaccineCalendar from "../components/VaccineCalendar";
 import { Card, EmptyState, SectionHeader } from "../components/ui";
 import { useBaby } from "../context/BabyContext";
@@ -37,6 +37,7 @@ import { GROWTH_REFERENCE, classifyPercentile } from "../data/growthReference";
 import type {
   GrowthMetric,
   NurseReferral,
+  NurseReferralLevel,
   RootStackParamList,
   RootTabParamList,
 } from "../data/types";
@@ -82,6 +83,30 @@ export default function BabyScreen() {
     () => `sentry-baby-nurse-${Math.floor(1000 + Math.random() * 9000)}`,
     [],
   );
+
+  // Bebeğin canlı vital metadata'sı (ebe/hemşire ekranına aktarılır).
+  const metadata = useMemo(
+    () =>
+      `Ateş ${vitals.temperature.toFixed(1)}°C · Kilo ${vitals.weightKg} kg · ` +
+      `Emzirme ${vitals.feedingsPerDay}/gün · Bebek ${baby.fullName} (${ageMonths} ay)`,
+    [vitals.temperature, vitals.weightKg, vitals.feedingsPerDay, baby.fullName, ageMonths],
+  );
+
+  // Ebe/hemşire panelinden (web sitesi) sinyal üzerinden gelen canlı yönlendirme.
+  const onIncomingReferral = useCallback((incoming: IncomingReferral) => {
+    const level: NurseReferralLevel =
+      incoming.level === "pediatric" || incoming.level === "family-health"
+        ? incoming.level
+        : "home";
+    setReferral({
+      id: `sig-${Date.now()}`,
+      level,
+      code: incoming.code,
+      title: incoming.title,
+      message: incoming.message,
+      issuedAt: Date.now(),
+    });
+  }, []);
 
   const selectedMetric = METRICS.find((m) => m.key === metric) ?? METRICS[0];
   const reference = GROWTH_REFERENCE[baby.gender][metric];
@@ -168,7 +193,10 @@ export default function BabyScreen() {
                 active={active}
                 muted={false}
                 roomId={roomId}
+                role="mother"
+                metadata={metadata}
                 onError={setError}
+                onReferral={onIncomingReferral}
               />
               {!active ? (
                 <View className="flex-1 items-center justify-center">
@@ -217,8 +245,9 @@ export default function BabyScreen() {
 
             <Text className="mt-2 text-center text-[10px] text-muted">
               Bebek vital verileri (ateş, kilo, emzirme sıklığı) görüşmede
-              ebe/hemşirenin ekranına canlı metadata olarak aktarılır. Bağlantı
-              WebRTC (Jitsi) ile sağlanır; jüri sunumu için simülasyondur.
+              ebe/hemşirenin ekranına canlı metadata olarak aktarılır. Bağlantı,
+              SentryHealth web sitesinin WebRTC sinyal sunucusu (/rtc) üzerinden
+              kurulur; jüri sunumu için simülasyondur.
             </Text>
           </Card>
 

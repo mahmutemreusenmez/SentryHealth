@@ -9,14 +9,14 @@ import {
   Video,
   VideoOff,
 } from "lucide-react-native";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import Barcode from "../components/Barcode";
-import LiveVideoPanel from "../components/LiveVideoPanel";
+import LiveVideoPanel, { type IncomingReferral } from "../components/LiveVideoPanel";
 import { usePatient } from "../context/PatientContext";
-import type { TriageReferral } from "../data/types";
+import type { ReferralLevel, TriageReferral } from "../data/types";
 import { triageChannel } from "../services/triageChannel";
 
 const ANALYSIS_LINES = [
@@ -47,7 +47,33 @@ export default function VideoTriageScreen() {
   const [lineIndex, setLineIndex] = useState(0);
   const [redCode, setRedCode] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
   const [referral, setReferral] = useState<TriageReferral | null>(null);
+
+  // Hastanın canlı metadata'sı (hekim ekranına aktarılır).
+  const metadata = useMemo(() => {
+    const chronic =
+      profile.chronicConditions.length > 0
+        ? profile.chronicConditions.join(", ")
+        : "Kronik tanı yok";
+    return `Hasta ${profile.fullName} · Yaş ${profile.age} · ${chronic}`;
+  }, [profile.fullName, profile.age, profile.chronicConditions]);
+
+  // Hekim panelinden (web sitesi) sinyal üzerinden gelen canlı sevk kararı.
+  const onIncomingReferral = useCallback((incoming: IncomingReferral) => {
+    const level: ReferralLevel =
+      incoming.level === "emergency" || incoming.level === "clinic"
+        ? incoming.level
+        : "home";
+    setReferral({
+      id: `sig-${Date.now()}`,
+      level,
+      code: incoming.code,
+      title: incoming.title,
+      message: incoming.message,
+      issuedAt: Date.now(),
+    });
+  }, []);
 
   // Hekim panelinden gelen canlı sevk kararını dinle (barkod ekranda belirir).
   useEffect(() => {
@@ -133,7 +159,11 @@ export default function VideoTriageScreen() {
             active={active}
             muted={muted}
             roomId={roomId}
+            role="patient"
+            metadata={metadata}
             onError={setError}
+            onStatus={setStatus}
+            onReferral={onIncomingReferral}
           />
 
           {/* Merkezdeki durum (yalnızca görüşme başlamadan) */}
@@ -164,7 +194,7 @@ export default function VideoTriageScreen() {
                 }`}
               />
               <Text className="text-[11px] font-semibold text-white">
-                {active ? "CANLI" : "Bağlantı bekleniyor"}
+                {active ? status ?? "CANLI" : "Bağlantı bekleniyor"}
               </Text>
             </View>
             <View className="flex-row items-center rounded-full bg-white/15 px-3 py-1">
@@ -270,8 +300,9 @@ export default function VideoTriageScreen() {
         ) : null}
 
         <Text className="mt-3 text-center text-[11px] text-muted">
-          Görüntülü görüşme WebRTC (Jitsi Meet) altyapısı ile sağlanır. Yapay
-          zeka analizi bir simülasyondur; gerçek tıbbi teşhis yerine geçmez.
+          Görüntülü görüşme, SentryHealth web sitesinin WebRTC sinyal sunucusu
+          (/rtc) üzerinden hekim paneline canlı bağlanır. Yapay zeka analizi bir
+          simülasyondur; gerçek tıbbi teşhis yerine geçmez.
         </Text>
       </ScrollView>
     </SafeAreaView>
