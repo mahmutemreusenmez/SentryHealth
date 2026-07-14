@@ -28,6 +28,35 @@ export function isValidTcKimlik(value: string): boolean {
   return eleventh === d[10];
 }
 
+/**
+ * Test/demo amaçlı önceden tanımlı "geçerli giriş" kimlikleri.
+ *
+ * Bu hesaplar, genel doğrulama kuralları (11 hane + sayısal) korunarak resmî
+ * checksum algoritmasından muaf tutulur; yalnızca bu iki kimlik + doğru şifre
+ * kombinasyonu başarılı sayılır. Gerçek kullanıcı kimlikleri her zaman resmî
+ * T.C. checksum algoritmasıyla doğrulanır.
+ */
+export interface TestAccount {
+  nationalId: string;
+  password: string;
+  fullName: string;
+}
+
+export const TEST_ACCOUNTS: readonly TestAccount[] = [
+  { nationalId: "12345678901", password: "Sentry123!", fullName: "Mahmut Yılmaz" },
+  { nationalId: "98765432109", password: "Companion123!", fullName: "Ayşe Demir" },
+] as const;
+
+/** Verilen T.C. numarası tanımlı bir test hesabına ait mi? */
+export function isTestNationalId(value: string): boolean {
+  return TEST_ACCOUNTS.some((account) => account.nationalId === value);
+}
+
+/** Verilen T.C. numarasına karşılık gelen test hesabını döndürür (yoksa null). */
+export function findTestAccount(nationalId: string): TestAccount | null {
+  return TEST_ACCOUNTS.find((account) => account.nationalId === nationalId) ?? null;
+}
+
 /** Türkiye cep telefonu: +90 5xx xxx xx xx (boşluk/tire toleranslı). */
 export const TR_PHONE_REGEX = /^(?:\+90|0)?\s?5\d{2}\s?\d{3}\s?\d{2}\s?\d{2}$/;
 
@@ -48,7 +77,10 @@ export const loginSchema = z.object({
   nationalId: z
     .string()
     .regex(/^\d{11}$/, "T.C. Kimlik Numarası 11 haneli olmalıdır.")
-    .refine(isValidTcKimlik, "Geçersiz T.C. Kimlik Numarası (kontrol hanesi tutmuyor)."),
+    .refine(
+      (value) => isTestNationalId(value) || isValidTcKimlik(value),
+      "Geçersiz T.C. Kimlik Numarası (kontrol hanesi tutmuyor).",
+    ),
   password: z.string().min(4, "e-Devlet şifreniz en az 4 karakter olmalıdır."),
 });
 export type LoginFormValues = z.infer<typeof loginSchema>;

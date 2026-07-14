@@ -212,7 +212,11 @@ export default function ChatScreen() {
   );
 }
 
-function Bubble({ message }: { message: ChatMessage }) {
+const Bubble = React.memo(function Bubble({
+  message,
+}: {
+  message: ChatMessage;
+}) {
   const isUser = message.role === "user";
   const isTyping = message.role === "assistant" && message.text.length === 0;
   return (
@@ -242,4 +246,4 @@ function Bubble({ message }: { message: ChatMessage }) {
       </View>
     </View>
   );
-}
+});

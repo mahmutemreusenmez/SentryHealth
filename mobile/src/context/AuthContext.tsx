@@ -15,7 +15,7 @@ import {
   removeKey,
   saveJSON,
 } from "../services/storageService";
-import { isValidTcKimlik } from "../utils/validation";
+import { findTestAccount, isValidTcKimlik } from "../utils/validation";
 
 const INITIAL_AUTH: AuthenticationState = {
   isAuthenticated: false,
@@ -67,19 +67,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback((nationalId: string, password: string) => {
-    if (!isValidTcKimlik(nationalId)) {
-      setAuth((prev) => ({
-        ...prev,
-        error: "Geçerli bir T.C. Kimlik Numarası girin (11 hane).",
-      }));
-      return;
-    }
-    if (password.trim().length < 4) {
-      setAuth((prev) => ({
-        ...prev,
-        error: "e-Devlet şifreniz en az 4 karakter olmalıdır.",
-      }));
-      return;
+    // Önceden tanımlı test hesapları: checksum'dan muaf, ancak şifre birebir
+    // eşleşmelidir. Diğer tüm kimlikler resmî T.C. algoritmasıyla doğrulanır.
+    const testAccount = findTestAccount(nationalId);
+    if (testAccount) {
+      if (password !== testAccount.password) {
+        setAuth((prev) => ({
+          ...prev,
+          error: "e-Devlet şifresi hatalı. Lütfen tekrar deneyin.",
+        }));
+        return;
+      }
+    } else {
+      if (!isValidTcKimlik(nationalId)) {
+        setAuth((prev) => ({
+          ...prev,
+          error: "Geçerli bir T.C. Kimlik Numarası girin (11 hane).",
+        }));
+        return;
+      }
+      if (password.trim().length < 4) {
+        setAuth((prev) => ({
+          ...prev,
+          error: "e-Devlet şifreniz en az 4 karakter olmalıdır.",
+        }));
+        return;
+      }
     }
 
     // Sahte e-Devlet doğrulaması: yükleniyor animasyonu sonra Giriş Başarılı.

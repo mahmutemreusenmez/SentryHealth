@@ -116,7 +116,7 @@ export default function DashboardScreen() {
               key={task.id}
               task={task}
               isLast={index === tasks.length - 1}
-              onComplete={() => completeTask(task.id)}
+              onComplete={completeTask}
             />
           ))}
         </View>
@@ -148,7 +148,11 @@ export default function DashboardScreen() {
   );
 }
 
-function ScreeningCard({ rec }: { rec: ScreeningRecommendation }) {
+const ScreeningCard = React.memo(function ScreeningCard({
+  rec,
+}: {
+  rec: ScreeningRecommendation;
+}) {
   return (
     <View className="mb-3 rounded-2xl border border-line bg-white p-4 shadow-sm">
       <View className="flex-row items-center">
@@ -165,16 +169,16 @@ function ScreeningCard({ rec }: { rec: ScreeningRecommendation }) {
       </View>
     </View>
   );
-}
+});
 
-function TaskRow({
+const TaskRow = React.memo(function TaskRow({
   task,
   isLast,
   onComplete,
 }: {
   task: HealthTask;
   isLast: boolean;
-  onComplete: () => void;
+  onComplete: (id: string) => void;
 }) {
   const Icon = CATEGORY_ICON[task.category];
   const done = task.status === "done";
@@ -225,7 +229,7 @@ function TaskRow({
           </Text>
         ) : task.status === "pending" ? (
           <Pressable
-            onPress={onComplete}
+            onPress={() => onComplete(task.id)}
             className="mt-3 flex-row items-center justify-center rounded-xl bg-blue py-2"
           >
             <CheckCircle2 size={16} color="#ffffff" />
@@ -245,4 +249,4 @@ function TaskRow({
       </View>
     </View>
   );
-}
+});

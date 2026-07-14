@@ -23,7 +23,11 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAuth } from "../context/AuthContext";
-import { loginSchema, type LoginFormValues } from "../utils/validation";
+import {
+  TEST_ACCOUNTS,
+  loginSchema,
+  type LoginFormValues,
+} from "../utils/validation";
 
 export default function AuthScreen() {
   const { auth, login } = useAuth();
@@ -200,6 +204,26 @@ export default function AuthScreen() {
             <Text className="mt-3 text-center text-[10px] text-muted">
               Bu bir simülasyondur; gerçek e-Devlet doğrulaması yapılmaz.
             </Text>
+          </View>
+
+          {/* Demo/test giriş bilgileri */}
+          <View className="mt-4 rounded-2xl border border-line bg-white p-4">
+            <Text className="mb-2 text-xs font-bold text-ink">
+              Test Giriş Bilgileri
+            </Text>
+            {TEST_ACCOUNTS.map((account) => (
+              <View
+                key={account.nationalId}
+                className="mb-1.5 flex-row items-center justify-between rounded-lg bg-surface px-3 py-2"
+              >
+                <Text className="text-[11px] font-medium text-ink">
+                  {account.nationalId}
+                </Text>
+                <Text className="text-[11px] text-muted">
+                  {account.password}
+                </Text>
+              </View>
+            ))}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

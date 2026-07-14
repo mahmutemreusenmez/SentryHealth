@@ -23,7 +23,7 @@ module.exports = {
         },
         // e-Devlet Kapısı kurumsal kırmızı-gece mavisi tonu
         edevlet: {
-          DEFAULT: "#b21e28",
+          DEFAULT: "#c20c18",
           dark: "#1f2a44",
         },
         success: "#10b981",

@@ -85,7 +85,9 @@ export default function RootNavigator() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Navigator
+        screenOptions={{ headerShown: false, animation: "fade" }}
+      >
         {auth.isAuthenticated ? (
           <Stack.Screen name="Main" component={MainTabs} />
         ) : (
