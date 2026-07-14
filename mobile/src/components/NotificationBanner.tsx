@@ -32,7 +32,7 @@ export default function NotificationBanner() {
     <SafeAreaView
       edges={["top"]}
       className="absolute left-0 right-0 top-0 z-50 px-4"
-      pointerEvents="box-none"
+      style={{ pointerEvents: "box-none" }}
     >
       <Pressable
         onPress={() => setActive(null)}
