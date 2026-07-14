@@ -3,6 +3,7 @@ import {
   Mic,
   MicOff,
   PhoneOff,
+  Siren,
   Stethoscope,
   Video,
   VideoOff,
@@ -10,6 +11,8 @@ import {
 import React, { useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+import { usePatient } from "../context/PatientContext";
 
 const ANALYSIS_LINES = [
   "Analiz Ediliyor: Ses tonunda nefes darlığı tespiti... SpO2 takibi öneriliyor.",
@@ -19,9 +22,16 @@ const ANALYSIS_LINES = [
 ];
 
 export default function VideoTriageScreen() {
+  const { raiseCriticalAlert } = usePatient();
   const [active, setActive] = useState(false);
   const [muted, setMuted] = useState(false);
   const [lineIndex, setLineIndex] = useState(0);
+  const [redCode, setRedCode] = useState(false);
+
+  const onRedCode = () => {
+    setRedCode(true);
+    raiseCriticalAlert();
+  };
 
   // Görüşme aktifken klinik analiz notu altyazı gibi akar.
   useEffect(() => {
@@ -113,6 +123,25 @@ export default function VideoTriageScreen() {
               <Text className="mt-1 text-xs leading-5 text-white">
                 {ANALYSIS_LINES[lineIndex]}
               </Text>
+              {redCode ? (
+                <View className="mt-2 flex-row items-center rounded-lg bg-danger px-3 py-2">
+                  <Siren size={14} color="#ffffff" />
+                  <Text className="ml-2 flex-1 text-[11px] font-semibold text-white">
+                    Kırmızı kod sevk kararı verildi — refakatçiye otomatik SMS
+                    taslağı oluşturuldu.
+                  </Text>
+                </View>
+              ) : (
+                <Pressable
+                  onPress={onRedCode}
+                  className="mt-2 flex-row items-center justify-center rounded-lg border border-danger bg-danger/20 px-3 py-2"
+                >
+                  <Siren size={14} color="#fecaca" />
+                  <Text className="ml-2 text-[11px] font-semibold text-white">
+                    Kırmızı Kod Sevk Kararı (Refakatçiyi Bilgilendir)
+                  </Text>
+                </Pressable>
+              )}
             </View>
           ) : null}
         </View>
@@ -138,6 +167,7 @@ export default function VideoTriageScreen() {
               onPress={() => {
                 setActive(false);
                 setMuted(false);
+                setRedCode(false);
               }}
               className="flex-row items-center rounded-full bg-danger px-6 py-4"
             >

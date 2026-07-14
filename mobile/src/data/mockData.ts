@@ -1,5 +1,6 @@
 import type {
   FeaturedAppointment,
+  Guardian,
   HealthTask,
   PatientProfile,
   VitalReading,
@@ -40,6 +41,14 @@ export const INITIAL_TASKS: HealthTask[] = [
     note: "Hafif rüzgarlı havaya dikkat edin.",
   },
 ];
+
+/** Kayıtlı hasta yakını (SentryGuardian refakatçisi) */
+export const INITIAL_GUARDIAN: Guardian = {
+  fullName: "Emre Yılmaz",
+  relation: "Oğlu",
+  phone: "+90 532 000 00 00",
+  smsEnabled: true,
+};
 
 export const FEATURED_APPOINTMENT: FeaturedAppointment = {
   id: "apt-1",

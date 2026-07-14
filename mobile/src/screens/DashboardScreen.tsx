@@ -1,5 +1,6 @@
 import {
   Activity,
+  BellRing,
   CalendarClock,
   CheckCircle2,
   ChevronRight,
@@ -14,6 +15,7 @@ import React from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import GuardianPanel from "../components/GuardianPanel";
 import { SectionHeader, StatusBadge } from "../components/ui";
 import { usePatient } from "../context/PatientContext";
 import type { HealthTask, ScreeningRecommendation } from "../data/types";
@@ -32,8 +34,16 @@ function honorific(gender: string): string {
 }
 
 export default function DashboardScreen() {
-  const { profile, tasks, appointment, recommendations, completeTask } =
-    usePatient();
+  const {
+    profile,
+    tasks,
+    appointment,
+    recommendations,
+    guardian,
+    guardianAlerts,
+    completeTask,
+    sendTestNotification,
+  } = usePatient();
   const firstName = profile.fullName.split(" ")[0];
 
   return (
@@ -63,6 +73,17 @@ export default function DashboardScreen() {
             </View>
           </View>
         </View>
+
+        {/* Jüri için canlı push bildirim simülatörü */}
+        <Pressable
+          onPress={sendTestNotification}
+          className="mb-6 flex-row items-center justify-center rounded-xl border border-brand bg-brand py-3"
+        >
+          <BellRing size={17} color="#ffffff" />
+          <Text className="ml-2 text-sm font-bold text-white">
+            Test Bildirimi Gönder
+          </Text>
+        </Pressable>
 
         {/* Yaklaşan randevu (MHRS) */}
         <View className="mb-6 rounded-2xl bg-blue p-4 shadow-sm">
@@ -116,6 +137,11 @@ export default function DashboardScreen() {
           ) : (
             recommendations.map((rec) => <ScreeningCard key={rec.id} rec={rec} />)
           )}
+        </View>
+
+        {/* Hasta Yakını (SentryGuardian) Erişim Paneli */}
+        <View className="mt-6">
+          <GuardianPanel guardian={guardian} alerts={guardianAlerts} />
         </View>
       </ScrollView>
     </SafeAreaView>

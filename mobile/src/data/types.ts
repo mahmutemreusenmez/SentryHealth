@@ -88,6 +88,43 @@ export interface ScreeningRecommendation {
   reason: string;
 }
 
+/** Hasta yakını (SentryGuardian) refakatçi kaydı */
+export interface Guardian {
+  fullName: string;
+  /** Yakınlık derecesi (ör. "Oğlu", "Kızı", "Eşi") */
+  relation: string;
+  phone: string;
+  /** Otomatik SMS bilgilendirmesinin aktif olup olmadığı */
+  smsEnabled: boolean;
+}
+
+/** Refakatçiye gidecek otonom SMS taslağı */
+export interface GuardianAlert {
+  id: string;
+  /** Tetikleyen olay türü */
+  kind: "missed-dose" | "critical-triage" | "spo2-drop";
+  /** SMS gövdesi (ekranda kutuda gösterilir) */
+  message: string;
+  /** oluşturulma epoch ms */
+  timestamp: number;
+}
+
+/** Jüri için canlı push bildirim simülatörü kart türü */
+export type SimNotificationKind =
+  | "medication"
+  | "critical"
+  | "measurement"
+  | "reminder";
+
+export interface SimNotification {
+  id: string;
+  kind: SimNotificationKind;
+  title: string;
+  body: string;
+  /** oluşturulma epoch ms */
+  timestamp: number;
+}
+
 export type ChatRole = "user" | "assistant";
 
 export interface ChatMessage {

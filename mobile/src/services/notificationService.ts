@@ -1,4 +1,8 @@
-import type { HealthTask, ScheduledNotification } from "../data/types";
+import type {
+  HealthTask,
+  ScheduledNotification,
+  SimNotification,
+} from "../data/types";
 
 /**
  * Simüle edilmiş arka plan bildirim servisi.
@@ -11,6 +15,9 @@ import type { HealthTask, ScheduledNotification } from "../data/types";
 export type NotificationListener = (
   notification: ScheduledNotification,
 ) => void;
+
+/** Jüri için canlı push simülatörü bildirimlerini dinleyen geri çağrım. */
+export type SimNotificationListener = (notification: SimNotification) => void;
 
 /** Görev saatinden kaç dakika önce hatırlatılacağı */
 const REMINDER_LEAD_MINUTES = 15;
@@ -31,6 +38,7 @@ function nextFireTime(time: string, leadMinutes: number): number {
 
 class ReminderService {
   private listeners = new Set<NotificationListener>();
+  private simListeners = new Set<SimNotificationListener>();
   private scheduled: ScheduledNotification[] = [];
   private timer: ReturnType<typeof setInterval> | null = null;
   private expo: typeof import("expo-notifications") | null = null;
@@ -51,6 +59,17 @@ class ReminderService {
   subscribe(listener: NotificationListener): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
+  }
+
+  /** Canlı push simülatörü bildirimlerine abone olur (Dashboard test butonu). */
+  subscribeSim(listener: SimNotificationListener): () => void {
+    this.simListeners.add(listener);
+    return () => this.simListeners.delete(listener);
+  }
+
+  /** Verilen bildirimi anında tüm sim abonelerine iletir. */
+  pushSim(notification: SimNotification): void {
+    this.simListeners.forEach((listener) => listener(notification));
   }
 
   getScheduled(): ScheduledNotification[] {

@@ -2,8 +2,9 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import type { LucideIcon } from "lucide-react-native";
-import { Home, MessageCircle, User, Video } from "lucide-react-native";
+import { HeartPulse, Home, MessageCircle, User, Video } from "lucide-react-native";
 import React from "react";
+import { ActivityIndicator, Text, View } from "react-native";
 
 import { useAuth } from "../context/AuthContext";
 import AuthScreen from "../screens/AuthScreen";
@@ -65,8 +66,22 @@ function MainTabs() {
   );
 }
 
+function HydrationSplash() {
+  return (
+    <View className="flex-1 items-center justify-center bg-surface">
+      <View className="h-16 w-16 items-center justify-center rounded-2xl bg-brand">
+        <HeartPulse size={30} color="#ffffff" />
+      </View>
+      <Text className="mt-4 text-base font-bold text-ink">e-Nabız</Text>
+      <ActivityIndicator color="#10b981" style={{ marginTop: 12 }} />
+    </View>
+  );
+}
+
 export default function RootNavigator() {
-  const { auth } = useAuth();
+  const { auth, isHydrating } = useAuth();
+
+  if (isHydrating) return <HydrationSplash />;
 
   return (
     <NavigationContainer>
