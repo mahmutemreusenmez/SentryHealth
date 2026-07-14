@@ -22,6 +22,20 @@ const TR_LAST_NAMES = [
 
 const RELATIONSHIPS = ['Eş', 'Çocuk', 'Kardeş', 'Anne', 'Baba', 'Yeğen', 'Dost/Akraba'];
 const CONDITIONS = ['KOAH', 'Diyabet', 'Hipertansiyon', 'Kalp Yetmezliği'] as const;
+const DIAGNOSES = [
+  'Tip 2 Diyabet', 'Tip 1 Diyabet', 'Esansiyel Hipertansiyon', 'KOAH', 'Kalp Yetmezliği',
+  'Hashimoto Tiroiditi', 'Kronik Böbrek Yetmezliği', 'Astım', 'Atriyal Fibrilasyon', 'Koroner Arter Hastalığı',
+  'Hiperlipidemi', 'Romatoid Artrit', 'Osteoporoz', 'Güatr (Nodüler)', 'Kronik Hepatit B',
+  'Sedef Hastalığı (Psoriasis)', 'Epilepsi', 'Migren (Kronik)', 'Parkinson Hastalığı', 'Multipl Skleroz',
+  'Anemi (Demir Eksikliği)', 'B12 Vitamini Eksikliği', 'Göz Tansiyonu (Glokom)', 'Reflü (GÖRH)', 'Ülseratif Kolit',
+  'Crohn Hastalığı', 'Çölyak Hastalığı', 'Gut Hastalığı', 'Fibromiyalji', 'Uyku Apnesi',
+  'Prostat Büyümesi (BPH)', 'Varis (Kronik Venöz Yetmezlik)', 'Hipotiroidi', 'Hipertiroidi', 'Obezite (Morbid)',
+  'Metabolik Sendrom', 'Kronik Pankreatit', 'Safra Kesesi Taşı', 'Böbrek Taşı (Nüks)', 'Osteoartrit (Diz)',
+  'Bel Fıtığı (Lomber Disk)', 'Boyun Fıtığı (Servikal Disk)', 'Vertigo (Meniere)', 'Kronik Sinüzit', 'Alerjik Rinit',
+  'Egzama (Atopik Dermatit)', 'Panik Bozukluk', 'Depresyon (Majör)', 'Anksiyete Bozukluğu', 'Demans (Erken Evre)',
+];
+const DIAGNOSIS_STAGES = ['', ' — Evre 1', ' — Evre 2', ' — Komplike Seyir'];
+const CLINICAL_STATUSES = ['Stabil', 'Takip Altında', 'Kritik', 'Hekim Onayı Bekliyor'] as const;
 const QUESTION_TEMPLATES = [
   'Açlık kan şekerinizi ölçtünüz mü?',
   'Tansiyon ölçümünüzü yaptınız mı?',
@@ -147,6 +161,8 @@ function buildStaticPatient(index: number): AnonymizedPatient {
     displayCode,
     ageGroup: deriveAgeGroup(age),
     conditionGroup: condition,
+    diagnosis: `${DIAGNOSES[index % DIAGNOSES.length]}${DIAGNOSIS_STAGES[Math.floor(index / DIAGNOSES.length) % DIAGNOSIS_STAGES.length]}`,
+    clinicalStatus: CLINICAL_STATUSES[(index * 7 + 3) % CLINICAL_STATUSES.length],
     maskedNationalId: `${nationalId.slice(0, 3)}*****${nationalId.slice(-3)}`,
     phone: buildPhone(index),
     contactChannel: index % 5 === 0 ? 'ai' : 'sms',
@@ -171,12 +187,12 @@ function buildStaticPatient(index: number): AnonymizedPatient {
   };
 }
 
-/** Permanent 300-patient seed dataset embedded in codebase (deterministic, restart-safe). */
-export const STATIC_MOCK_PATIENTS: AnonymizedPatient[] = Array.from({ length: 300 }, (_, i) => buildStaticPatient(i));
+/** Permanent 200-patient seed dataset embedded in codebase (deterministic, restart-safe). */
+export const STATIC_MOCK_PATIENTS: AnonymizedPatient[] = Array.from({ length: 200 }, (_, i) => buildStaticPatient(i));
 
 export async function seedPatients(): Promise<void> {
   const existing = await repository.findAll();
-  if (existing.length >= 300) return;
+  if (existing.length >= 200) return;
 
   for (const patient of STATIC_MOCK_PATIENTS) {
     const current = await repository.findByPseudonym(patient.pseudonym);

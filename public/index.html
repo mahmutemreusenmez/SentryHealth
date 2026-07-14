@@ -69,7 +69,6 @@
           <a href="#" class="nav-item active" data-view="dashboard"><span class="nav-icon">▦</span> <span data-i18n="nav.dashboard">Ana Panel</span></a>
           <a href="#" class="nav-item" data-view="patients"><span class="nav-icon">🧑‍⚕️</span> <span data-i18n="nav.patients">Hastalar</span></a>
           <a href="#" class="nav-item" data-view="telemedicine"><span class="nav-icon">📡</span> <span data-i18n="nav.telemedicine">Tele-Tıp (Canlı)</span></a>
-          <a href="#" class="nav-item" data-view="voice"><span class="nav-icon">🎙️</span> <span data-i18n="nav.aiAssistant">YZ Sesli Asistan</span></a>
           <a href="#" class="nav-item" data-view="dashboard"><span class="nav-icon">🔔</span> <span data-i18n="nav.alarms">Alarmlar</span> <span class="nav-badge" id="nav-alarm-count">0</span></a>
           <span class="nav-section" data-i18n="nav.management">Yönetim</span>
           <a href="#" class="nav-item hidden" data-view="admin" id="nav-admin"><span class="nav-icon">⚙</span> <span data-i18n="nav.admin">Yönetici Paneli</span></a>
@@ -77,7 +76,6 @@
           <span class="nav-section" data-i18n="nav.future">İleri Modüller</span>
           <a href="#" class="nav-item" data-view="future"><span class="nav-icon">🌐</span> <span data-i18n="nav.future">İleri Modüller</span></a>
           <span class="nav-section" data-i18n="analytics.title">Analitik &amp; Raporlar</span>
-          <a href="#" class="nav-item" data-view="connect"><span class="nav-icon">🔗</span> <span data-i18n="nav.connect">SentryConnect | Veri Entegrasyon Katmanı</span></a>
           <a href="#" class="nav-item" data-view="analytics"><span class="nav-icon">📊</span> <span data-i18n="nav.analytics">Analitik</span></a>
           <a href="#" class="nav-item" data-view="reports"><span class="nav-icon">📄</span> <span data-i18n="nav.reports">Raporlar</span></a>
         </nav>
@@ -106,9 +104,6 @@
           <div class="topbar-right">
             <div class="user-info" id="user-info"></div>
             <button class="btn btn-ghost" id="logout-btn" data-i18n="app.logout">Çıkış</button>
-            <div class="status-pill" id="connection-status">
-              <span class="dot"></span><span id="connection-text" data-i18n="status.connecting">Bağlanıyor…</span>
-            </div>
           </div>
         </header>
 
@@ -388,13 +383,14 @@
                     <th data-i18n="patients.table.code">Hasta Kodu</th>
                     <th data-i18n="patients.table.pseudonym">Anonim Kimlik (KVKK)</th>
                     <th data-i18n="patients.table.age">Yaş Grubu</th>
-                    <th data-i18n="patients.table.condition">Kronik Hastalık</th>
+                    <th data-i18n="patients.table.diagnosis">Hastalık Tanısı</th>
                     <th data-i18n="patients.table.latest">Son Nabız / SpO2</th>
+                    <th data-i18n="patients.table.status">Sağlık Durumu</th>
                     <th data-i18n="patients.table.risk">Risk Durumu</th>
                   </tr>
                 </thead>
                 <tbody id="patients-table-body">
-                  <tr><td colspan="6" class="table-empty" data-i18n="patients.empty">Kayıtlı hasta bulunamadı.</td></tr>
+                  <tr><td colspan="7" class="table-empty" data-i18n="patients.empty">Kayıtlı hasta bulunamadı.</td></tr>
                 </tbody>
               </table>
             </section>
@@ -428,21 +424,19 @@
                 </form>
               </div>
               <div class="admin-card">
-                <h3 data-i18n="admin.list">Kayıtlı Doktorlar</h3>
-                <table class="patients-table">
-                  <thead>
-                    <tr>
-                      <th data-i18n="admin.username">Kullanıcı Adı</th>
-                      <th data-i18n="admin.displayName">Adı Soyadı</th>
-                      <th class="text-right" data-i18n="admin.action">İşlem</th>
-                    </tr>
-                  </thead>
-                  <tbody id="admin-doctors-body">
-                    <tr><td colspan="3" class="table-empty" data-i18n="admin.empty">Doktor bulunamadı.</td></tr>
-                  </tbody>
-                </table>
+                <h3 data-i18n="admin.list">Kayıtlı Doktorlar ve Klinik Kimlik Kartları</h3>
+                <div class="doctor-cards" id="admin-doctors-body">
+                  <p class="table-empty" data-i18n="admin.empty">Doktor bulunamadı.</p>
+                </div>
               </div>
             </div>
+            <section class="admin-card triage-analytics-card">
+              <div class="settings-card-head">
+                <h3>Poliklinik Yoğunluk ve Sevk Analitiği</h3>
+                <p>Görüntülü triyajdan yönlendirilen hastaların otonom sevk dağılımı</p>
+              </div>
+              <div class="triage-analytics" id="triage-analytics"></div>
+            </section>
           </div>
 
           <div id="view-settings" class="view hidden">
@@ -568,6 +562,62 @@
                   <button type="button" class="btn btn-ghost" id="settings-send-sms" data-i18n="settings.sendSms">SMS Gönder</button>
                   <span id="settings-send-sms-status" class="settings-status"></span>
                 </form>
+              </div>
+
+              <div class="settings-card">
+                <div class="settings-card-head">
+                  <h3>🔑 Güvenlik ve Şifre Değiştirme</h3>
+                  <p>Hesap güvenliği, oturum ve şifre yönetimi</p>
+                </div>
+                <form id="settings-security-form" class="settings-form" autocomplete="off">
+                  <label class="field">
+                    <span>Mevcut Şifre</span>
+                    <input type="password" name="currentPassword" required minlength="4" autocomplete="current-password" />
+                  </label>
+                  <div class="field-row">
+                    <label class="field">
+                      <span>Yeni Şifre</span>
+                      <input type="password" name="newPassword" required minlength="6" autocomplete="new-password" />
+                    </label>
+                    <label class="field">
+                      <span>Yeni Şifre (Tekrar)</span>
+                      <input type="password" name="newPassword2" required minlength="6" autocomplete="new-password" />
+                    </label>
+                  </div>
+                  <div class="toggle-list">
+                    <label class="toggle-row">
+                      <span>İki Adımlı Doğrulama (e-Devlet Entegre)</span>
+                      <input type="checkbox" name="toggle2fa" class="toggle-input" checked />
+                    </label>
+                    <label class="toggle-row">
+                      <span>15 Dakika Hareketsizlikte Otomatik Oturum Kapatma</span>
+                      <input type="checkbox" name="toggleAutoLogout" class="toggle-input" checked />
+                    </label>
+                  </div>
+                  <button type="submit" class="btn btn-primary">Şifreyi Güncelle</button>
+                  <span id="settings-security-status" class="settings-status"></span>
+                </form>
+              </div>
+
+              <div class="settings-card">
+                <div class="settings-card-head">
+                  <h3>📋 KVKK Aydınlatma ve Onay Metinleri</h3>
+                  <p>6698 sayılı Kişisel Verilerin Korunması Kanunu kapsamı</p>
+                </div>
+                <div class="kvkk-consent-list">
+                  <label class="toggle-row kvkk-consent">
+                    <span><strong>Sağlık Verisi İşleme Onayı</strong><br /><small>Kronik hastalık takibi amacıyla vital bulgularımın HMAC-SHA256 ile anonimleştirilerek işlenmesini kabul ediyorum.</small></span>
+                    <input type="checkbox" class="toggle-input" checked disabled />
+                  </label>
+                  <label class="toggle-row kvkk-consent">
+                    <span><strong>Aydınlatma Metni</strong><br /><small>Verilerim yalnızca cihaz üzerinde (lokal) işlenir; üçüncü taraflarla paylaşılmaz. T.C. Sağlık Bakanlığı veri saklama politikalarına tabidir.</small></span>
+                    <input type="checkbox" class="toggle-input" checked disabled />
+                  </label>
+                  <label class="toggle-row kvkk-consent">
+                    <span><strong>Hasta Yakını Bilgilendirme Onayı</strong><br /><small>Kritik eşik aşımlarında tanımlı hasta yakınıma SMS ile bilgilendirme yapılmasını onaylıyorum.</small></span>
+                    <input type="checkbox" class="toggle-input" checked disabled />
+                  </label>
+                </div>
               </div>
 
               <div class="settings-card">
@@ -849,70 +899,6 @@
             <section class="chatbot-grid" id="voice-panel"></section>
           </div>
 
-          <div id="view-connect" class="view hidden">
-            <section class="connect-header">
-              <div>
-                <h2 data-i18n="connect.title">SentryConnect — Entegrasyon ve API Yönetim Merkezi</h2>
-                <p data-i18n="connect.subtitle">Evrensel Sağlık Verisi Entegrasyon Katmanı · Canlı İş Akışı Motoru</p>
-              </div>
-              <span class="connect-prod-badge" data-i18n="connect.badge">Üretim Dağıtım Sürümü (Production Layer)</span>
-            </section>
-
-            <section class="connect-grid">
-              <div class="connect-panel fhir">
-                <div class="connect-panel-head">
-                  <h3 data-i18n="connect.fhirTitle">HL7 FHIR v4.0 Standartları Doğrulama Konsolu</h3>
-                  <span class="connect-live"><span class="connect-live-dot"></span><span data-i18n="connect.fhirLive">CANLI AKIŞ</span></span>
-                </div>
-                <p class="connect-panel-sub" data-i18n="connect.fhirSub">Görüntülü triyaj ve SentryCompanion AI verilerinin anlık FHIR dönüşümü</p>
-                <div class="fhir-console" id="fhir-console" aria-live="polite"></div>
-              </div>
-
-              <div class="connect-panel workflow">
-                <div class="connect-panel-head">
-                  <h3 data-i18n="connect.workflowTitle">Canlı İş Akışı Entegrasyon Durumu</h3>
-                </div>
-                <p class="connect-panel-sub" data-i18n="connect.workflowSub">Yapay zeka sevk kararlarının HBYS ve bakanlık sunucularına gömülme durumu</p>
-                <ul class="connect-signals">
-                  <li class="connect-signal">
-                    <span class="signal-dot"></span>
-                    <div>
-                      <strong data-i18n="connect.sig1">T.C. Sağlık Bakanlığı e-Nabız Senkronizasyonu</strong>
-                      <em data-i18n="connect.sig1Status">AKTİF (HL7 FHIR)</em>
-                    </div>
-                  </li>
-                  <li class="connect-signal">
-                    <span class="signal-dot"></span>
-                    <div>
-                      <strong data-i18n="connect.sig2">Merkezi Hekim Randevu Sistemi (MHRS) Öncelik Atama Hattı</strong>
-                      <em data-i18n="connect.sig2Status">BAĞLANDI</em>
-                    </div>
-                  </li>
-                  <li class="connect-signal">
-                    <span class="signal-dot"></span>
-                    <div>
-                      <strong data-i18n="connect.sig3">Hastane Bilgi Yönetim Sistemi (HBYS) Canlı Entegrasyon Katmanı</strong>
-                      <em data-i18n="connect.sig3Status">AKTİF</em>
-                    </div>
-                  </li>
-                </ul>
-                <div class="connect-metrics">
-                  <div class="connect-metric">
-                    <span data-i18n="connect.metricMsgs">Bugün İşlenen FHIR Mesajı</span>
-                    <strong id="connect-msg-count">—</strong>
-                  </div>
-                  <div class="connect-metric">
-                    <span data-i18n="connect.metricLatency">Ortalama Senkronizasyon Gecikmesi</span>
-                    <strong id="connect-latency">—</strong>
-                  </div>
-                  <div class="connect-metric">
-                    <span data-i18n="connect.metricUptime">Entegrasyon Hattı Çalışma Oranı</span>
-                    <strong id="connect-uptime">—</strong>
-                  </div>
-                </div>
-              </div>
-            </section>
-          </div>
         </main>
 
         <footer>

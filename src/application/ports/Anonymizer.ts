@@ -34,6 +34,8 @@ export interface AnonymizedPatient {
   ageGroup?: string;
   displayCode?: string;
   conditionGroup?: string;
+  diagnosis?: string;
+  clinicalStatus?: string;
   maskedNationalId?: string;
   phone?: string;
   contactChannel?: 'sms' | 'ai';
