@@ -26,31 +26,49 @@ export interface PatientProfile {
   chronicConditions: ChronicCondition[];
 }
 
-export interface Medication {
+/** Ana sayfadaki "Bugünkü Sağlık Görevleriniz" zaman tüneli öğesi */
+export type HealthTaskCategory = "measurement" | "medication" | "activity";
+export type HealthTaskStatus = "done" | "pending" | "suggestion";
+
+export interface HealthTask {
   id: string;
-  name: string;
-  dosage: string;
   /** "HH:MM" 24 saat formatı */
   time: string;
-  taken: boolean;
-  withFood?: boolean;
+  title: string;
+  detail?: string;
+  category: HealthTaskCategory;
+  status: HealthTaskStatus;
+  /** Öneri/aktivite notu (ör. hava durumu uyarısı) */
+  note?: string;
 }
 
-export interface Appointment {
+/** Ana sayfada öne çıkarılan yaklaşan randevu (MHRS) */
+export interface FeaturedAppointment {
   id: string;
   title: string;
   department: string;
-  location: string;
-  /** ISO 8601 tarih-saat */
-  dateTime: string;
+  /** "Bugün" | "Yarın" | "13 Tem" gibi */
+  dayLabel: string;
+  /** "HH:MM" */
+  time: string;
+  /** MHRS öncelikli sıra numarası */
+  queueNo: number;
 }
 
-/** Yaş/kronik duruma göre üretilen akıllı tetkik önerisi */
+/** Kronik takip için geçmiş tansiyon ölçümü */
+export interface VitalReading {
+  label: string;
+  systolic: number;
+  diastolic: number;
+}
+
+/** Yaş/kronik duruma göre üretilen dinamik tetkik önerisi */
 export interface ScreeningRecommendation {
   id: string;
   title: string;
   description: string;
   cadence: string;
+  status: "Süresi Yaklaşıyor" | "Planlanmalı" | "Zorunlu Takip";
   priority: "info" | "warning" | "critical";
   reason: string;
 }
@@ -69,7 +87,7 @@ export interface ChatMessage {
 /** Simüle edilmiş yerel bildirim kaydı */
 export interface ScheduledNotification {
   id: string;
-  medicationId: string;
+  taskId: string;
   title: string;
   body: string;
   /** tetikleneceği epoch ms */

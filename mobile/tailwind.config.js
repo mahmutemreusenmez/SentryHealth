@@ -8,18 +8,24 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // e-Nabız kurumsal paleti
+        // e-Nabız kurumsal paleti — yalnızca sağlık yeşili, bakanlık mavisi,
+        // temiz beyaz ve gri tonları.
         brand: {
-          DEFAULT: "#0a7c86",
-          dark: "#075e66",
-          light: "#e6f4f5",
+          DEFAULT: "#10b981", // e-Nabız yeşili
+          dark: "#059669",
+          light: "#d1fae5",
         },
-        accent: "#f39200",
-        danger: "#d64545",
-        success: "#2e9e5b",
-        ink: "#1f2933",
+        blue: {
+          DEFAULT: "#0284c7", // Sağlık Bakanlığı mavisi
+          dark: "#0369a1",
+          light: "#e0f2fe",
+        },
+        success: "#10b981",
+        danger: "#dc2626",
+        ink: "#1f2937",
         muted: "#6b7280",
-        surface: "#f5f7f8",
+        line: "#e5e7eb",
+        surface: "#f8fafc",
       },
     },
   },

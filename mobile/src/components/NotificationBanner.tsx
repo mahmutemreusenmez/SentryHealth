@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Bell, X } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -39,13 +39,13 @@ export default function NotificationBanner() {
         className="mt-2 flex-row items-center rounded-2xl bg-brand-dark p-3 shadow-lg"
       >
         <View className="mr-3 h-9 w-9 items-center justify-center rounded-full bg-white/20">
-          <Ionicons name="notifications" size={18} color="#fff" />
+          <Bell size={18} color="#ffffff" />
         </View>
         <View className="flex-1">
           <Text className="text-sm font-bold text-white">{active.title}</Text>
           <Text className="text-xs text-brand-light">{active.body}</Text>
         </View>
-        <Ionicons name="close" size={18} color="#e6f4f5" />
+        <X size={18} color="#d1fae5" />
       </Pressable>
     </SafeAreaView>
   );

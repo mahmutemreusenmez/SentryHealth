@@ -1,78 +1,59 @@
 import type {
-  Appointment,
-  Medication,
+  FeaturedAppointment,
+  HealthTask,
   PatientProfile,
+  VitalReading,
 } from "./types";
 
 export const INITIAL_PROFILE: PatientProfile = {
-  fullName: "Ayşe Yıldız",
+  fullName: "Mahmut Yılmaz",
   nationalId: "10000000146",
-  age: 67,
-  gender: "female",
+  age: 58,
+  gender: "male",
   chronicConditions: ["Diyabet", "Hipertansiyon"],
 };
 
-export const INITIAL_MEDICATIONS: Medication[] = [
+export const INITIAL_TASKS: HealthTask[] = [
   {
-    id: "med-1",
-    name: "Metformin",
-    dosage: "1000 mg",
-    time: "08:00",
-    taken: true,
-    withFood: true,
-  },
-  {
-    id: "med-2",
-    name: "Ramipril",
-    dosage: "5 mg",
+    id: "task-1",
     time: "09:00",
-    taken: true,
+    title: "Sabah Tansiyon Ölçümü",
+    detail: "Ölçüm: 128/82 mmHg",
+    category: "measurement",
+    status: "done",
   },
   {
-    id: "med-3",
-    name: "Metformin",
-    dosage: "1000 mg",
-    time: "14:00",
-    taken: false,
-    withFood: true,
+    id: "task-2",
+    time: "13:00",
+    title: "Tok Karnına Diyabet İlacı",
+    detail: "Metformin 1000 mg",
+    category: "medication",
+    status: "pending",
   },
   {
-    id: "med-4",
-    name: "Atorvastatin",
-    dosage: "20 mg",
-    time: "21:00",
-    taken: false,
+    id: "task-3",
+    time: "16:00",
+    title: "Günlük Tempolu Yürüyüş",
+    detail: "30 dakika, orta tempo",
+    category: "activity",
+    status: "suggestion",
+    note: "Hafif rüzgarlı havaya dikkat edin.",
   },
 ];
 
-function isoAt(daysFromNow: number, time: string): string {
-  const d = new Date();
-  d.setDate(d.getDate() + daysFromNow);
-  const [h, m] = time.split(":").map(Number);
-  d.setHours(h, m, 0, 0);
-  return d.toISOString();
-}
+export const FEATURED_APPOINTMENT: FeaturedAppointment = {
+  id: "apt-1",
+  title: "Kardiyoloji Kontrolü",
+  department: "Kardiyoloji",
+  dayLabel: "Yarın",
+  time: "10:30",
+  queueNo: 12,
+};
 
-export const INITIAL_APPOINTMENTS: Appointment[] = [
-  {
-    id: "apt-1",
-    title: "Endokrinoloji Kontrolü",
-    department: "Endokrinoloji ve Metabolizma",
-    location: "Ankara Şehir Hastanesi",
-    dateTime: isoAt(2, "10:30"),
-  },
-  {
-    id: "apt-2",
-    title: "Kardiyoloji Muayenesi",
-    department: "Kardiyoloji",
-    location: "Ankara Şehir Hastanesi",
-    dateTime: isoAt(9, "14:00"),
-  },
-  {
-    id: "apt-3",
-    title: "Göz Dibi Muayenesi",
-    department: "Göz Hastalıkları",
-    location: "Etlik Devlet Hastanesi",
-    dateTime: isoAt(18, "11:15"),
-  },
+/** Kronik tansiyon geçmişi — AI'ın proaktif analizi için */
+export const BP_HISTORY: VitalReading[] = [
+  { label: "Bugün", systolic: 128, diastolic: 82 },
+  { label: "Dün", systolic: 135, diastolic: 86 },
+  { label: "2 gün önce", systolic: 142, diastolic: 90 },
+  { label: "3 gün önce", systolic: 138, diastolic: 88 },
 ];

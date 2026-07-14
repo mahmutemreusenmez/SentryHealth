@@ -1,4 +1,11 @@
-import { Ionicons } from "@expo/vector-icons";
+import {
+  Activity,
+  CheckCircle2,
+  ClipboardList,
+  CreditCard,
+  PlusCircle,
+  User,
+} from "lucide-react-native";
 import React, { useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -11,7 +18,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { Card, PriorityBadge, SectionHeader } from "../components/ui";
+import { Card, EmptyState, SectionHeader, StatusBadge } from "../components/ui";
 import { usePatient } from "../context/PatientContext";
 import {
   CHRONIC_CONDITIONS,
@@ -57,6 +64,16 @@ export default function ProfileScreen() {
     });
   };
 
+  // Yaş alanını her değişimde state'e yansıt ki tetkikler anlık güncellensin.
+  const onAgeChange = (t: string) => {
+    const digits = t.replace(/[^0-9]/g, "");
+    setAgeText(digits);
+    const n = Number.parseInt(digits, 10);
+    if (Number.isFinite(n) && n > 0 && n < 130) {
+      updateProfile({ age: n });
+    }
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={["top"]}>
       <KeyboardAvoidingView
@@ -70,7 +87,7 @@ export default function ProfileScreen() {
         >
           <View className="mb-5 items-center">
             <View className="h-20 w-20 items-center justify-center rounded-full bg-brand">
-              <Ionicons name="person" size={40} color="#fff" />
+              <User size={40} color="#ffffff" />
             </View>
             <Text className="mt-2 text-xl font-bold text-ink">
               {profile.fullName}
@@ -80,7 +97,7 @@ export default function ProfileScreen() {
 
           {/* Kişisel bilgiler */}
           <Card className="mb-5">
-            <SectionHeader title="Kişisel Bilgiler" icon="id-card-outline" />
+            <SectionHeader title="Kişisel Bilgiler" icon={CreditCard} />
 
             <Field label="Ad Soyad">
               <TextInput
@@ -88,7 +105,7 @@ export default function ProfileScreen() {
                 onChangeText={setFullName}
                 onBlur={commitProfile}
                 placeholder="Ad Soyad"
-                className="rounded-xl border border-gray-200 bg-surface px-3 py-2 text-ink"
+                className="rounded-xl border border-line bg-surface px-3 py-2 text-ink"
               />
             </Field>
 
@@ -104,7 +121,7 @@ export default function ProfileScreen() {
                 maxLength={11}
                 placeholder="XXXXXXXXXXX"
                 className={`rounded-xl border bg-surface px-3 py-2 text-ink ${
-                  idValid ? "border-gray-200" : "border-danger"
+                  idValid ? "border-line" : "border-danger"
                 }`}
               />
             </Field>
@@ -115,13 +132,12 @@ export default function ProfileScreen() {
             >
               <TextInput
                 value={ageText}
-                onChangeText={(t) => setAgeText(t.replace(/[^0-9]/g, ""))}
-                onBlur={commitProfile}
+                onChangeText={onAgeChange}
                 keyboardType="number-pad"
                 maxLength={3}
                 placeholder="Yaş"
                 className={`rounded-xl border bg-surface px-3 py-2 text-ink ${
-                  ageValid ? "border-gray-200" : "border-danger"
+                  ageValid ? "border-line" : "border-danger"
                 }`}
               />
             </Field>
@@ -157,7 +173,7 @@ export default function ProfileScreen() {
             <SectionHeader
               title="Kronik Hastalıklar"
               subtitle="Sizde bulunanları seçin"
-              icon="fitness-outline"
+              icon={Activity}
             />
             <View className="flex-row flex-wrap">
               {CHRONIC_CONDITIONS.map((condition) => {
@@ -169,14 +185,14 @@ export default function ProfileScreen() {
                     className={`mb-2 mr-2 flex-row items-center rounded-full border px-3 py-2 ${
                       active
                         ? "border-brand bg-brand-light"
-                        : "border-gray-200 bg-white"
+                        : "border-line bg-white"
                     }`}
                   >
-                    <Ionicons
-                      name={active ? "checkmark-circle" : "add-circle-outline"}
-                      size={15}
-                      color={active ? "#0a7c86" : "#6b7280"}
-                    />
+                    {active ? (
+                      <CheckCircle2 size={15} color="#059669" />
+                    ) : (
+                      <PlusCircle size={15} color="#6b7280" />
+                    )}
                     <Text
                       className={`ml-1 text-xs font-medium ${
                         active ? "text-brand-dark" : "text-muted"
@@ -190,30 +206,30 @@ export default function ProfileScreen() {
             </View>
           </Card>
 
-          {/* Bu profile göre üretilen öneriler */}
+          {/* Dinamik tetkikler */}
           <Card>
             <SectionHeader
-              title="Profilinize Özel Öneriler"
-              subtitle="Bilgiler değiştikçe otomatik güncellenir"
-              icon="sparkles-outline"
+              title="Zorunlu Tetkikler"
+              subtitle="Yaş ve kronik duruma göre anlık güncellenir"
+              icon={ClipboardList}
             />
             {recommendations.length === 0 ? (
-              <Text className="text-sm text-muted">
-                Şu an için ek tetkik önerisi bulunmuyor.
-              </Text>
+              <EmptyState text="Şu an için zorunlu tetkik önerisi bulunmuyor." />
             ) : (
               recommendations.map((rec) => (
                 <View
                   key={rec.id}
-                  className="mb-2 flex-row items-center justify-between rounded-xl bg-surface px-3 py-2"
+                  className="mb-2 rounded-xl border border-line bg-surface px-3 py-2.5"
                 >
-                  <View className="flex-1 pr-2">
-                    <Text className="text-sm font-semibold text-ink">
+                  <View className="flex-row items-center justify-between">
+                    <Text className="flex-1 pr-2 text-sm font-semibold text-ink">
                       {rec.title}
                     </Text>
-                    <Text className="text-[11px] text-muted">{rec.reason}</Text>
+                    <StatusBadge recommendation={rec} />
                   </View>
-                  <PriorityBadge priority={rec.priority} />
+                  <Text className="mt-1 text-[11px] text-muted">
+                    {rec.cadence} · {rec.reason}
+                  </Text>
                 </View>
               ))
             )}

@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Mic, Send, Sparkles, Square } from "lucide-react-native";
 import React, { useRef, useState } from "react";
 import {
   FlatList,
@@ -20,8 +20,8 @@ import {
 import { formatClock } from "../utils/format";
 
 const QUICK_PROMPTS = [
-  "Başım dönüyor, ne yapmalıyım?",
-  "İlacımı almayı unuttum",
+  "Bugün başım dönüyor, ne yapmalıyım?",
+  "Tansiyonum nasıl gidiyor?",
   "Randevularım neler?",
 ];
 
@@ -31,6 +31,7 @@ export default function ChatScreen() {
     createMessage(
       "assistant",
       `Merhaba ${profile.fullName.split(" ")[0]}, ben SentryCompanion. ` +
+        "Kronik takip verilerinizi analiz ederek yardımcı olurum. " +
         "Sağlığınızla ilgili sorularınızı sesli veya yazılı sorabilirsiniz.",
     ),
   ]);
@@ -62,16 +63,16 @@ export default function ChatScreen() {
     setListening(true);
     setTimeout(() => {
       setListening(false);
-      send("Başım dönüyor, ne yapmalıyım?", true);
+      send("Bugün başım dönüyor, ne yapmalıyım?", true);
     }, 1500);
   };
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={["top"]}>
       {/* Başlık */}
-      <View className="flex-row items-center border-b border-gray-100 bg-white px-4 py-3">
+      <View className="flex-row items-center border-b border-line bg-white px-4 py-3">
         <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-brand">
-          <Ionicons name="chatbubbles" size={20} color="#fff" />
+          <Sparkles size={20} color="#ffffff" />
         </View>
         <View>
           <Text className="text-base font-bold text-ink">
@@ -103,32 +104,33 @@ export default function ChatScreen() {
             <Pressable
               key={p}
               onPress={() => send(p)}
-              className="mb-2 mr-2 rounded-full border border-brand bg-white px-3 py-1"
+              className="mb-2 mr-2 rounded-full border border-line bg-white px-3 py-1.5"
             >
-              <Text className="text-[11px] text-brand-dark">{p}</Text>
+              <Text className="text-[11px] text-ink">{p}</Text>
             </Pressable>
           ))}
         </View>
 
         {/* Giriş çubuğu */}
-        <View className="flex-row items-center border-t border-gray-100 bg-white px-3 py-2">
+        <View className="flex-row items-center border-t border-line bg-white px-3 py-2">
           <Pressable
             onPress={toggleVoice}
             className={`mr-2 h-11 w-11 items-center justify-center rounded-full ${
-              listening ? "bg-danger" : "bg-brand-light"
+              listening ? "bg-danger" : "bg-surface"
             }`}
           >
-            <Ionicons
-              name={listening ? "stop" : "mic"}
-              size={20}
-              color={listening ? "#fff" : "#0a7c86"}
-            />
+            {listening ? (
+              <Square size={18} color="#ffffff" />
+            ) : (
+              <Mic size={20} color="#059669" />
+            )}
           </Pressable>
           <TextInput
             value={listening ? "Dinleniyor..." : input}
             editable={!listening}
             onChangeText={setInput}
             placeholder="Bir mesaj yazın..."
+            placeholderTextColor="#9ca3af"
             className="mr-2 flex-1 rounded-full bg-surface px-4 py-2 text-ink"
             onSubmitEditing={() => send(input)}
             returnKeyType="send"
@@ -137,7 +139,7 @@ export default function ChatScreen() {
             onPress={() => send(input)}
             className="h-11 w-11 items-center justify-center rounded-full bg-brand"
           >
-            <Ionicons name="send" size={18} color="#fff" />
+            <Send size={18} color="#ffffff" />
           </Pressable>
         </View>
       </KeyboardAvoidingView>
@@ -148,14 +150,12 @@ export default function ChatScreen() {
 function Bubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === "user";
   return (
-    <View
-      className={`mb-3 max-w-[80%] ${isUser ? "self-end" : "self-start"}`}
-    >
+    <View className={`mb-3 max-w-[82%] ${isUser ? "self-end" : "self-start"}`}>
       <View
         className={`rounded-2xl px-4 py-2 ${
           isUser
             ? "rounded-br-sm bg-brand"
-            : "rounded-bl-sm border border-gray-100 bg-white"
+            : "rounded-bl-sm border border-line bg-white"
         }`}
       >
         <Text className={isUser ? "text-white" : "text-ink"}>
@@ -168,12 +168,7 @@ function Bubble({ message }: { message: ChatMessage }) {
         }`}
       >
         {message.viaVoice ? (
-          <Ionicons
-            name="mic"
-            size={10}
-            color="#6b7280"
-            style={{ marginRight: 3 }}
-          />
+          <Mic size={10} color="#6b7280" style={{ marginRight: 3 }} />
         ) : null}
         <Text className="text-[10px] text-muted">
           {formatClock(message.timestamp)}

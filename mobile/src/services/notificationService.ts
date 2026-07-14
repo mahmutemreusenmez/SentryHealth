@@ -1,4 +1,4 @@
-import type { Medication, ScheduledNotification } from "../data/types";
+import type { HealthTask, ScheduledNotification } from "../data/types";
 
 /**
  * Simüle edilmiş arka plan bildirim servisi.
@@ -12,7 +12,7 @@ export type NotificationListener = (
   notification: ScheduledNotification,
 ) => void;
 
-/** İlaç saatinden kaç dakika önce hatırlatılacağı */
+/** Görev saatinden kaç dakika önce hatırlatılacağı */
 const REMINDER_LEAD_MINUTES = 15;
 /** Simülasyon döngüsünün kontrol aralığı (ms) */
 const TICK_INTERVAL_MS = 1000;
@@ -38,7 +38,6 @@ class ReminderService {
   constructor() {
     // Native modül varsa yükle; yoksa sessizce simülasyon moduna geç.
     try {
-       
       this.expo = require("expo-notifications");
     } catch {
       this.expo = null;
@@ -58,18 +57,18 @@ class ReminderService {
     return [...this.scheduled].sort((a, b) => a.fireAt - b.fireAt);
   }
 
-  /** Günün ilaçlarına göre hatırlatıcıları (yeniden) planlar. */
-  schedule(medications: Medication[]): void {
-    this.scheduled = medications
-      .filter((med) => !med.taken)
-      .map((med) => ({
-        id: `notif-${med.id}`,
-        medicationId: med.id,
-        title: "İlaç Hatırlatıcısı",
-        body: `${med.time} — ${med.name} ${med.dosage}${
-          med.withFood ? " (tokken)" : ""
+  /** Bekleyen sağlık görevlerine göre hatırlatıcıları (yeniden) planlar. */
+  schedule(tasks: HealthTask[]): void {
+    this.scheduled = tasks
+      .filter((task) => task.status === "pending")
+      .map((task) => ({
+        id: `notif-${task.id}`,
+        taskId: task.id,
+        title: "Sağlık Hatırlatıcısı",
+        body: `${task.time} — ${task.title}${
+          task.detail ? ` (${task.detail})` : ""
         } zamanı yaklaşıyor.`,
-        fireAt: nextFireTime(med.time, REMINDER_LEAD_MINUTES),
+        fireAt: nextFireTime(task.time, REMINDER_LEAD_MINUTES),
         fired: false,
       }));
 

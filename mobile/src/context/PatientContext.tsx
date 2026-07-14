@@ -8,26 +8,26 @@ import React, {
 } from "react";
 
 import {
-  INITIAL_APPOINTMENTS,
-  INITIAL_MEDICATIONS,
+  FEATURED_APPOINTMENT,
   INITIAL_PROFILE,
+  INITIAL_TASKS,
 } from "../data/mockData";
 import type {
-  Appointment,
-  Medication,
+  FeaturedAppointment,
+  HealthTask,
   PatientProfile,
   ScreeningRecommendation,
 } from "../data/types";
-import { generateScreeningRecommendations } from "../services/screeningAlgorithm";
 import { reminderService } from "../services/notificationService";
+import { generateScreeningRecommendations } from "../services/screeningAlgorithm";
 
 interface PatientContextValue {
   profile: PatientProfile;
-  medications: Medication[];
-  appointments: Appointment[];
+  tasks: HealthTask[];
+  appointment: FeaturedAppointment;
   recommendations: ScreeningRecommendation[];
   updateProfile: (patch: Partial<PatientProfile>) => void;
-  toggleMedicationTaken: (id: string) => void;
+  completeTask: (id: string) => void;
 }
 
 const PatientContext = createContext<PatientContextValue | undefined>(
@@ -36,28 +36,29 @@ const PatientContext = createContext<PatientContextValue | undefined>(
 
 export function PatientProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<PatientProfile>(INITIAL_PROFILE);
-  const [medications, setMedications] =
-    useState<Medication[]>(INITIAL_MEDICATIONS);
-  const [appointments] = useState<Appointment[]>(INITIAL_APPOINTMENTS);
+  const [tasks, setTasks] = useState<HealthTask[]>(INITIAL_TASKS);
+  const [appointment] = useState<FeaturedAppointment>(FEATURED_APPOINTMENT);
 
   const recommendations = useMemo(
     () => generateScreeningRecommendations(profile),
     [profile],
   );
 
-  // İlaç listesi değiştikçe arka plan hatırlatıcı servisini güncelle.
+  // Görev listesi değiştikçe arka plan hatırlatıcı servisini güncelle.
   useEffect(() => {
-    reminderService.schedule(medications);
-  }, [medications]);
+    reminderService.schedule(tasks);
+  }, [tasks]);
 
   const updateProfile = useCallback((patch: Partial<PatientProfile>) => {
     setProfile((prev) => ({ ...prev, ...patch }));
   }, []);
 
-  const toggleMedicationTaken = useCallback((id: string) => {
-    setMedications((prev) =>
-      prev.map((med) =>
-        med.id === id ? { ...med, taken: !med.taken } : med,
+  const completeTask = useCallback((id: string) => {
+    setTasks((prev) =>
+      prev.map((task) =>
+        task.id === id
+          ? { ...task, status: task.status === "done" ? "pending" : "done" }
+          : task,
       ),
     );
   }, []);
@@ -65,20 +66,13 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<PatientContextValue>(
     () => ({
       profile,
-      medications,
-      appointments,
+      tasks,
+      appointment,
       recommendations,
       updateProfile,
-      toggleMedicationTaken,
+      completeTask,
     }),
-    [
-      profile,
-      medications,
-      appointments,
-      recommendations,
-      updateProfile,
-      toggleMedicationTaken,
-    ],
+    [profile, tasks, appointment, recommendations, updateProfile, completeTask],
   );
 
   return (

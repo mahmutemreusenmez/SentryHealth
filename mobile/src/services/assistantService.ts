@@ -1,29 +1,54 @@
-import type { ChatMessage, PatientProfile } from "../data/types";
+import { BP_HISTORY } from "../data/mockData";
+import type { ChatMessage, PatientProfile, VitalReading } from "../data/types";
 
 interface Rule {
   keywords: string[];
   reply: (profile: PatientProfile) => string;
 }
 
+/** Geçmiş tansiyon ölçümlerinden en yüksek sistolik değeri bulur. */
+function peakSystolic(history: VitalReading[]): VitalReading {
+  return history.reduce((max, r) => (r.systolic > max.systolic ? r : max));
+}
+
 /**
  * Basit, kural tabanlı çevrimdışı asistan.
- * Gerçek dağıtımda SentryHealth'in klinik AI servisine bağlanacak;
- * iskelet aşamasında güvenli, deterministik yanıtlar üretir.
+ * Hastanın kronik tansiyon geçmişini analiz ederek proaktif, tıbbi dilde
+ * yanıt üretir. Gerçek dağıtımda SentryHealth'in klinik AI servisine bağlanır.
  */
 const RULES: Rule[] = [
   {
     keywords: ["baş dönmesi", "başım dönüyor", "sersemlik", "denge"],
-    reply: () =>
-      "Baş dönmesi tansiyon veya kan şekeri değişimiyle ilişkili olabilir. " +
-      "Lütfen oturun, birkaç dakika dinlenin ve su için. Tansiyon ve şeker " +
-      "ölçüm cihazınız varsa değerlerinizi ölçün. Şikâyet 15 dakikada geçmezse " +
-      "veya bilinç bulanıklığı, göğüs ağrısı eklenirse 112'yi arayın.",
+    reply: (profile) => {
+      const peak = peakSystolic(BP_HISTORY);
+      const hypertensive = profile.chronicConditions.includes("Hipertansiyon");
+      const bpNote = hypertensive
+        ? `Kayıtlarınıza göre son ölçümlerinizde tansiyonunuz ${peak.label.toLocaleLowerCase("tr-TR")} ${peak.systolic}/${peak.diastolic} mmHg'ye kadar yükselmiş. `
+        : "";
+      return (
+        `${bpNote}Baş dönmesi tansiyon veya kan şekeri değişimiyle ilişkili olabilir. ` +
+        "Lütfen oturun, birkaç dakika dinlenin ve su için. Tansiyon ve şeker " +
+        "ölçüm cihazınız varsa değerlerinizi ölçüp uygulamaya işleyin. Şikâyet 15 " +
+        "dakikada geçmezse veya bilinç bulanıklığı, göğüs ağrısı eklenirse 112'yi arayın."
+      );
+    },
   },
   {
-    keywords: ["göğüs ağrısı", "göğsüm", "nefes", "nefes darlığı"],
-    reply: () =>
-      "Göğüs ağrısı veya nefes darlığı acil bir durum olabilir. Lütfen hemen " +
-      "112'yi arayın ve hareketsiz kalın. Bu bir acil sağlık uyarısıdır.",
+    keywords: ["tansiyon", "hipertansiyon", "tansiyonum"],
+    reply: (profile) => {
+      const peak = peakSystolic(BP_HISTORY);
+      const latest = BP_HISTORY[0];
+      const trend =
+        latest.systolic < peak.systolic
+          ? "son ölçümünüzde bir miktar gerilemiş olması olumlu"
+          : "yükseliş eğiliminde olması takip gerektiriyor";
+      return (
+        `Son ${BP_HISTORY.length} tansiyon ölçümünüzü inceledim: en yüksek ${peak.systolic}/${peak.diastolic}, ` +
+        `en güncel ${latest.systolic}/${latest.diastolic} mmHg. Değerlerin ${trend}. ` +
+        "Tuz tüketimini azaltın, ilaçlarınızı düzenli alın ve ölçümlerinizi her gün " +
+        "aynı saatte tekrarlayın. 180/110 üzeri bir değerde vakit kaybetmeden 112'yi arayın."
+      );
+    },
   },
   {
     keywords: ["şeker", "kan şekeri", "hipoglisemi", "glukoz"],
@@ -31,21 +56,21 @@ const RULES: Rule[] = [
       p.chronicConditions.includes("Diyabet")
         ? "Diyabet takibinizde kan şekeri düşerse (terleme, titreme) 15 gr hızlı " +
           "karbonhidrat alın ve 15 dakika sonra tekrar ölçün. Yüksekse su için ve " +
-          "doktorunuzun planına uyun."
+          "doktorunuzun planına uyun. HbA1c ölçüm zamanınızı Profil sekmesinden takip edebilirsiniz."
         : "Kan şekeri şikâyetlerinizi kaydedin; belirtiler sürerse hekiminize danışın.",
   },
   {
     keywords: ["ilaç", "doz", "hap", "unuttum"],
     reply: () =>
       "İlaç dozunu unuttuysanız hatırladığınızda alın; ancak sonraki doza çok " +
-      "yakınsa atlayın, çift doz almayın. Bugünkü ilaç planınızı Ana Sayfa'daki " +
-      "zaman çizelgesinden takip edebilirsiniz.",
+      "yakınsa atlayın, çift doz almayın. Bugünkü sağlık görevlerinizi Ana Sayfa'daki " +
+      "zaman tünelinden takip edebilirsiniz.",
   },
   {
     keywords: ["randevu", "muayene", "kontrol"],
     reply: () =>
-      "Yaklaşan randevularınızı Ana Sayfa'daki zaman çizelgesinde görebilirsiniz. " +
-      "MHRS üzerinden yeni randevu almak için hastane ve bölüm seçmeniz yeterli.",
+      "Yaklaşan randevunuz yarın 10:30'da Kardiyoloji Kontrolü (MHRS öncelikli sıra no: 12). " +
+      "Ana Sayfa'daki randevu kartından detayları görebilirsiniz.",
   },
 ];
 

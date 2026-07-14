@@ -11,7 +11,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <PatientProvider>
-        <StatusBar style="light" backgroundColor="#0a7c86" />
+        <StatusBar style="light" backgroundColor="#10b981" />
         <RootNavigator />
         <NotificationBanner />
       </PatientProvider>

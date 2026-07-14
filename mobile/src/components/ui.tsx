@@ -1,4 +1,5 @@
-import { Ionicons } from "@expo/vector-icons";
+import type { LucideIcon } from "lucide-react-native";
+import { CheckCircle2 } from "lucide-react-native";
 import React from "react";
 import { Text, View } from "react-native";
 
@@ -13,7 +14,7 @@ export function Card({
 }) {
   return (
     <View
-      className={`rounded-2xl bg-white p-4 shadow-sm border border-gray-100 ${className}`}
+      className={`rounded-2xl border border-line bg-white p-4 shadow-sm ${className}`}
     >
       {children}
     </View>
@@ -23,20 +24,20 @@ export function Card({
 export function SectionHeader({
   title,
   subtitle,
-  icon,
+  icon: Icon,
 }: {
   title: string;
   subtitle?: string;
-  icon?: keyof typeof Ionicons.glyphMap;
+  icon?: LucideIcon;
 }) {
   return (
     <View className="mb-3 flex-row items-center">
-      {icon ? (
-        <View className="mr-2 h-8 w-8 items-center justify-center rounded-full bg-brand-light">
-          <Ionicons name={icon} size={18} color="#0a7c86" />
+      {Icon ? (
+        <View className="mr-2 h-9 w-9 items-center justify-center rounded-full bg-brand-light">
+          <Icon size={18} color="#059669" />
         </View>
       ) : null}
-      <View>
+      <View className="flex-1">
         <Text className="text-lg font-bold text-ink">{title}</Text>
         {subtitle ? (
           <Text className="text-xs text-muted">{subtitle}</Text>
@@ -46,52 +47,34 @@ export function SectionHeader({
   );
 }
 
-const PRIORITY_STYLES: Record<
+const STATUS_STYLES: Record<
   ScreeningRecommendation["priority"],
-  { bg: string; text: string; icon: keyof typeof Ionicons.glyphMap }
+  { bg: string; text: string }
 > = {
-  info: { bg: "bg-brand-light", text: "text-brand-dark", icon: "information-circle" },
-  warning: { bg: "bg-orange-50", text: "text-accent", icon: "alert-circle" },
-  critical: { bg: "bg-red-50", text: "text-danger", icon: "warning" },
+  info: { bg: "bg-blue-light", text: "text-blue-dark" },
+  warning: { bg: "bg-blue-light", text: "text-blue-dark" },
+  critical: { bg: "bg-brand-light", text: "text-brand-dark" },
 };
 
-export function PriorityBadge({
-  priority,
+export function StatusBadge({
+  recommendation,
 }: {
-  priority: ScreeningRecommendation["priority"];
+  recommendation: ScreeningRecommendation;
 }) {
-  const style = PRIORITY_STYLES[priority];
-  const label =
-    priority === "critical"
-      ? "Öncelikli"
-      : priority === "warning"
-        ? "Önerilen"
-        : "Bilgi";
+  const style = STATUS_STYLES[recommendation.priority];
   return (
-    <View className={`flex-row items-center rounded-full px-2 py-1 ${style.bg}`}>
-      <Ionicons name={style.icon} size={12} color={colorFor(priority)} />
-      <Text className={`ml-1 text-[10px] font-semibold ${style.text}`}>
-        {label}
+    <View className={`rounded-full px-2.5 py-1 ${style.bg}`}>
+      <Text className={`text-[10px] font-semibold ${style.text}`}>
+        {recommendation.status}
       </Text>
     </View>
   );
 }
 
-function colorFor(priority: ScreeningRecommendation["priority"]): string {
-  switch (priority) {
-    case "critical":
-      return "#d64545";
-    case "warning":
-      return "#f39200";
-    default:
-      return "#075e66";
-  }
-}
-
 export function EmptyState({ text }: { text: string }) {
   return (
     <View className="items-center justify-center py-8">
-      <Ionicons name="checkmark-done-circle-outline" size={32} color="#6b7280" />
+      <CheckCircle2 size={32} color="#6b7280" />
       <Text className="mt-2 text-sm text-muted">{text}</Text>
     </View>
   );
