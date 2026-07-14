@@ -1,5 +1,6 @@
 import { BP_HISTORY } from "../data/mockData";
 import type { ChatMessage, PatientProfile, VitalReading } from "../data/types";
+import { generateScreeningRecommendations } from "./screeningAlgorithm";
 
 interface Rule {
   keywords: string[];
@@ -11,12 +12,57 @@ function peakSystolic(history: VitalReading[]): VitalReading {
   return history.reduce((max, r) => (r.systolic > max.systolic ? r : max));
 }
 
+/** Global profildeki yaş ve kronik duruma göre kişiselleştirilmiş öneri metni. */
+function personalizedAdvice(profile: PatientProfile): string {
+  const parts: string[] = [`Yaşınız ${profile.age}. `];
+
+  if (profile.age > 50) {
+    parts.push(
+      "50 yaşın üzerinde olduğunuz için kolorektal kanser taraması (kolonoskopi) ve yıllık EKG/kardiyoloji taraması planlamanız önerilir. ",
+    );
+  } else if (profile.age > 40) {
+    parts.push(
+      "40 yaşın üzerinde olduğunuz için yıllık EKG ve kardiyoloji taramanızı ihmal etmeyin. ",
+    );
+  }
+
+  if (profile.chronicConditions.includes("Diyabet")) {
+    parts.push(
+      "Diyabet tanınız olduğu için 3 ayda bir HbA1c ölçümü ve yılda bir göz dibi muayenesi gereklidir. ",
+    );
+  }
+  if (profile.chronicConditions.includes("Hipertansiyon")) {
+    parts.push(
+      "Hipertansiyon takibinizde tuz kısıtlaması ve her gün aynı saatte tansiyon ölçümü önemlidir. ",
+    );
+  }
+
+  const recCount = generateScreeningRecommendations(profile).length;
+  parts.push(
+    recCount > 0
+      ? `Profil sekmenizdeki "Zorunlu Tetkikler" alanında sizin için ${recCount} öneri listeleniyor. `
+      : "Şu an profilinize göre zorunlu bir tetkik önerisi görünmüyor. ",
+  );
+  parts.push("Şiddetli belirtilerde vakit kaybetmeden 112'yi arayın.");
+  return parts.join("");
+}
+
 /**
  * Basit, kural tabanlı çevrimdışı asistan.
  * Hastanın kronik tansiyon geçmişini analiz ederek proaktif, tıbbi dilde
  * yanıt üretir. Gerçek dağıtımda SentryHealth'in klinik AI servisine bağlanır.
  */
 const RULES: Rule[] = [
+  {
+    keywords: [
+      "yaşım ve hastalığıma göre",
+      "yaşıma göre",
+      "hastalığıma göre",
+      "bana özel",
+      "profilime göre",
+    ],
+    reply: (profile) => personalizedAdvice(profile),
+  },
   {
     keywords: ["baş dönmesi", "başım dönüyor", "sersemlik", "denge"],
     reply: (profile) => {

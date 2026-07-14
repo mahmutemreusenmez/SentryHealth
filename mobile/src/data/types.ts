@@ -26,6 +26,21 @@ export interface PatientProfile {
   chronicConditions: ChronicCondition[];
 }
 
+/** Uygulama genelinde kullanılan hasta profili tipi (PatientProfile ile aynı). */
+export type UserProfile = PatientProfile;
+
+/** e-Devlet Kapısı kimlik doğrulama durumunu tutan global state. */
+export interface AuthenticationState {
+  /** "Giriş Başarılı" bayrağı */
+  isAuthenticated: boolean;
+  /** Sahte e-Devlet doğrulaması sürerken true */
+  isLoading: boolean;
+  /** Giriş yapan kullanıcının T.C. Kimlik Numarası */
+  nationalId: string | null;
+  /** Doğrulama hatası mesajı */
+  error: string | null;
+}
+
 /** Ana sayfadaki "Bugünkü Sağlık Görevleriniz" zaman tüneli öğesi */
 export type HealthTaskCategory = "measurement" | "medication" | "activity";
 export type HealthTaskStatus = "done" | "pending" | "suggestion";

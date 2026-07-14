@@ -20,6 +20,7 @@ import {
 import { formatClock } from "../utils/format";
 
 const QUICK_PROMPTS = [
+  "Yaşım ve hastalığıma göre ne yapmalıyım?",
   "Bugün başım dönüyor, ne yapmalıyım?",
   "Tansiyonum nasıl gidiyor?",
   "Randevularım neler?",

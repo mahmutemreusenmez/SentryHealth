@@ -3,6 +3,7 @@ import {
   CheckCircle2,
   ClipboardList,
   CreditCard,
+  LogOut,
   PlusCircle,
   User,
 } from "lucide-react-native";
@@ -19,6 +20,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Card, EmptyState, SectionHeader, StatusBadge } from "../components/ui";
+import { useAuth } from "../context/AuthContext";
 import { usePatient } from "../context/PatientContext";
 import {
   CHRONIC_CONDITIONS,
@@ -38,6 +40,7 @@ function isValidNationalId(id: string): boolean {
 
 export default function ProfileScreen() {
   const { profile, recommendations, updateProfile } = usePatient();
+  const { logout } = useAuth();
 
   const [fullName, setFullName] = useState(profile.fullName);
   const [nationalId, setNationalId] = useState(profile.nationalId);
@@ -234,6 +237,17 @@ export default function ProfileScreen() {
               ))
             )}
           </Card>
+
+          {/* e-Devlet oturumunu kapat */}
+          <Pressable
+            onPress={logout}
+            className="mt-5 flex-row items-center justify-center rounded-xl border border-danger bg-white py-3"
+          >
+            <LogOut size={16} color="#dc2626" />
+            <Text className="ml-2 text-sm font-semibold text-danger">
+              Güvenli Çıkış Yap
+            </Text>
+          </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

@@ -3,6 +3,7 @@ import {
   CalendarClock,
   CheckCircle2,
   ChevronRight,
+  ClipboardList,
   Footprints,
   HeartPulse,
   Pill,
@@ -13,9 +14,9 @@ import React from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { SectionHeader } from "../components/ui";
+import { SectionHeader, StatusBadge } from "../components/ui";
 import { usePatient } from "../context/PatientContext";
-import type { HealthTask } from "../data/types";
+import type { HealthTask, ScreeningRecommendation } from "../data/types";
 import { formatDateLong } from "../utils/format";
 
 const CATEGORY_ICON: Record<HealthTask["category"], LucideIcon> = {
@@ -31,7 +32,8 @@ function honorific(gender: string): string {
 }
 
 export default function DashboardScreen() {
-  const { profile, tasks, appointment, completeTask } = usePatient();
+  const { profile, tasks, appointment, recommendations, completeTask } =
+    usePatient();
   const firstName = profile.fullName.split(" ")[0];
 
   return (
@@ -97,8 +99,45 @@ export default function DashboardScreen() {
             />
           ))}
         </View>
+
+        {/* Yaş/kronik duruma göre anlık düşen zorunlu tetkik görevleri */}
+        <View className="mt-4">
+          <SectionHeader
+            title="Belli Yaş Üstü Zorunlu Tetkikler"
+            subtitle={`Yaş ${profile.age} · profil verinize göre otomatik`}
+            icon={ClipboardList}
+          />
+          {recommendations.length === 0 ? (
+            <View className="rounded-2xl border border-line bg-white p-4">
+              <Text className="text-xs text-muted">
+                Şu an için düşen zorunlu tetkik görevi bulunmuyor.
+              </Text>
+            </View>
+          ) : (
+            recommendations.map((rec) => <ScreeningCard key={rec.id} rec={rec} />)
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function ScreeningCard({ rec }: { rec: ScreeningRecommendation }) {
+  return (
+    <View className="mb-3 rounded-2xl border border-line bg-white p-4 shadow-sm">
+      <View className="flex-row items-center">
+        <View className="mr-3 h-9 w-9 items-center justify-center rounded-full bg-blue-light">
+          <ClipboardList size={18} color="#0369a1" />
+        </View>
+        <View className="flex-1 pr-2">
+          <Text className="text-sm font-semibold text-ink">{rec.title}</Text>
+          <Text className="mt-0.5 text-[11px] text-muted">
+            {rec.cadence} · {rec.reason}
+          </Text>
+        </View>
+        <StatusBadge recommendation={rec} />
+      </View>
+    </View>
   );
 }
 

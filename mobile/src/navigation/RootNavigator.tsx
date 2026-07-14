@@ -1,9 +1,12 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import type { LucideIcon } from "lucide-react-native";
 import { Home, MessageCircle, User, Video } from "lucide-react-native";
 import React from "react";
 
+import { useAuth } from "../context/AuthContext";
+import AuthScreen from "../screens/AuthScreen";
 import ChatScreen from "../screens/ChatScreen";
 import DashboardScreen from "../screens/DashboardScreen";
 import ProfileScreen from "../screens/ProfileScreen";
@@ -14,6 +17,11 @@ export type RootTabParamList = {
   Triage: undefined;
   Chat: undefined;
   Profile: undefined;
+};
+
+export type RootStackParamList = {
+  Auth: undefined;
+  Main: undefined;
 };
 
 const TABS: Record<
@@ -27,33 +35,48 @@ const TABS: Record<
 };
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
+function MainTabs() {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarActiveTintColor: "#10b981",
+        tabBarInactiveTintColor: "#6b7280",
+        tabBarStyle: {
+          borderTopColor: "#e5e7eb",
+          height: 62,
+          paddingBottom: 8,
+          paddingTop: 6,
+        },
+        tabBarLabel: TABS[route.name].label,
+        tabBarIcon: ({ color, size }) => {
+          const Icon = TABS[route.name].icon;
+          return <Icon size={size} color={color} />;
+        },
+      })}
+    >
+      <Tab.Screen name="Dashboard" component={DashboardScreen} />
+      <Tab.Screen name="Triage" component={VideoTriageScreen} />
+      <Tab.Screen name="Chat" component={ChatScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
+    </Tab.Navigator>
+  );
+}
 
 export default function RootNavigator() {
+  const { auth } = useAuth();
+
   return (
     <NavigationContainer>
-      <Tab.Navigator
-        screenOptions={({ route }) => ({
-          headerShown: false,
-          tabBarActiveTintColor: "#10b981",
-          tabBarInactiveTintColor: "#6b7280",
-          tabBarStyle: {
-            borderTopColor: "#e5e7eb",
-            height: 62,
-            paddingBottom: 8,
-            paddingTop: 6,
-          },
-          tabBarLabel: TABS[route.name].label,
-          tabBarIcon: ({ color, size }) => {
-            const Icon = TABS[route.name].icon;
-            return <Icon size={size} color={color} />;
-          },
-        })}
-      >
-        <Tab.Screen name="Dashboard" component={DashboardScreen} />
-        <Tab.Screen name="Triage" component={VideoTriageScreen} />
-        <Tab.Screen name="Chat" component={ChatScreen} />
-        <Tab.Screen name="Profile" component={ProfileScreen} />
-      </Tab.Navigator>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {auth.isAuthenticated ? (
+          <Stack.Screen name="Main" component={MainTabs} />
+        ) : (
+          <Stack.Screen name="Auth" component={AuthScreen} />
+        )}
+      </Stack.Navigator>
     </NavigationContainer>
   );
 }
