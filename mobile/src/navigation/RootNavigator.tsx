@@ -1,29 +1,28 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
+import type { LinkingOptions } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import type { LucideIcon } from "lucide-react-native";
-import { HeartPulse, Home, MessageCircle, User, Video } from "lucide-react-native";
+import {
+  HeartPulse,
+  Home,
+  MapPin,
+  MessageCircle,
+  User,
+  Video,
+} from "lucide-react-native";
 import React from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 
 import { useAuth } from "../context/AuthContext";
+import type { RootStackParamList, RootTabParamList } from "../data/types";
 import AuthScreen from "../screens/AuthScreen";
 import ChatScreen from "../screens/ChatScreen";
 import DashboardScreen from "../screens/DashboardScreen";
+import DoctorPanelScreen from "../screens/DoctorPanelScreen";
+import PharmacyScreen from "../screens/PharmacyScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import VideoTriageScreen from "../screens/VideoTriageScreen";
-
-export type RootTabParamList = {
-  Dashboard: undefined;
-  Triage: undefined;
-  Chat: undefined;
-  Profile: undefined;
-};
-
-export type RootStackParamList = {
-  Auth: undefined;
-  Main: undefined;
-};
 
 const TABS: Record<
   keyof RootTabParamList,
@@ -32,7 +31,28 @@ const TABS: Record<
   Dashboard: { icon: Home, label: "Ana Sayfa" },
   Triage: { icon: Video, label: "Canlı Triyaj" },
   Chat: { icon: MessageCircle, label: "AI Sohbet" },
+  Pharmacy: { icon: MapPin, label: "Eczane" },
   Profile: { icon: User, label: "Profil" },
+};
+
+/** Web derlemesi için derin bağlantı (ör. /doctor-panel) eşlemesi. */
+const linking: LinkingOptions<RootStackParamList> = {
+  prefixes: [],
+  config: {
+    screens: {
+      Auth: "giris",
+      Main: {
+        screens: {
+          Dashboard: "",
+          Triage: "triyaj",
+          Chat: "sohbet",
+          Pharmacy: "eczane",
+          Profile: "profil",
+        },
+      },
+      DoctorPanel: "doctor-panel",
+    },
+  },
 };
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
@@ -61,6 +81,7 @@ function MainTabs() {
       <Tab.Screen name="Dashboard" component={DashboardScreen} />
       <Tab.Screen name="Triage" component={VideoTriageScreen} />
       <Tab.Screen name="Chat" component={ChatScreen} />
+      <Tab.Screen name="Pharmacy" component={PharmacyScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
@@ -84,7 +105,7 @@ export default function RootNavigator() {
   if (isHydrating) return <HydrationSplash />;
 
   return (
-    <NavigationContainer>
+    <NavigationContainer linking={linking}>
       <Stack.Navigator
         screenOptions={{ headerShown: false, animation: "fade" }}
       >
@@ -93,6 +114,8 @@ export default function RootNavigator() {
         ) : (
           <Stack.Screen name="Auth" component={AuthScreen} />
         )}
+        {/* SentryMD hekim paneli: /doctor-panel derin bağlantısıyla erişilir. */}
+        <Stack.Screen name="DoctorPanel" component={DoctorPanelScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

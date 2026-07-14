@@ -5,15 +5,19 @@ import {
   PhoneOff,
   Siren,
   Stethoscope,
+  TicketCheck,
   Video,
   VideoOff,
 } from "lucide-react-native";
 import React, { useEffect, useMemo, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import Barcode from "../components/Barcode";
 import LiveVideoPanel from "../components/LiveVideoPanel";
 import { usePatient } from "../context/PatientContext";
+import type { TriageReferral } from "../data/types";
+import { triageChannel } from "../services/triageChannel";
 
 const ANALYSIS_LINES = [
   "Analiz Ediliyor: Ses tonunda nefes darlığı tespiti... SpO2 takibi öneriliyor.",
@@ -43,6 +47,22 @@ export default function VideoTriageScreen() {
   const [lineIndex, setLineIndex] = useState(0);
   const [redCode, setRedCode] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [referral, setReferral] = useState<TriageReferral | null>(null);
+
+  // Hekim panelinden gelen canlı sevk kararını dinle (barkod ekranda belirir).
+  useEffect(() => {
+    const unsubscribe = triageChannel.subscribe((next) => {
+      setReferral(next);
+    });
+    return unsubscribe;
+  }, []);
+
+  const referralAccent =
+    referral?.level === "emergency"
+      ? "#dc2626"
+      : referral?.level === "clinic"
+        ? "#d97706"
+        : "#10b981";
 
   // Görüşme başına benzersiz, canlı bir oda anahtarı (Room ID).
   const roomId = useMemo(
@@ -83,7 +103,11 @@ export default function VideoTriageScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={["top"]}>
-      <View className="flex-1 p-4">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ padding: 16 }}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Başlık */}
         <View className="mb-4 flex-row items-center">
           <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-brand-light">
@@ -100,7 +124,10 @@ export default function VideoTriageScreen() {
         </View>
 
         {/* Video görünümü penceresi */}
-        <View className="flex-1 justify-end overflow-hidden rounded-3xl bg-ink p-4">
+        <View
+          className="justify-end overflow-hidden rounded-3xl bg-ink p-4"
+          style={{ height: 380 }}
+        >
           {/* Gerçek canlı kamera akışı (aktifken) */}
           <LiveVideoPanel
             active={active}
@@ -217,11 +244,36 @@ export default function VideoTriageScreen() {
           )}
         </View>
 
+        {/* Hekimden gelen canlı sevk barkodu */}
+        {referral ? (
+          <View
+            className="mt-4 items-center rounded-2xl border bg-white p-4"
+            style={{ borderColor: referralAccent }}
+          >
+            <View className="mb-1 flex-row items-center">
+              <TicketCheck size={16} color={referralAccent} />
+              <Text
+                className="ml-2 text-sm font-bold"
+                style={{ color: referralAccent }}
+              >
+                {referral.title}
+              </Text>
+            </View>
+            <Text className="mb-3 px-2 text-center text-[11px] leading-5 text-ink">
+              {referral.message}
+            </Text>
+            <Barcode value={referral.code} width={240} color={referralAccent} />
+            <Text className="mt-2 text-[10px] text-muted">
+              Hekim tarafından canlı olarak düzenlendi
+            </Text>
+          </View>
+        ) : null}
+
         <Text className="mt-3 text-center text-[11px] text-muted">
           Görüntülü görüşme WebRTC (Jitsi Meet) altyapısı ile sağlanır. Yapay
           zeka analizi bir simülasyondur; gerçek tıbbi teşhis yerine geçmez.
         </Text>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

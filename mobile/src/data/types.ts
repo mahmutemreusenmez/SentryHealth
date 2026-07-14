@@ -160,6 +160,110 @@ export interface SyncQueueItem {
   queuedAt: number;
 }
 
+/* ------------------------------------------------------------------ */
+/* Sürüm 2.0 — Gelişmiş Klinik ve Donanımsal Entegrasyon               */
+/* ------------------------------------------------------------------ */
+
+/** SentryPharmacy: bir ilacın stok/dozaj takibi. */
+export interface MedicationStock {
+  /** İlgili sağlık görevi (HealthTask) kimliği. */
+  taskId: string;
+  /** İlaç adı (ör. "Metformin 1000 mg"). */
+  name: string;
+  /** Kalan adet (tablet/doz). */
+  remaining: number;
+  /** Günlük tüketilen doz sayısı. */
+  dailyDose: number;
+}
+
+/** SentryPharmacy: nöbetçi eczane kaydı. */
+export interface PharmacyInfo {
+  id: string;
+  name: string;
+  phone: string;
+  address: string;
+  district: string;
+  /** Simüle edilmiş kullanıcı konumuna uzaklık (km). */
+  distanceKm: number;
+  /** Rota tarifi için enlem/boylam. */
+  lat: number;
+  lng: number;
+}
+
+/** SentryPulse: giyilebilir cihazdan gelen anlık vital örneği. */
+export interface PulseSample {
+  /** Nabız — atım/dk. */
+  heartRate: number;
+  /** SpO2 — oksijen satürasyonu %. */
+  spo2: number;
+  /** O ana kadarki günlük adım sayısı. */
+  steps: number;
+  /** Ölçüm zamanı epoch ms. */
+  at: number;
+}
+
+/** SentryPulse: giyilebilir cihaz erişim izni durumu. */
+export type WearablePermission = "unknown" | "granted" | "denied";
+
+/** SentryLens: tahlildeki tek bir laboratuvar bulgusu. */
+export interface LabFinding {
+  /** Test adı (ör. "B12 Vitamini"). */
+  name: string;
+  value: number;
+  unit: string;
+  /** Referans alt sınırı. */
+  refLow: number;
+  /** Referans üst sınırı. */
+  refHigh: number;
+  /** Referansa göre durum. */
+  status: "low" | "high" | "normal";
+  /** Hastanın anlayacağı sade, korkutmayan açıklama. */
+  plainSummary: string;
+}
+
+/** SentryLens: yüklenen tahlil raporunun AI analiz sonucu. */
+export interface LabAnalysis {
+  fileName: string;
+  findings: LabFinding[];
+  /** Referans dışı (anormal) bulgu sayısı. */
+  abnormalCount: number;
+  /** Genel, sakinleştirici özet mesajı. */
+  overallSummary: string;
+}
+
+/** SentryMD: hekimin verdiği 3 yönlü sevk kararı seviyesi. */
+export type ReferralLevel = "emergency" | "clinic" | "home";
+
+/** SentryMD: hekimden hastaya canlı iletilen sevk kaydı. */
+export interface TriageReferral {
+  id: string;
+  level: ReferralLevel;
+  /** Ekranda gösterilecek sevk barkodu değeri. */
+  code: string;
+  /** Sevk başlığı (ör. "Acil Servise Sevk"). */
+  title: string;
+  /** Hastaya yönelik açıklama. */
+  message: string;
+  /** oluşturulma epoch ms. */
+  issuedAt: number;
+}
+
+/** Alt sekme (bottom tab) navigasyon parametre listesi. */
+export type RootTabParamList = {
+  Dashboard: undefined;
+  Triage: undefined;
+  Chat: undefined;
+  Pharmacy: undefined;
+  Profile: undefined;
+};
+
+/** Kök yığın (stack) navigasyon parametre listesi. */
+export type RootStackParamList = {
+  Auth: undefined;
+  Main: undefined;
+  DoctorPanel: undefined;
+};
+
 export type ChatRole = "user" | "assistant";
 
 export interface ChatMessage {

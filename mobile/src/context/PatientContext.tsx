@@ -11,6 +11,7 @@ import React, {
 import {
   FEATURED_APPOINTMENT,
   INITIAL_GUARDIAN,
+  INITIAL_MEDICATION_STOCK,
   INITIAL_PROFILE,
   INITIAL_TASKS,
 } from "../data/mockData";
@@ -19,6 +20,7 @@ import type {
   Guardian,
   GuardianAlert,
   HealthTask,
+  MedicationStock,
   PatientProfile,
   ScreeningRecommendation,
   VitalEntry,
@@ -26,6 +28,8 @@ import type {
 import {
   buildCriticalAlert,
   buildMissedDoseAlert,
+  buildPulseAlert,
+  buildPulseSimNotification,
   buildSimNotification,
 } from "../services/guardianService";
 import { reminderService } from "../services/notificationService";
@@ -43,6 +47,7 @@ import {
   loadSyncQueue,
   subscribeConnectivity,
 } from "../services/syncService";
+import type { VoiceCommand } from "../services/voiceService";
 
 interface PatientContextValue {
   profile: PatientProfile;
@@ -64,6 +69,14 @@ interface PatientContextValue {
   online: boolean;
   /** Çevrimdışı alınıp henüz senkronize edilmemiş onay sayısı. */
   pendingSyncCount: number;
+  /** SentryPharmacy: ilaç stok sayaçları. */
+  medicationStock: MedicationStock[];
+  /** SentryPharmacy: bitmesine 3 gün ve altı kalan ilaçlar. */
+  lowStockMedications: MedicationStock[];
+  /** Sesli komutla ilgili görevi onaylar; onaylanan görevi döndürür. */
+  confirmByVoice: (command: VoiceCommand) => HealthTask | null;
+  /** SentryPulse: kritik nabız bildirimi + refakatçi SMS taslağı üretir. */
+  notifyCriticalPulse: (bpm: number) => void;
 }
 
 /** Görev onaylarının o güne ait kalıcı hali. */
@@ -83,11 +96,20 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
   const [guardian] = useState<Guardian>(INITIAL_GUARDIAN);
   const [guardianAlerts, setGuardianAlerts] = useState<GuardianAlert[]>([]);
   const [vitals, setVitals] = useState<VitalEntry | null>(null);
+  const [medicationStock, setMedicationStock] = useState<MedicationStock[]>(
+    INITIAL_MEDICATION_STOCK,
+  );
   const [hydrated, setHydrated] = useState(false);
   const [online, setOnline] = useState(true);
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
   const onlineRef = useRef(true);
   const simIndexRef = useRef(0);
+  const tasksRef = useRef(tasks);
+
+  // completeTask/confirmByVoice içinde güncel görev durumuna erişmek için ref.
+  useEffect(() => {
+    tasksRef.current = tasks;
+  }, [tasks]);
 
   const recommendations = useMemo(
     () => generateScreeningRecommendations(profile),
@@ -101,10 +123,12 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       loadJSON<PatientProfile>(STORAGE_KEYS.profile),
       loadJSON<PersistedTasks>(STORAGE_KEYS.tasks),
       loadJSON<VitalEntry>(STORAGE_KEYS.vitals),
-    ]).then(([storedProfile, storedTasks, storedVitals]) => {
+      loadJSON<MedicationStock[]>(STORAGE_KEYS.medicationStock),
+    ]).then(([storedProfile, storedTasks, storedVitals, storedStock]) => {
       if (cancelled) return;
       if (storedProfile) setProfile(storedProfile);
       if (storedVitals) setVitals(storedVitals);
+      if (storedStock && storedStock.length > 0) setMedicationStock(storedStock);
       if (storedTasks && storedTasks.day === todayKey()) {
         setTasks((prev) =>
           prev.map((task) => {
@@ -163,6 +187,12 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
     void saveJSON(STORAGE_KEYS.profile, profile);
   }, [profile, hydrated]);
 
+  // İlaç stok sayaçları değiştikçe güvenli hafızaya yaz.
+  useEffect(() => {
+    if (!hydrated) return;
+    void saveJSON<MedicationStock[]>(STORAGE_KEYS.medicationStock, medicationStock);
+  }, [medicationStock, hydrated]);
+
   // Görev onay durumları değiştikçe (o güne ait) kalıcı olarak sakla.
   useEffect(() => {
     if (!hydrated) return;
@@ -192,14 +222,29 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const completeTask = useCallback((id: string) => {
-    let nextStatus: HealthTask["status"] = "done";
+    // Güncel durumu önce ref'ten türet (deferred updater içinde okuma yapmadan).
+    const target = tasksRef.current.find((task) => task.id === id);
+    if (!target) return;
+    const nextStatus: HealthTask["status"] =
+      target.status === "done" ? "pending" : "done";
+
     setTasks((prev) =>
-      prev.map((task) => {
-        if (task.id !== id) return task;
-        nextStatus = task.status === "done" ? "pending" : "done";
-        return { ...task, status: nextStatus };
-      }),
+      prev.map((task) =>
+        task.id === id ? { ...task, status: nextStatus } : task,
+      ),
     );
+
+    // SentryPharmacy: ilaç onaylandığında stoktan günlük dozu düş.
+    if (target.category === "medication" && nextStatus === "done") {
+      setMedicationStock((stock) =>
+        stock.map((m) =>
+          m.taskId === id
+            ? { ...m, remaining: Math.max(0, m.remaining - m.dailyDose) }
+            : m,
+        ),
+      );
+    }
+
     // Çevrimdışıyken onayı güvenli kuyruğa al; bağlantı gelince senkronize edilir.
     if (!onlineRef.current) {
       void enqueueSyncItem({
@@ -210,6 +255,30 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       }).then((queue) => setPendingSyncCount(queue.length));
     }
   }, []);
+
+  // Sesli komutu (ilaç/ölçüm) ilgili bekleyen göreve eşleyip onaylar.
+  const confirmByVoice = useCallback(
+    (command: VoiceCommand): HealthTask | null => {
+      if (command === "unknown") return null;
+      const category = command === "measurement" ? "measurement" : "medication";
+      const target = tasksRef.current.find(
+        (t) => t.category === category && t.status !== "done",
+      );
+      if (!target) return null;
+      completeTask(target.id);
+      return target;
+    },
+    [completeTask],
+  );
+
+  // SentryPulse: kritik nabızda push bildirimi + refakatçi SMS taslağı.
+  const notifyCriticalPulse = useCallback(
+    (bpm: number) => {
+      reminderService.pushSim(buildPulseSimNotification(bpm));
+      setGuardianAlerts((prev) => [buildPulseAlert(profile, bpm), ...prev]);
+    },
+    [profile],
+  );
 
   const sendTestNotification = useCallback(() => {
     const index = simIndexRef.current;
@@ -241,6 +310,15 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
     // profil adı değişebileceği için profile bağımlı; pendingMedId tetikler.
   }, [pendingMedId, guardianAlerts, profile]);
 
+  // SentryPharmacy: bitmesine 3 gün ve altı kalan ilaçlar.
+  const lowStockMedications = useMemo(
+    () =>
+      medicationStock.filter(
+        (m) => m.dailyDose > 0 && m.remaining / m.dailyDose <= 3,
+      ),
+    [medicationStock],
+  );
+
   const value = useMemo<PatientContextValue>(
     () => ({
       profile,
@@ -257,6 +335,10 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       raiseCriticalAlert,
       online,
       pendingSyncCount,
+      medicationStock,
+      lowStockMedications,
+      confirmByVoice,
+      notifyCriticalPulse,
     }),
     [
       profile,
@@ -273,6 +355,10 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       raiseCriticalAlert,
       online,
       pendingSyncCount,
+      medicationStock,
+      lowStockMedications,
+      confirmByVoice,
+      notifyCriticalPulse,
     ],
   );
 

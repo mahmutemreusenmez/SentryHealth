@@ -57,6 +57,31 @@ export function buildSimNotification(
   };
 }
 
+/** SentryPulse: kritik nabız için canlı push bildirimi. */
+export function buildPulseSimNotification(bpm: number): SimNotification {
+  return {
+    id: nextId("sim"),
+    kind: "critical",
+    title: "Kritik Vital Uyarısı",
+    body: `Nabzınız ${bpm} atım/dk ölçüldü. Bu değer kritik eşiktedir; lütfen hemen Görüntülü Triyaj'a bağlanın.`,
+    timestamp: Date.now(),
+  };
+}
+
+/** SentryPulse: kritik nabız için refakatçiye gidecek SMS taslağı. */
+export function buildPulseAlert(
+  profile: PatientProfile,
+  bpm: number,
+): GuardianAlert {
+  const firstName = profile.fullName.split(" ")[0];
+  return {
+    id: nextId("alert"),
+    kind: "critical-triage",
+    message: `SentryCompanion Kritik Uyarı: Yakınınız ${firstName} Bey'in nabzı ${bpm} atım/dk ölçüldü (kritik eşik). Lütfen acilen ulaşın.`,
+    timestamp: Date.now(),
+  };
+}
+
 /** Kaçırılan doz için refakatçiye gidecek otonom SMS taslağı. */
 export function buildMissedDoseAlert(profile: PatientProfile): GuardianAlert {
   const firstName = profile.fullName.split(" ")[0];

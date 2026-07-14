@@ -3,7 +3,9 @@ import type {
   FeaturedAppointment,
   Guardian,
   HealthTask,
+  MedicationStock,
   PatientProfile,
+  PharmacyInfo,
   VitalReading,
 } from "./types";
 
@@ -72,6 +74,62 @@ export const WEEKLY_COMPLIANCE: DailyCompliance[] = [
   { label: "Cum", status: "done" },
   { label: "Cmt", status: "upcoming" },
   { label: "Paz", status: "upcoming" },
+];
+
+/**
+ * SentryPharmacy: ilaç stok sayacı başlangıç değerleri.
+ * `task-2` (Metformin) bilerek azalmış bırakıldı ki "İlacınız Azalıyor"
+ * uyarısı jüri sunumunda anında görünsün.
+ */
+export const INITIAL_MEDICATION_STOCK: MedicationStock[] = [
+  { taskId: "task-2", name: "Metformin 1000 mg", remaining: 3, dailyDose: 1 },
+];
+
+/**
+ * SentryPharmacy: simüle GPS konumuna göre en yakın nöbetçi eczaneler.
+ * Uzaklığa göre artan sırada.
+ */
+export const NOBETCI_PHARMACIES: PharmacyInfo[] = [
+  {
+    id: "ecz-1",
+    name: "Şifa Nöbetçi Eczanesi",
+    phone: "+90 312 400 10 20",
+    address: "Cumhuriyet Cad. No:14, Çankaya",
+    district: "Çankaya",
+    distanceKm: 0.6,
+    lat: 39.9208,
+    lng: 32.8541,
+  },
+  {
+    id: "ecz-2",
+    name: "Bakanlıklar Eczanesi",
+    phone: "+90 312 418 55 66",
+    address: "Atatürk Bulvarı No:102, Kızılay",
+    district: "Kızılay",
+    distanceKm: 1.4,
+    lat: 39.9179,
+    lng: 32.8543,
+  },
+  {
+    id: "ecz-3",
+    name: "Yeni Umut Eczanesi",
+    phone: "+90 312 231 77 88",
+    address: "Gazi Mustafa Kemal Blv. No:47, Maltepe",
+    district: "Maltepe",
+    distanceKm: 2.1,
+    lat: 39.9264,
+    lng: 32.8385,
+  },
+  {
+    id: "ecz-4",
+    name: "Sağlık Nöbetçi Eczanesi",
+    phone: "+90 312 285 12 34",
+    address: "Anıttepe Mah. Gençlik Cad. No:9, Anıttepe",
+    district: "Anıttepe",
+    distanceKm: 3.3,
+    lat: 39.9276,
+    lng: 32.8298,
+  },
 ];
 
 /** Kronik tansiyon geçmişi — AI'ın proaktif analizi için */

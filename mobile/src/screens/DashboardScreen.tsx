@@ -1,3 +1,7 @@
+import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+import { useNavigation } from "@react-navigation/native";
+import type { CompositeNavigationProp } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   Activity,
   BellRing,
@@ -8,6 +12,7 @@ import {
   Footprints,
   HeartPulse,
   Pill,
+  Stethoscope,
   Volume2,
   Wind,
 } from "lucide-react-native";
@@ -17,13 +22,26 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import GuardianPanel from "../components/GuardianPanel";
+import LabAnalyzer from "../components/LabAnalyzer";
+import PulseWidgets from "../components/PulseWidgets";
+import VoiceConfirmButton from "../components/VoiceConfirmButton";
 import WeeklyCompliance from "../components/WeeklyCompliance";
 import { SectionHeader, StatusBadge } from "../components/ui";
 import { usePatient } from "../context/PatientContext";
 import { WEEKLY_COMPLIANCE } from "../data/mockData";
-import type { HealthTask, ScreeningRecommendation } from "../data/types";
+import type {
+  HealthTask,
+  RootStackParamList,
+  RootTabParamList,
+  ScreeningRecommendation,
+} from "../data/types";
 import { speak } from "../services/speechService";
 import { formatDateLong } from "../utils/format";
+
+type DashboardNav = CompositeNavigationProp<
+  BottomTabNavigationProp<RootTabParamList, "Dashboard">,
+  NativeStackNavigationProp<RootStackParamList>
+>;
 
 const CATEGORY_ICON: Record<HealthTask["category"], LucideIcon> = {
   measurement: HeartPulse,
@@ -47,7 +65,9 @@ export default function DashboardScreen() {
     guardianAlerts,
     completeTask,
     sendTestNotification,
+    lowStockMedications,
   } = usePatient();
+  const navigation = useNavigation<DashboardNav>();
   const firstName = profile.fullName.split(" ")[0];
   const title = honorific(profile.gender);
 
@@ -101,13 +121,47 @@ export default function DashboardScreen() {
         {/* Jüri için canlı push bildirim simülatörü */}
         <Pressable
           onPress={sendTestNotification}
-          className="mb-6 flex-row items-center justify-center rounded-xl border border-brand bg-brand py-3"
+          className="mb-4 flex-row items-center justify-center rounded-xl border border-brand bg-brand py-3"
         >
           <BellRing size={17} color="#ffffff" />
           <Text className="ml-2 text-sm font-bold text-white">
             Test Bildirimi Gönder
           </Text>
         </Pressable>
+
+        {/* SentryPharmacy: ilaç azalıyor uyarısı (bitmesine ≤3 gün) */}
+        {lowStockMedications.length > 0 ? (
+          <Pressable
+            onPress={() => navigation.navigate("Pharmacy")}
+            className="mb-4 flex-row items-center rounded-2xl border border-danger bg-danger/5 p-3"
+          >
+            <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-danger/10">
+              <Pill size={20} color="#dc2626" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-sm font-bold text-danger">
+                İlacınız Azalıyor, Reçete Yenileyin
+              </Text>
+              <Text className="mt-0.5 text-[11px] text-ink">
+                {lowStockMedications
+                  .map((m) => `${m.name} · ~${m.remaining} gün kaldı`)
+                  .join(" • ")}
+              </Text>
+            </View>
+            <ChevronRight size={18} color="#dc2626" />
+          </Pressable>
+        ) : null}
+
+        {/* SentryPulse: giyilebilir cihaz canlı vitalleri */}
+        <PulseWidgets
+          onNavigateTriage={() => navigation.navigate("Triage")}
+        />
+
+        {/* Sesli İlaç Onay Modülü */}
+        <VoiceConfirmButton />
+
+        {/* SentryLens: tahlil raporu yükleme + AI analiz */}
+        <LabAnalyzer />
 
         {/* Yaklaşan randevu (MHRS) */}
         <View className="mb-6 rounded-2xl bg-blue p-4 shadow-sm">
@@ -189,6 +243,17 @@ export default function DashboardScreen() {
         <View className="mt-6">
           <GuardianPanel guardian={guardian} alerts={guardianAlerts} />
         </View>
+
+        {/* SentryMD: Triyaj Hekimi Paneli (/doctor-panel) */}
+        <Pressable
+          onPress={() => navigation.navigate("DoctorPanel")}
+          className="mt-6 flex-row items-center justify-center rounded-xl border border-blue bg-white py-3"
+        >
+          <Stethoscope size={16} color="#0284c7" />
+          <Text className="ml-2 text-sm font-bold text-blue-dark">
+            SentryMD Hekim Panelini Aç
+          </Text>
+        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );
