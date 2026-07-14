@@ -159,6 +159,8 @@ function buildStaticPatient(index: number): AnonymizedPatient {
     id: `static-patient-${String(index + 1).padStart(3, '0')}`,
     pseudonym,
     displayCode,
+    name: fullName,
+    nationalId,
     ageGroup: deriveAgeGroup(age),
     conditionGroup: condition,
     diagnosis: `${DIAGNOSES[index % DIAGNOSES.length]}${DIAGNOSIS_STAGES[Math.floor(index / DIAGNOSES.length) % DIAGNOSIS_STAGES.length]}`,

@@ -1,5 +1,6 @@
-(() => {
-  const { t } = window.SentryI18n;
+import { patients as STATIC_PATIENTS, analytics as STATIC_ANALYTICS } from './data/patientsMockData.js';
+
+const { t } = window.SentryI18n;
   const i18n = window.SentryI18n;
   const POLL_MS = 2500;
 
@@ -1064,7 +1065,7 @@
   }
 
   function displayName(p) {
-    return t('patient.display', { code: p.displayCode || p.pseudonym.slice(0, 8).toUpperCase() });
+    return p.name || t('patient.display', { code: p.displayCode || p.pseudonym.slice(0, 8).toUpperCase() });
   }
 
   function translateCondition(cg) {
@@ -1241,8 +1242,8 @@
 
     els.tableBody.innerHTML = pagePatients.map((p) => `
       <tr data-pseudonym="${escapeHtml(p.pseudonym)}" class="${p.pseudonym === selectedPseudonym ? 'selected' : ''}">
-        <td data-label="${escapeHtml(t('patients.table.code'))}"><span class="code-chip">${escapeHtml(p.displayCode || p.pseudonym.slice(0, 8).toUpperCase())}</span></td>
-        <td class="mono" data-label="${escapeHtml(t('patients.table.pseudonym'))}">${escapeHtml(p.pseudonym)}</td>
+        <td data-label="${escapeHtml(t('patients.table.code'))}"><span class="code-chip">${escapeHtml(p.maskedNationalId || p.displayCode || p.pseudonym.slice(0, 8).toUpperCase())}</span></td>
+        <td class="mono" data-label="${escapeHtml(t('patients.table.pseudonym'))}">${escapeHtml(p.name || p.pseudonym)}</td>
         <td data-label="${escapeHtml(t('patients.table.age'))}">${escapeHtml(p.ageGroup || '—')}</td>
         <td data-label="${escapeHtml(t('patients.table.diagnosis'))}">${escapeHtml(p.diagnosis || translateCondition(p.conditionGroup))}</td>
         <td data-label="${escapeHtml(t('patients.table.latest'))}">${p.latest ? `${p.latest.heartRate} bpm / %${p.latest.oxygenSaturation}` : escapeHtml(t('patients.waiting'))}</td>
@@ -2342,7 +2343,7 @@
   }
 
   /* ---------- Scorecard & Bot Integration ---------- */
-  function getRespiratoryRate(h) {
+  function getRespiratoryRateForMews(h) {
     if (h && h.respiratoryRate) return Number(h.respiratoryRate);
     return 0;
   }
@@ -2352,7 +2353,7 @@
     const sys = Number(h.bloodPressureSystolic || 0);
     const temp = Number(h.temperature || 0);
     const spo2 = Number(h.oxygenSaturation || 0);
-    const rr = getRespiratoryRate(h);
+    const rr = getRespiratoryRateForMews(h);
 
     let score = 0;
     if (hr >= 130 || hr < 40) score += 2;
@@ -3532,21 +3533,9 @@
     renderPager(els.patientsPager, dashboardPage, total, (p) => { dashboardPage = p; render(data); });
   }
 
-  async function poll() {
-    try {
-      const res = await api('/api/dashboard/patients');
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await safeJson(res);
-      if (!data || !Array.isArray(data.patients)) throw new Error('invalid');
-      data.patients = data.patients.concat(getLocalPatients());
-      setConnection(true);
-      render(data);
-    } catch {
-      setConnection(false);
-      if (!lastData) {
-        render({ patients: getLocalPatients() });
-      }
-    }
+  function poll() {
+    setConnection(true);
+    render({ patients: STATIC_PATIENTS, analytics: STATIC_ANALYTICS });
   }
 
   /* ---------- Language ---------- */
@@ -3577,4 +3566,3 @@
 
   initLang();
   initAuth();
-})();

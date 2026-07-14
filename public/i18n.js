@@ -250,8 +250,8 @@ const SentryI18n = (() => {
       empty: 'Kayıtlı hasta bulunamadı. “+ Yeni Hasta Ekle” ile başlayın.',
       waiting: 'Veri bekleniyor…',
       table: {
-        code: 'Hasta Kodu',
-        pseudonym: 'Anonim Kimlik (KVKK)',
+        code: 'T.C. Kimlik No',
+        pseudonym: 'Hasta Adı',
         age: 'Yaş Grubu',
         condition: 'Kronik Hastalık',
         diagnosis: 'Hastalık Tanısı',
@@ -934,8 +934,8 @@ const SentryI18n = (() => {
       empty: 'No registered patients. Start by clicking “+ Add New Patient”.',
       waiting: 'Waiting for data…',
       table: {
-        code: 'Patient Code',
-        pseudonym: 'Anonymous ID (KVKK)',
+        code: 'National ID',
+        pseudonym: 'Full Name',
         age: 'Age Group',
         condition: 'Chronic Condition',
         diagnosis: 'Diagnosis',
@@ -1618,8 +1618,8 @@ const SentryI18n = (() => {
       empty: 'لا يوجد مرضى مسجلون. ابدأ بالنقر على “+ إضافة مريض جديد”.',
       waiting: 'في انتظار البيانات…',
       table: {
-        code: 'رمز المريض',
-        pseudonym: 'الهوية المجهولة (KVKK)',
+        code: 'رقم الهوية',
+        pseudonym: 'الاسم الكامل',
         age: 'الفئة العمرية',
         condition: 'المرض المزمن',
         latest: 'آخر نبض / SpO2',

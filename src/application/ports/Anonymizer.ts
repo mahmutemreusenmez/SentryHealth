@@ -31,6 +31,8 @@ export interface InteractionLogEntry {
 export interface AnonymizedPatient {
   id: string;
   pseudonym: string;
+  name?: string;
+  nationalId?: string;
   ageGroup?: string;
   displayCode?: string;
   conditionGroup?: string;
