@@ -16,6 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Barcode from "../components/Barcode";
 import LiveVideoPanel, { type IncomingReferral } from "../components/LiveVideoPanel";
 import PermissionModal from "../components/PermissionModal";
+import { PrivacyShieldModal } from "../components/PrivacyShield";
 import { PressableScale } from "../components/ui";
 import { usePatient } from "../context/PatientContext";
 import type { ReferralLevel, TriageReferral } from "../data/types";
@@ -35,6 +36,7 @@ const ANALYSIS_LINES = [
 export default function VideoTriageScreen() {
   const { profile, raiseCriticalAlert } = usePatient();
   const [active, setActive] = useState(false);
+  const [privacyGate, setPrivacyGate] = useState(false);
   const [muted, setMuted] = useState(false);
   const [lineIndex, setLineIndex] = useState(0);
   const [redCode, setRedCode] = useState(false);
@@ -97,7 +99,7 @@ export default function VideoTriageScreen() {
       ? "#dc2626"
       : referral?.level === "clinic"
         ? "#d97706"
-        : "#10b981";
+        : "#00875A";
 
   // Görüşme başına benzersiz, canlı bir çağrı odası (her denemede yenilenir).
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -114,8 +116,14 @@ export default function VideoTriageScreen() {
     raiseCriticalAlert();
   };
 
+  // Canlı görüşme öncesi KVKK/GDPR "Privacy Shield" bilgilendirmesini göster.
   const startCall = () => {
     setError(null);
+    setPrivacyGate(true);
+  };
+
+  const confirmPrivacyAndConnect = () => {
+    setPrivacyGate(false);
     setActive(true);
   };
 
@@ -147,7 +155,7 @@ export default function VideoTriageScreen() {
         {/* Başlık */}
         <View className="mb-4 flex-row items-center">
           <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-brand-light">
-            <Stethoscope size={20} color="#059669" />
+            <Stethoscope size={20} color="#006644" />
           </View>
           <View className="flex-1">
             <Text className="text-base font-bold text-ink">
@@ -317,6 +325,12 @@ export default function VideoTriageScreen() {
           zeka analizi bir simülasyondur; gerçek tıbbi teşhis yerine geçmez.
         </Text>
       </ScrollView>
+
+      <PrivacyShieldModal
+        visible={privacyGate}
+        onAccept={confirmPrivacyAndConnect}
+        onDecline={() => setPrivacyGate(false)}
+      />
 
       <PermissionModal
         visible={permissionModal}

@@ -95,7 +95,7 @@ export default function GrowthChart({
         <Polyline
           points={medianPoints}
           fill="none"
-          stroke="#059669"
+          stroke="#006644"
           strokeWidth={1.5}
           strokeDasharray="4 3"
         />

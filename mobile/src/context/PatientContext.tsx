@@ -21,10 +21,13 @@ import type {
   GuardianAlert,
   HealthTask,
   MedicationStock,
+  MewsResult,
   PatientProfile,
   ScreeningRecommendation,
   VitalEntry,
 } from "../data/types";
+import { toFhirBundle, type FhirBundle } from "../services/fhir";
+import { mewsFromVitals } from "../services/mewsEngine";
 import {
   buildCriticalAlert,
   buildMissedDoseAlert,
@@ -58,6 +61,12 @@ interface PatientContextValue {
   guardianAlerts: GuardianAlert[];
   /** Güvenli hafızada şifreli saklanan en güncel vital ölçümü. */
   vitals: VitalEntry | null;
+  /** Son ölçümlerin (şifreli) geçmişi — trend grafikleri için (eskiden yeniye). */
+  vitalsHistory: VitalEntry[];
+  /** En güncel vitalden hesaplanan MEWS klinik karar sonucu (yoksa null). */
+  mews: MewsResult | null;
+  /** Profil + son ölçümün HL7 FHIR (R4) Bundle temsili. */
+  fhirBundle: FhirBundle;
   updateProfile: (patch: Partial<PatientProfile>) => void;
   saveVitals: (entry: VitalEntry) => void;
   completeTask: (id: string) => void;
@@ -96,6 +105,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
   const [guardian] = useState<Guardian>(INITIAL_GUARDIAN);
   const [guardianAlerts, setGuardianAlerts] = useState<GuardianAlert[]>([]);
   const [vitals, setVitals] = useState<VitalEntry | null>(null);
+  const [vitalsHistory, setVitalsHistory] = useState<VitalEntry[]>([]);
   const [medicationStock, setMedicationStock] = useState<MedicationStock[]>(
     INITIAL_MEDICATION_STOCK,
   );
@@ -124,10 +134,14 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       loadJSON<PersistedTasks>(STORAGE_KEYS.tasks),
       loadJSON<VitalEntry>(STORAGE_KEYS.vitals),
       loadJSON<MedicationStock[]>(STORAGE_KEYS.medicationStock),
-    ]).then(([storedProfile, storedTasks, storedVitals, storedStock]) => {
+      loadJSON<VitalEntry[]>(STORAGE_KEYS.vitalsHistory),
+    ]).then(
+      ([storedProfile, storedTasks, storedVitals, storedStock, storedHistory]) => {
       if (cancelled) return;
       if (storedProfile) setProfile(storedProfile);
       if (storedVitals) setVitals(storedVitals);
+      if (storedHistory && storedHistory.length > 0)
+        setVitalsHistory(storedHistory);
       if (storedStock && storedStock.length > 0) setMedicationStock(storedStock);
       if (storedTasks && storedTasks.day === todayKey()) {
         setTasks((prev) =>
@@ -138,7 +152,8 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
         );
       }
       setHydrated(true);
-    });
+    },
+    );
     return () => {
       cancelled = true;
     };
@@ -215,11 +230,35 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
     setProfile((prev) => ({ ...prev, ...patch }));
   }, []);
 
-  // Vital ölçümü güvenli (şifreli) hafızaya yazar ve state'i günceller.
+  // Vital ölçümü güvenli (şifreli) hafızaya yazar, geçmişe ekler ve MEWS'i
+  // yeniden hesaplanabilir kılar.
   const saveVitals = useCallback((entry: VitalEntry) => {
     setVitals(entry);
     void saveJSON<VitalEntry>(STORAGE_KEYS.vitals, entry);
+    setVitalsHistory((prev) => {
+      const next = [...prev, entry].slice(-14);
+      void saveJSON<VitalEntry[]>(STORAGE_KEYS.vitalsHistory, next);
+      return next;
+    });
   }, []);
+
+  // En güncel vitalden MEWS klinik karar sonucunu türet.
+  const mews = useMemo<MewsResult | null>(
+    () => (vitals ? mewsFromVitals(vitals) : null),
+    [vitals],
+  );
+
+  // Profil + son ölçümün HL7 FHIR (R4) Bundle temsili (interoperability).
+  const fhirBundle = useMemo<FhirBundle>(
+    () => toFhirBundle(profile, vitals),
+    [profile, vitals],
+  );
+
+  // FHIR Bundle değiştikçe güvenli hafızaya (şifreli) kalıcılaştır.
+  useEffect(() => {
+    if (!hydrated) return;
+    void saveJSON<FhirBundle>(STORAGE_KEYS.fhirBundle, fhirBundle);
+  }, [fhirBundle, hydrated]);
 
   const completeTask = useCallback((id: string) => {
     // Güncel durumu önce ref'ten türet (deferred updater içinde okuma yapmadan).
@@ -328,6 +367,9 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       guardian,
       guardianAlerts: displayedAlerts,
       vitals,
+      vitalsHistory,
+      mews,
+      fhirBundle,
       updateProfile,
       saveVitals,
       completeTask,
@@ -348,6 +390,9 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       guardian,
       displayedAlerts,
       vitals,
+      vitalsHistory,
+      mews,
+      fhirBundle,
       updateProfile,
       saveVitals,
       completeTask,

@@ -44,7 +44,7 @@ const REFERRAL_BUTTONS: {
     icon: Baby,
     bg: "#d97706",
   },
-  { level: "home", label: "Evde Takibe Devam Et", icon: Home, bg: "#10b981" },
+  { level: "home", label: "Evde Takibe Devam Et", icon: Home, bg: "#00875A" },
 ];
 
 /**
@@ -82,7 +82,7 @@ export default function NursePanelScreen() {
             </Pressable>
           ) : null}
           <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-brand-light">
-            <Droplets size={20} color="#059669" />
+            <Droplets size={20} color="#006644" />
           </View>
           <View className="flex-1">
             <Text className="text-base font-bold text-ink">
@@ -111,7 +111,7 @@ export default function NursePanelScreen() {
           <View className={wide ? "mr-3 flex-1" : "mb-4"}>
             <View className="rounded-2xl border border-line bg-white p-4">
               <View className="mb-3 flex-row items-center">
-                <Baby size={16} color="#059669" />
+                <Baby size={16} color="#006644" />
                 <Text className="ml-2 text-sm font-bold text-ink">
                   Bebek Özeti
                 </Text>
@@ -224,7 +224,7 @@ function VitalTile({
         critical ? "bg-danger/10" : "bg-surface"
       }`}
     >
-      <Icon size={15} color={critical ? "#dc2626" : "#059669"} />
+      <Icon size={15} color={critical ? "#dc2626" : "#006644"} />
       <Text className="ml-2 flex-1 text-[11px] font-semibold text-ink">
         {label}
       </Text>

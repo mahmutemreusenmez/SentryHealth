@@ -188,7 +188,7 @@ class ReminderService {
     await this.expo.setNotificationChannelAsync("sentry-reminders", {
       name: "SentryCompanion Hatırlatıcılar",
       importance: this.expo.AndroidImportance.HIGH,
-      lightColor: "#10b981",
+      lightColor: "#00875A",
     });
     this.channelReady = true;
   }

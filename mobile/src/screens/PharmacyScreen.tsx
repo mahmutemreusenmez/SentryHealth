@@ -51,7 +51,7 @@ export default function PharmacyScreen() {
       >
         <View className="mb-4 flex-row items-center">
           <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-brand-light">
-            <MapPin size={20} color="#059669" />
+            <MapPin size={20} color="#006644" />
           </View>
           <View className="flex-1">
             <Text className="text-base font-bold text-ink">

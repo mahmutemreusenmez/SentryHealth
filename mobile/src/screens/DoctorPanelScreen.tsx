@@ -35,7 +35,7 @@ const REFERRAL_BUTTONS: {
 }[] = [
   { level: "emergency", label: "Acil Sevk", icon: Siren, bg: "#dc2626" },
   { level: "clinic", label: "Poliklinik Sevk", icon: Hospital, bg: "#d97706" },
-  { level: "home", label: "Evde Takip", icon: Home, bg: "#10b981" },
+  { level: "home", label: "Evde Takip", icon: Home, bg: "#00875A" },
 ];
 
 /**
@@ -146,7 +146,7 @@ export default function DoctorPanelScreen() {
               </View>
 
               <View className="mt-3 flex-row items-center rounded-xl bg-brand-light px-3 py-2">
-                <TrendingUp size={15} color="#059669" />
+                <TrendingUp size={15} color="#006644" />
                 <Text className="ml-2 flex-1 text-[11px] font-semibold text-brand-dark">
                   İlaç Uyum Skoru
                 </Text>

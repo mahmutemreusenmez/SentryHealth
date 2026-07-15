@@ -69,6 +69,8 @@ export const VITAL_LIMITS = {
   diastolic: { min: 40, max: 160 },
   pulse: { min: 30, max: 220 },
   glucose: { min: 40, max: 600 },
+  respiratoryRate: { min: 4, max: 60 },
+  temperature: { min: 30, max: 44 },
 } as const;
 
 /** e-Devlet giriş formu şeması. */
@@ -107,6 +109,15 @@ export const vitalsSchema = z
       .int("Tam sayı girin.")
       .min(VITAL_LIMITS.glucose.min, `Kan şekeri ${VITAL_LIMITS.glucose.min}-${VITAL_LIMITS.glucose.max} aralığında olmalı.`)
       .max(VITAL_LIMITS.glucose.max, `Kan şekeri ${VITAL_LIMITS.glucose.min}-${VITAL_LIMITS.glucose.max} aralığında olmalı.`),
+    respiratoryRate: z.coerce
+      .number({ invalid_type_error: "Solunum hızı sayısal olmalı." })
+      .int("Tam sayı girin.")
+      .min(VITAL_LIMITS.respiratoryRate.min, `Solunum hızı ${VITAL_LIMITS.respiratoryRate.min}-${VITAL_LIMITS.respiratoryRate.max} aralığında olmalı.`)
+      .max(VITAL_LIMITS.respiratoryRate.max, `Solunum hızı ${VITAL_LIMITS.respiratoryRate.min}-${VITAL_LIMITS.respiratoryRate.max} aralığında olmalı.`),
+    temperature: z.coerce
+      .number({ invalid_type_error: "Ateş değeri sayısal olmalı." })
+      .min(VITAL_LIMITS.temperature.min, `Vücut sıcaklığı ${VITAL_LIMITS.temperature.min}-${VITAL_LIMITS.temperature.max} °C aralığında olmalı.`)
+      .max(VITAL_LIMITS.temperature.max, `Vücut sıcaklığı ${VITAL_LIMITS.temperature.min}-${VITAL_LIMITS.temperature.max} °C aralığında olmalı.`),
   })
   .refine((v) => v.systolic > v.diastolic, {
     message: "Sistolik değer diyastolikten büyük olmalıdır.",

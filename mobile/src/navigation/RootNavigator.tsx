@@ -15,8 +15,10 @@ import {
 import React from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 
+import { PrivacyShieldScreen } from "../components/PrivacyShield";
 import { useAuth } from "../context/AuthContext";
 import { useBaby } from "../context/BabyContext";
+import { usePrivacy } from "../context/PrivacyContext";
 import type { RootStackParamList, RootTabParamList } from "../data/types";
 import AuthScreen from "../screens/AuthScreen";
 import BabyScreen from "../screens/BabyScreen";
@@ -72,7 +74,7 @@ function MainTabs() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: "#10b981",
+        tabBarActiveTintColor: "#00875A",
         tabBarInactiveTintColor: "#6b7280",
         tabBarStyle: {
           borderTopColor: "#e5e7eb",
@@ -106,15 +108,19 @@ function HydrationSplash() {
         <HeartPulse size={30} color="#ffffff" />
       </View>
       <Text className="mt-4 text-base font-bold text-ink">e-Nabız</Text>
-      <ActivityIndicator color="#10b981" style={{ marginTop: 12 }} />
+      <ActivityIndicator color="#00875A" style={{ marginTop: 12 }} />
     </View>
   );
 }
 
 export default function RootNavigator() {
   const { auth, isHydrating } = useAuth();
+  const { accepted, isHydrating: privacyHydrating, accept } = usePrivacy();
 
-  if (isHydrating) return <HydrationSplash />;
+  if (isHydrating || privacyHydrating) return <HydrationSplash />;
+
+  // KVKK/GDPR "Güvenlik ve İzin Bilgilendirme" (Privacy Shield) — ilk açılış.
+  if (!accepted) return <PrivacyShieldScreen onAccept={accept} />;
 
   return (
     <NavigationContainer linking={linking}>

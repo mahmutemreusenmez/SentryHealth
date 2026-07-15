@@ -46,13 +46,13 @@ export default function PermissionModal({
           <View className="px-6 py-5">
             <View className="mb-4 flex-row">
               <View className="mr-3 flex-1 flex-row items-center rounded-2xl bg-brand-light px-3 py-3">
-                <Camera size={18} color="#059669" />
+                <Camera size={18} color="#006644" />
                 <Text className="ml-2 text-xs font-semibold text-brand-dark">
                   Kamera
                 </Text>
               </View>
               <View className="flex-1 flex-row items-center rounded-2xl bg-brand-light px-3 py-3">
-                <Mic size={18} color="#059669" />
+                <Mic size={18} color="#006644" />
                 <Text className="ml-2 text-xs font-semibold text-brand-dark">
                   Mikrofon
                 </Text>

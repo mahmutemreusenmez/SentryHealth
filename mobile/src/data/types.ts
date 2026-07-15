@@ -77,6 +77,9 @@ export interface VitalReading {
   diastolic: number;
 }
 
+/** Hastanın bilinç durumu — MEWS "AVPU" ölçeği. */
+export type ConsciousnessLevel = "alert" | "voice" | "pain" | "unresponsive";
+
 /** Hastanın güvenli hafızada şifreli saklanan günlük vital ölçümü */
 export interface VitalEntry {
   /** Sistolik (büyük) tansiyon — mmHg */
@@ -87,8 +90,47 @@ export interface VitalEntry {
   pulse: number;
   /** Kan şekeri — mg/dL */
   glucose: number;
+  /** Solunum hızı — soluk/dk (MEWS için) */
+  respiratoryRate: number;
+  /** Vücut sıcaklığı — °C (MEWS için) */
+  temperature: number;
+  /** Bilinç durumu (AVPU); girilmezse "alert" kabul edilir. */
+  consciousness?: ConsciousnessLevel;
   /** kayıt zamanı epoch ms */
   recordedAt: number;
+}
+
+/* ------------------------------------------------------------------ */
+/* Klinik Karar Destek Sistemi (CDSS) — MEWS                           */
+/* ------------------------------------------------------------------ */
+
+/** MEWS klinik risk bandı: Yeşil (stabil) / Sarı (gözlem) / Kırmızı (acil). */
+export type MewsBand = "green" | "yellow" | "red";
+
+/** MEWS skoruna katkı veren tek bir vital parametrenin dökümü. */
+export interface MewsParameterScore {
+  /** Parametre etiketi (ör. "Solunum Hızı"). */
+  label: string;
+  /** Ölçülen değer + birim (ör. "22 /dk"). */
+  display: string;
+  /** Bu parametrenin MEWS alt puanı (0-3). */
+  points: number;
+}
+
+/** MEWS motorunun ürettiği klinik karar sonucu. */
+export interface MewsResult {
+  /** Toplam MEWS skoru. */
+  total: number;
+  /** Risk bandı. */
+  band: MewsBand;
+  /** Banda karşılık gelen kısa başlık (ör. "Acil Triyaj Gerekli"). */
+  title: string;
+  /** Hastaya yönelik sade klinik yönlendirme. */
+  guidance: string;
+  /** Parametre bazlı puan dökümü (şeffaflık için). */
+  breakdown: MewsParameterScore[];
+  /** Kırmızı/sarı bandda triyaj yönlendirmesi önerilir mi? */
+  triageAdvised: boolean;
 }
 
 /** Yaş/kronik duruma göre üretilen dinamik tetkik önerisi */

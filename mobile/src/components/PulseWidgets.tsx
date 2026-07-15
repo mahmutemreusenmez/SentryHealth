@@ -116,7 +116,7 @@ export default function PulseWidgets({
       <View className="flex-row justify-between">
         <VitalWidget
           icon={HeartPulse}
-          color={critical ? "#dc2626" : "#10b981"}
+          color={critical ? "#dc2626" : "#00875A"}
           label="Nabız"
           value={sample ? `${sample.heartRate}` : "—"}
           unit="atım/dk"
@@ -130,7 +130,7 @@ export default function PulseWidgets({
         />
         <VitalWidget
           icon={Footprints}
-          color="#059669"
+          color="#006644"
           label="Adım"
           value={sample ? `${sample.steps}` : "—"}
           unit="bugün"
@@ -146,7 +146,7 @@ export default function PulseWidgets({
         </View>
         <Sparkline
           data={hrHistory}
-          color={critical ? "#dc2626" : "#10b981"}
+          color={critical ? "#dc2626" : "#00875A"}
           width={280}
           height={44}
         />

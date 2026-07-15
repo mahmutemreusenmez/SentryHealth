@@ -3,6 +3,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { CompositeNavigationProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
+  Accessibility,
   Activity,
   BellRing,
   CalendarClock,
@@ -11,7 +12,9 @@ import {
   ClipboardList,
   Footprints,
   HeartPulse,
+  LineChart,
   Pill,
+  ShieldPlus,
   Stethoscope,
   Volume2,
   Wind,
@@ -22,13 +25,17 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import GuardianPanel from "../components/GuardianPanel";
+import HealthTrends from "../components/HealthTrends";
 import LabAnalyzer from "../components/LabAnalyzer";
+import MewsCard from "../components/MewsCard";
 import PulseWidgets from "../components/PulseWidgets";
 import VoiceConfirmButton from "../components/VoiceConfirmButton";
 import WeeklyCompliance from "../components/WeeklyCompliance";
 import { SectionHeader, StatusBadge } from "../components/ui";
+import { useAccessibility } from "../context/AccessibilityContext";
 import { usePatient } from "../context/PatientContext";
 import { WEEKLY_COMPLIANCE } from "../data/mockData";
+import { COLORS } from "../theme/colors";
 import type {
   HealthTask,
   RootStackParamList,
@@ -66,7 +73,12 @@ export default function DashboardScreen() {
     completeTask,
     sendTestNotification,
     lowStockMedications,
+    mews,
+    vitals,
+    vitalsHistory,
   } = usePatient();
+  const { surface, fontScale, highContrast, toggleAccessibilityMode } =
+    useAccessibility();
   const navigation = useNavigation<DashboardNav>();
   const firstName = profile.fullName.split(" ")[0];
   const title = honorific(profile.gender);
@@ -91,7 +103,11 @@ export default function DashboardScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-surface" edges={["top"]}>
+    <SafeAreaView
+      className="flex-1 bg-surface"
+      edges={["top"]}
+      style={{ backgroundColor: surface.screen }}
+    >
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
@@ -99,14 +115,39 @@ export default function DashboardScreen() {
         {/* e-Nabız kurumsal başlık */}
         <View className="mb-5 flex-row items-center justify-between">
           <View className="flex-1">
-            <Text className="text-sm text-muted">Sağlıklı Günler,</Text>
-            <Text className="text-2xl font-bold text-ink">
+            <Text
+              className="text-sm text-muted"
+              style={{ color: surface.muted, fontSize: 14 * fontScale }}
+            >
+              Sağlıklı Günler,
+            </Text>
+            <Text
+              className="text-2xl font-bold text-ink"
+              style={{ color: surface.ink, fontSize: 24 * fontScale }}
+            >
               {firstName} {honorific(profile.gender)}
             </Text>
-            <Text className="mt-1 text-xs text-muted">
+            <Text
+              className="mt-1 text-xs text-muted"
+              style={{ color: surface.muted, fontSize: 12 * fontScale }}
+            >
               {formatDateLong(new Date().toISOString())}
             </Text>
           </View>
+          <Pressable
+            onPress={toggleAccessibilityMode}
+            accessibilityRole="button"
+            accessibilityLabel="Erişilebilirlik modunu aç veya kapat (yüksek kontrast ve büyük yazı)"
+            hitSlop={8}
+            className={`mr-2 h-11 w-11 items-center justify-center rounded-xl border ${
+              highContrast ? "border-brand bg-brand" : "border-line bg-white"
+            }`}
+          >
+            <Accessibility
+              size={20}
+              color={highContrast ? COLORS.white : COLORS.brandDark}
+            />
+          </Pressable>
           <View className="flex-row items-center rounded-xl border border-brand-light bg-white px-3 py-2">
             <View className="mr-2 h-7 w-7 items-center justify-center rounded-full bg-brand">
               <HeartPulse size={16} color="#ffffff" />
@@ -116,6 +157,24 @@ export default function DashboardScreen() {
               <Text className="text-[9px] text-muted">Sağlık Kaydı</Text>
             </View>
           </View>
+        </View>
+
+        {/* Klinik Karar Destek Sistemi (CDSS) — MEWS erken uyarı kartı */}
+        <View className="mb-4">
+          <View className="mb-2 flex-row items-center">
+            <ShieldPlus size={16} color={COLORS.brandDark} />
+            <Text
+              className="ml-2 text-base font-bold"
+              style={{ color: surface.ink, fontSize: 16 * fontScale }}
+            >
+              Klinik Erken Uyarı (MEWS)
+            </Text>
+          </View>
+          <MewsCard
+            result={mews}
+            hasData={vitals !== null}
+            onStartTriage={() => navigation.navigate("Triage")}
+          />
         </View>
 
         {/* Jüri için canlı push bildirim simülatörü */}
@@ -199,6 +258,16 @@ export default function DashboardScreen() {
             icon={Activity}
           />
           <WeeklyCompliance days={WEEKLY_COMPLIANCE} />
+        </View>
+
+        {/* SVG tabanlı sağlık trend grafikleri (tansiyon/şeker) */}
+        <View className="mb-6">
+          <SectionHeader
+            title="Sağlık Trend Grafikleri"
+            subtitle="Tansiyon ve şeker değişiminiz"
+            icon={LineChart}
+          />
+          <HealthTrends history={vitalsHistory} />
         </View>
 
         {/* Bugünkü sağlık görevleri zaman tüneli */}
@@ -329,7 +398,7 @@ const TaskRow = React.memo(function TaskRow({
       <View className="mb-4 flex-1 rounded-2xl border border-line bg-white p-4 shadow-sm">
         <View className="flex-row items-center">
           <View className="mr-3 h-9 w-9 items-center justify-center rounded-full bg-surface">
-            <Icon size={18} color="#059669" />
+            <Icon size={18} color="#006644" />
           </View>
           <View className="flex-1">
             <Text className="text-base font-semibold text-ink">
@@ -348,13 +417,13 @@ const TaskRow = React.memo(function TaskRow({
               hitSlop={8}
               className="mr-2 h-8 w-8 items-center justify-center rounded-full bg-brand-light"
             >
-              <Volume2 size={15} color="#059669" />
+              <Volume2 size={15} color="#006644" />
             </Pressable>
           ) : null}
 
           {done ? (
             <View className="flex-row items-center">
-              <CheckCircle2 size={22} color="#10b981" />
+              <CheckCircle2 size={22} color="#00875A" />
             </View>
           ) : null}
         </View>

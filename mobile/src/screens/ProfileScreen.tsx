@@ -1,15 +1,20 @@
 import {
+  Accessibility,
   Activity,
   Baby,
   CheckCircle2,
   ClipboardList,
+  Contrast,
   CreditCard,
+  FileJson,
   HeartPulse,
   LogOut,
   PlusCircle,
   Save,
+  Type,
   User,
 } from "lucide-react-native";
+import type { LucideIcon } from "lucide-react-native";
 import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
@@ -24,6 +29,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Card, EmptyState, SectionHeader, StatusBadge } from "../components/ui";
+import { useAccessibility } from "../context/AccessibilityContext";
 import { useAuth } from "../context/AuthContext";
 import { useBaby } from "../context/BabyContext";
 import { usePatient } from "../context/PatientContext";
@@ -51,9 +57,15 @@ function isValidNationalId(id: string): boolean {
 }
 
 export default function ProfileScreen() {
-  const { profile, recommendations, vitals, updateProfile, saveVitals } =
+  const { profile, recommendations, vitals, fhirBundle, updateProfile, saveVitals } =
     usePatient();
   const { logout } = useAuth();
+  const {
+    largeText,
+    highContrast,
+    toggleLargeText,
+    toggleHighContrast,
+  } = useAccessibility();
   const { hasNewborn, baby, ageMonths, setHasNewborn } = useBaby();
 
   const [fullName, setFullName] = useState(profile.fullName);
@@ -206,7 +218,7 @@ export default function ProfileScreen() {
                     }`}
                   >
                     {active ? (
-                      <CheckCircle2 size={15} color="#059669" />
+                      <CheckCircle2 size={15} color="#006644" />
                     ) : (
                       <PlusCircle size={15} color="#6b7280" />
                     )}
@@ -262,7 +274,7 @@ export default function ProfileScreen() {
             {hasNewborn ? (
               <View className="mb-3 flex-row items-center rounded-xl bg-brand-light px-3 py-2.5">
                 <View className="mr-3 h-9 w-9 items-center justify-center rounded-full bg-white">
-                  <Baby size={18} color="#059669" />
+                  <Baby size={18} color="#006644" />
                 </View>
                 <View className="flex-1">
                   <Text className="text-sm font-bold text-ink">
@@ -308,6 +320,40 @@ export default function ProfileScreen() {
             />
           </View>
 
+          {/* Erişilebilirlik (WCAG 2.1) + KVKK/FHIR bilgisi */}
+          <View className="mt-5">
+            <Card>
+              <SectionHeader
+                title="Erişilebilirlik ve Gizlilik"
+                subtitle="WCAG 2.1 · KVKK/GDPR · HL7 FHIR"
+                icon={Accessibility}
+              />
+              <ToggleRow
+                icon={Type}
+                label="Büyük Yazı"
+                hint="Yazı boyutunu büyütür (yaşlı dostu)."
+                value={largeText}
+                onToggle={toggleLargeText}
+              />
+              <ToggleRow
+                icon={Contrast}
+                label="Yüksek Kontrast"
+                hint="Koyu/net tema ile okunabilirliği artırır."
+                value={highContrast}
+                onToggle={toggleHighContrast}
+              />
+              <View className="mt-2 flex-row items-start rounded-xl bg-brand-light/60 p-3">
+                <FileJson size={16} color="#006644" />
+                <Text className="ml-2 flex-1 text-[11px] leading-4 text-brand-dark">
+                  Verileriniz HL7 FHIR (R4) standardında saklanır:{" "}
+                  {fhirBundle.entry.length} kaynak (Patient + Observation).
+                  Kimlik bilginiz KVKK/GDPR gereği pseudonimize edilir; ham
+                  tutulmaz.
+                </Text>
+              </View>
+            </Card>
+          </View>
+
           {/* e-Devlet oturumunu kapat */}
           <Pressable
             onPress={logout}
@@ -321,6 +367,47 @@ export default function ProfileScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+  );
+}
+
+function ToggleRow({
+  icon: Icon,
+  label,
+  hint,
+  value,
+  onToggle,
+}: {
+  icon: LucideIcon;
+  label: string;
+  hint: string;
+  value: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onToggle}
+      accessibilityRole="switch"
+      accessibilityState={{ checked: value }}
+      accessibilityLabel={label}
+      className="mb-2 flex-row items-center rounded-xl border border-line bg-surface px-3 py-3"
+    >
+      <View className="mr-3 h-9 w-9 items-center justify-center rounded-full bg-brand-light">
+        <Icon size={18} color="#006644" />
+      </View>
+      <View className="flex-1">
+        <Text className="text-sm font-semibold text-ink">{label}</Text>
+        <Text className="text-[11px] text-muted">{hint}</Text>
+      </View>
+      <View
+        className={`h-6 w-11 justify-center rounded-full px-0.5 ${
+          value ? "bg-brand" : "bg-line"
+        }`}
+      >
+        <View
+          className={`h-5 w-5 rounded-full bg-white ${value ? "self-end" : "self-start"}`}
+        />
+      </View>
+    </Pressable>
   );
 }
 
@@ -347,18 +434,33 @@ type VitalsFieldValues = {
   diastolic: string;
   pulse: string;
   glucose: string;
+  respiratoryRate: string;
+  temperature: string;
 };
 
 const VITAL_FIELDS: {
   name: keyof VitalsFieldValues;
   label: string;
   placeholder: string;
+  /** Ondalık girişe izin verilen alanlar (ör. ateş). */
+  decimal?: boolean;
 }[] = [
   { name: "systolic", label: "Büyük Tansiyon (mmHg)", placeholder: "120" },
   { name: "diastolic", label: "Küçük Tansiyon (mmHg)", placeholder: "80" },
   { name: "pulse", label: "Nabız (atım/dk)", placeholder: "72" },
   { name: "glucose", label: "Kan Şekeri (mg/dL)", placeholder: "110" },
+  { name: "respiratoryRate", label: "Solunum Hızı (/dk)", placeholder: "16" },
+  { name: "temperature", label: "Ateş (°C)", placeholder: "36.7", decimal: true },
 ];
+
+const EMPTY_VITALS: VitalsFieldValues = {
+  systolic: "",
+  diastolic: "",
+  pulse: "",
+  glucose: "",
+  respiratoryRate: "",
+  temperature: "",
+};
 
 function VitalsForm({
   lastVitals,
@@ -375,7 +477,7 @@ function VitalsForm({
     reset,
     formState: { errors },
   } = useForm<VitalsFieldValues>({
-    defaultValues: { systolic: "", diastolic: "", pulse: "", glucose: "" },
+    defaultValues: EMPTY_VITALS,
   });
 
   const submit = handleSubmit((raw) => {
@@ -392,7 +494,7 @@ function VitalsForm({
     }
     const values: VitalsFormValues = parsed.data;
     onSave(values);
-    reset({ systolic: "", diastolic: "", pulse: "", glucose: "" });
+    reset(EMPTY_VITALS);
     setSaved(true);
   });
 
@@ -425,10 +527,16 @@ function VitalsForm({
                 render={({ field: { value, onChange, onBlur } }) => (
                   <TextInput
                     value={value}
-                    onChangeText={(t) => onChange(t.replace(/[^0-9]/g, ""))}
+                    onChangeText={(t) =>
+                      onChange(
+                        f.decimal
+                          ? t.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1")
+                          : t.replace(/[^0-9]/g, ""),
+                      )
+                    }
                     onBlur={onBlur}
-                    keyboardType="number-pad"
-                    maxLength={3}
+                    keyboardType={f.decimal ? "decimal-pad" : "number-pad"}
+                    maxLength={f.decimal ? 5 : 3}
                     placeholder={f.placeholder}
                     placeholderTextColor="#9ca3af"
                     className={`rounded-xl border bg-surface px-3 py-2 text-ink ${

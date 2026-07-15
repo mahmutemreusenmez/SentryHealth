@@ -91,7 +91,7 @@ export function SectionHeader({
     <View className="mb-3 flex-row items-center">
       {Icon ? (
         <View className="mr-2 h-9 w-9 items-center justify-center rounded-full bg-brand-light">
-          <Icon size={18} color="#059669" />
+          <Icon size={18} color="#006644" />
         </View>
       ) : null}
       <View className="flex-1">

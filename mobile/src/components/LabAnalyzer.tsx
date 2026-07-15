@@ -111,7 +111,7 @@ function AnalysisResult({ analysis }: { analysis: LabAnalysis }) {
           accessibilityLabel="Analiz sonucunu sesli oku"
           className="h-8 w-8 items-center justify-center rounded-full bg-brand-light"
         >
-          <Volume2 size={15} color="#059669" />
+          <Volume2 size={15} color="#006644" />
         </Pressable>
       </View>
 
@@ -152,7 +152,7 @@ function FindingCard({ finding }: { finding: LabFinding }) {
         {abnormal ? (
           <AlertTriangle size={15} color="#dc2626" />
         ) : (
-          <CheckCircle2 size={15} color="#059669" />
+          <CheckCircle2 size={15} color="#006644" />
         )}
         <Text className="ml-2 flex-1 text-sm font-bold text-ink">
           {finding.name}

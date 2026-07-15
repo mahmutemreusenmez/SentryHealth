@@ -31,6 +31,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import GrowthChart from "../components/GrowthChart";
 import LiveVideoPanel, { type IncomingReferral } from "../components/LiveVideoPanel";
 import PermissionModal from "../components/PermissionModal";
+import { PrivacyShieldModal } from "../components/PrivacyShield";
 import VaccineCalendar from "../components/VaccineCalendar";
 import { Card, EmptyState, PressableScale, SectionHeader } from "../components/ui";
 import { useBaby } from "../context/BabyContext";
@@ -72,6 +73,7 @@ export default function BabyScreen() {
 
   const [metric, setMetric] = useState<GrowthMetric>("weightKg");
   const [active, setActive] = useState(false);
+  const [privacyGate, setPrivacyGate] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [referral, setReferral] = useState<NurseReferral | null>(null);
   const [permissionModal, setPermissionModal] = useState(false);
@@ -147,7 +149,7 @@ export default function BabyScreen() {
       ? "#dc2626"
       : referral?.level === "family-health"
         ? "#d97706"
-        : "#10b981";
+        : "#00875A";
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={["top"]}>
@@ -163,7 +165,7 @@ export default function BabyScreen() {
           {/* Başlık */}
           <View className="mb-4 flex-row items-center">
             <View className="mr-3 h-11 w-11 items-center justify-center rounded-full bg-brand-light">
-              <Baby size={22} color="#059669" />
+              <Baby size={22} color="#006644" />
             </View>
             <View className="flex-1">
               <Text className="text-lg font-bold text-ink">
@@ -258,7 +260,7 @@ export default function BabyScreen() {
               <PressableScale
                 onPress={() => {
                   setError(null);
-                  setActive(true);
+                  setPrivacyGate(true);
                 }}
                 accessibilityRole="button"
                 accessibilityLabel="Ebe veya hemşireye canlı bağlan"
@@ -354,7 +356,7 @@ export default function BabyScreen() {
               >
                 <Ruler
                   size={15}
-                  color={percentile.tone === "normal" ? "#059669" : "#dc2626"}
+                  color={percentile.tone === "normal" ? "#006644" : "#dc2626"}
                 />
                 <Text
                   className={`ml-2 flex-1 text-[11px] font-semibold ${
@@ -392,7 +394,7 @@ export default function BabyScreen() {
               }
               className="mt-1 flex-row items-center justify-center rounded-xl bg-brand-light py-2"
             >
-              <Thermometer size={14} color="#059669" />
+              <Thermometer size={14} color="#006644" />
               <Text className="ml-2 text-xs font-semibold text-brand-dark">
                 Yaklaşan Aşıları Sesli Oku
               </Text>
@@ -413,6 +415,15 @@ export default function BabyScreen() {
           </PressableScale>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <PrivacyShieldModal
+        visible={privacyGate}
+        onAccept={() => {
+          setPrivacyGate(false);
+          setActive(true);
+        }}
+        onDecline={() => setPrivacyGate(false)}
+      />
 
       <PermissionModal
         visible={permissionModal}
@@ -480,7 +491,7 @@ function AddGrowthForm({
         onPress={() => setOpen(true)}
         className="mt-3 flex-row items-center justify-center rounded-xl border border-brand bg-white py-2.5"
       >
-        <Plus size={15} color="#059669" />
+        <Plus size={15} color="#006644" />
         <Text className="ml-2 text-xs font-bold text-brand-dark">
           Yeni Ölçüm Ekle
         </Text>

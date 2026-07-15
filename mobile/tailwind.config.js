@@ -12,8 +12,8 @@ module.exports = {
         // e-Nabız kurumsal paleti — yalnızca sağlık yeşili, bakanlık mavisi,
         // temiz beyaz ve gri tonları.
         brand: {
-          DEFAULT: "#10b981", // e-Nabız yeşili
-          dark: "#059669",
+          DEFAULT: "#00875A", // e-Nabız kurumsal yeşili
+          dark: "#006644",
           light: "#d1fae5",
         },
         blue: {
@@ -26,7 +26,7 @@ module.exports = {
           DEFAULT: "#c20c18",
           dark: "#1f2a44",
         },
-        success: "#10b981",
+        success: "#00875A",
         danger: "#dc2626",
         ink: "#1f2937",
         muted: "#6b7280",
