@@ -301,9 +301,13 @@ export default function LiveVideoPanel({
         } else if (msg.type === "signal") {
           if (msg.from && msg.data) await onRemoteSignal(msg.from, msg.data as PeerSignal);
         } else if (msg.type === "peer-left") {
-          setConnected(false);
-          onStatus?.("Karşı taraf ayrıldı");
-          if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+          // Lobiden çağrı odasına geçen eşin ayrılışını görüşme bitişi sayma;
+          // yalnızca çağrı odasındaki gerçek görüşme eşi ayrılırsa işle.
+          if (inCallRoomRef.current && msg.peerId === remotePeerIdRef.current) {
+            setConnected(false);
+            onStatus?.("Karşı taraf ayrıldı");
+            if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+          }
         }
       };
     };
