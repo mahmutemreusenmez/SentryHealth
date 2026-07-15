@@ -49,7 +49,14 @@ function safeSend(ws: WebSocket, payload: unknown): void {
 }
 
 export function attachSignaling(server: Server, path = '/rtc'): WebSocketServer {
-  const wss = new WebSocketServer({ server, path });
+  // noServer + yönlendirmeli upgrade: aynı HTTP sunucusunda birden fazla
+  // WebSocket yolu (ör. /rtc ve /api/webrtc/signaling) çakışmadan çalışır.
+  const wss = new WebSocketServer({ noServer: true });
+  server.on('upgrade', (req, socket, head) => {
+    if ((req.url ?? '').split('?')[0] === path) {
+      wss.handleUpgrade(req, socket, head, (ws) => wss.emit('connection', ws, req));
+    }
+  });
   const rooms = new Map<string, Set<SignalClient>>();
 
   const peersOf = (room: string, exceptId?: string): SignalClient[] => {

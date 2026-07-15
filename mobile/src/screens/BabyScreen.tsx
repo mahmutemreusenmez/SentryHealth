@@ -43,6 +43,7 @@ import type {
   RootTabParamList,
 } from "../data/types";
 import { babyChannel } from "../services/babyChannel";
+import { makeCallRoomId } from "../services/rtcConfig";
 import { speak } from "../services/speechService";
 
 type BabyNav = CompositeNavigationProp<
@@ -96,9 +97,13 @@ export default function BabyScreen() {
     return unsubscribe;
   }, []);
 
-  const roomId = useMemo(
-    () => `sentry-baby-nurse-${Math.floor(1000 + Math.random() * 9000)}`,
-    [],
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const roomId = useMemo(() => makeCallRoomId(), [attemptKey]);
+
+  // Ebe/hemşire paneline duyurulacak bebek/anne kimliği.
+  const patient = useMemo(
+    () => ({ nationalId: "", name: baby.fullName }),
+    [baby.fullName],
   );
 
   // Bebeğin canlı vital metadata'sı (ebe/hemşire ekranına aktarılır).
@@ -212,6 +217,7 @@ export default function BabyScreen() {
                 muted={false}
                 roomId={roomId}
                 role="mother"
+                patient={patient}
                 metadata={metadata}
                 onError={onPanelError}
                 onReferral={onIncomingReferral}
@@ -268,8 +274,9 @@ export default function BabyScreen() {
             <Text className="mt-2 text-center text-[10px] text-muted">
               Bebek vital verileri (ateş, kilo, emzirme sıklığı) görüşmede
               ebe/hemşirenin ekranına canlı metadata olarak aktarılır. Bağlantı,
-              SentryHealth web sitesinin WebRTC sinyal sunucusu (/rtc) üzerinden
-              kurulur; jüri sunumu için simülasyondur.
+              SentryHealth web sitesinin WebRTC sinyal sunucusu
+              (/api/webrtc/signaling) üzerinden kurulur; jüri sunumu için
+              simülasyondur.
             </Text>
           </Card>
 

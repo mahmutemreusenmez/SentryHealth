@@ -19,7 +19,11 @@ import PermissionModal from "../components/PermissionModal";
 import { PressableScale } from "../components/ui";
 import { usePatient } from "../context/PatientContext";
 import type { ReferralLevel, TriageReferral } from "../data/types";
+import { makeCallRoomId } from "../services/rtcConfig";
 import { triageChannel } from "../services/triageChannel";
+
+/** Hekim panelindeki kayıtlı demo hastasıyla eşleşen T.C. kimlik numarası. */
+const TRIAGE_PATIENT_ID = "10000000000";
 
 const ANALYSIS_LINES = [
   "Analiz Ediliyor: Ses tonunda nefes darlığı tespiti... SpO2 takibi öneriliyor.",
@@ -27,20 +31,6 @@ const ANALYSIS_LINES = [
   "Analiz Ediliyor: Öksürük paterni değerlendiriliyor... Ek bulgu saptanmadı.",
   "Analiz Ediliyor: Kalp atım sesleri stabil, tansiyon geçmişiyle karşılaştırılıyor.",
 ];
-
-/** Hasta adından güvenli bir canlı oda anahtarı üretir. */
-function slugify(name: string): string {
-  return name
-    .toLocaleLowerCase("tr-TR")
-    .replace(/ç/g, "c")
-    .replace(/ğ/g, "g")
-    .replace(/ı/g, "i")
-    .replace(/ö/g, "o")
-    .replace(/ş/g, "s")
-    .replace(/ü/g, "u")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
 
 export default function VideoTriageScreen() {
   const { profile, raiseCriticalAlert } = usePatient();
@@ -109,12 +99,13 @@ export default function VideoTriageScreen() {
         ? "#d97706"
         : "#10b981";
 
-  // Görüşme başına benzersiz, canlı bir oda anahtarı (Room ID).
-  const roomId = useMemo(
-    () =>
-      `sentry-triage-${slugify(profile.fullName.split(" ")[0] || "hasta")}-${Math.floor(
-        1000 + Math.random() * 9000,
-      )}`,
+  // Görüşme başına benzersiz, canlı bir çağrı odası (her denemede yenilenir).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const roomId = useMemo(() => makeCallRoomId(), [attemptKey]);
+
+  // Hekim paneline duyurulacak hasta kimliği.
+  const patient = useMemo(
+    () => ({ nationalId: TRIAGE_PATIENT_ID, name: profile.fullName }),
     [profile.fullName],
   );
 
@@ -180,6 +171,7 @@ export default function VideoTriageScreen() {
             muted={muted}
             roomId={roomId}
             role="patient"
+            patient={patient}
             metadata={metadata}
             onError={onPanelError}
             onStatus={setStatus}
@@ -321,8 +313,8 @@ export default function VideoTriageScreen() {
 
         <Text className="mt-3 text-center text-[11px] text-muted">
           Görüntülü görüşme, SentryHealth web sitesinin WebRTC sinyal sunucusu
-          (/rtc) üzerinden hekim paneline canlı bağlanır. Yapay zeka analizi bir
-          simülasyondur; gerçek tıbbi teşhis yerine geçmez.
+          (/api/webrtc/signaling) üzerinden hekim paneline canlı bağlanır. Yapay
+          zeka analizi bir simülasyondur; gerçek tıbbi teşhis yerine geçmez.
         </Text>
       </ScrollView>
 

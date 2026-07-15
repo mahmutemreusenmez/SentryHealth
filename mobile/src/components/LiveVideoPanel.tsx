@@ -1,17 +1,26 @@
 import React, { useEffect, useRef, useState } from "react";
 
-import { RTC_ICE_SERVERS, getSignalWsUrl } from "../services/rtcConfig";
+import {
+  LOBBY_ROOM,
+  RTC_ICE_SERVERS,
+  getSignalWsUrl,
+} from "../services/rtcConfig";
 
 /**
  * Canlı görüntülü triyaj video paneli — **web / varsayılan** uygulama.
  *
- * Gerçek WebRTC: `navigator.mediaDevices.getUserMedia` ile kamera + mikrofon
- * izni istenir ve SentryHealth web sitesindeki WebSocket sinyal sunucusuna
- * (`/rtc`) bağlanılır. Odadaki hekim/ebe eşiyle SDP/ICE değişimi yapılıp uzak
- * akış ekrana yansıtılır. Kamera olmasa bile (VM/izin reddi) bir veri kanalı
- * ile P2P bağlantı kurulur ve canlı vital metadata karşı tarafa aktarılır.
- * Görüşme bitince tüm medya track'leri durdurulur, PeerConnection ve WebSocket
- * kapatılarak donanım kaynakları serbest bırakılır.
+ * SentryHealth web sitesinin WebSocket sinyal sunucusuna
+ * (`/api/webrtc/signaling`) bağlanır ve hekim/hemşire paneliyle aynı protokolü
+ * konuşur:
+ *
+ *   1. Bağlanınca `triage-lobby` odasına katılır.
+ *   2. "incoming-call" yayını (broadcast) ile hasta bilgisini panele duyurur.
+ *   3. Panel aramayı kabul edince ("call-accepted") çağrı odasına geçilir.
+ *   4. `signal` mesajlarıyla (SimplePeer uyumlu SDP/ICE) P2P görüşme kurulur.
+ *
+ * Kamera/mikrofon olmasa bile (VM veya izin reddi) sinyalleşme alıcı
+ * (receive-only) modda sürer. Görüşme bitince tüm medya track'leri durdurulur,
+ * PeerConnection ve WebSocket kapatılarak kaynaklar serbest bırakılır.
  */
 export interface IncomingReferral {
   level: string;
@@ -20,32 +29,44 @@ export interface IncomingReferral {
   message: string;
 }
 
+export interface CallPatient {
+  nationalId: string;
+  name: string;
+}
+
 export interface LiveVideoPanelProps {
   active: boolean;
   muted: boolean;
-  /** Canlı oda anahtarı (ör. sentry-triage-mahmut-123). */
+  /** Bu görüşme için üretilen benzersiz çağrı odası (ör. call-abc123). */
   roomId: string;
   /** Bu eşin rolü (ör. "patient" | "mother"). */
   role?: string;
-  /** Karşı tarafın (hekim/ebe) ekranına aktarılacak canlı vital metadata. */
+  /** Hekim/hemşire paneline duyurulacak hasta kimliği. */
+  patient?: CallPatient;
+  /** Karşı tarafa (veri kanalı ile) aktarılacak canlı vital metadata. */
   metadata?: string;
   /** İzin reddi / donanım / sinyal hatası mesajı için geri çağrım. */
   onError?: (message: string) => void;
   /** Bağlantı durumu güncellemeleri (ör. "Hekime bağlanıldı"). */
   onStatus?: (message: string) => void;
-  /** Hekim/ebe panelinden gelen canlı sevk kararı. */
+  /** Karşı taraftan (veri kanalı) gelen canlı sevk kararı. */
   onReferral?: (referral: IncomingReferral) => void;
+}
+
+/** SimplePeer'ın gönderdiği sinyal yükü (SDP veya ICE adayı). */
+interface PeerSignal {
+  type?: string;
+  sdp?: string;
+  candidate?: RTCIceCandidateInit;
 }
 
 interface SignalMessage {
   type: string;
+  peerId?: string;
+  roomId?: string;
+  peers?: string[];
   from?: string;
-  id?: string;
-  sdp?: RTCSessionDescriptionInit;
-  candidate?: RTCIceCandidateInit;
-  peers?: { id: string; role: string; name: string }[];
-  text?: string;
-  referral?: IncomingReferral;
+  data?: PeerSignal | { kind?: string; roomId?: string; referral?: IncomingReferral };
 }
 
 export default function LiveVideoPanel({
@@ -53,6 +74,7 @@ export default function LiveVideoPanel({
   muted,
   roomId,
   role = "patient",
+  patient,
   metadata,
   onError,
   onStatus,
@@ -64,14 +86,19 @@ export default function LiveVideoPanel({
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const dcRef = useRef<RTCDataChannel | null>(null);
-  const peerIdRef = useRef<string | null>(null);
+  const myPeerIdRef = useRef<string | null>(null);
+  const remotePeerIdRef = useRef<string | null>(null);
+  const inCallRoomRef = useRef(false);
   const [connected, setConnected] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
 
   useEffect(() => {
     if (!active) return;
     let cancelled = false;
+    setConnected(false);
     setPermissionDenied(false);
+    inCallRoomRef.current = false;
+    remotePeerIdRef.current = null;
     const localEl = localVideoRef.current;
     const remoteEl = remoteVideoRef.current;
 
@@ -81,43 +108,10 @@ export default function LiveVideoPanel({
     };
 
     const sendMeta = () => {
-      if (!metadata) return;
-      const payload = { type: "meta", text: metadata, to: peerIdRef.current ?? undefined };
-      send(payload);
       const dc = dcRef.current;
-      if (dc && dc.readyState === "open") {
+      if (metadata && dc && dc.readyState === "open") {
         dc.send(JSON.stringify({ type: "meta", text: metadata }));
       }
-    };
-
-    const ensurePc = (): RTCPeerConnection => {
-      if (pcRef.current) return pcRef.current;
-      const pc = new RTCPeerConnection({ iceServers: RTC_ICE_SERVERS });
-      const stream = streamRef.current;
-      if (stream) stream.getTracks().forEach((t) => pc.addTrack(t, stream));
-      pc.ontrack = (e) => {
-        if (remoteVideoRef.current) {
-          remoteVideoRef.current.srcObject = e.streams[0];
-          void remoteVideoRef.current.play().catch(() => undefined);
-        }
-      };
-      pc.onicecandidate = (e) => {
-        if (e.candidate) send({ type: "candidate", candidate: e.candidate, to: peerIdRef.current ?? undefined });
-      };
-      pc.onconnectionstatechange = () => {
-        if (cancelled) return;
-        if (pc.connectionState === "connected") {
-          setConnected(true);
-          onStatus?.("Hekim/ebe ile canlı bağlantı kuruldu");
-          sendMeta();
-        } else if (pc.connectionState === "failed" || pc.connectionState === "disconnected") {
-          setConnected(false);
-          onStatus?.("Bağlantı koptu");
-        }
-      };
-      pc.ondatachannel = (e) => bindDataChannel(e.channel);
-      pcRef.current = pc;
-      return pc;
     };
 
     const bindDataChannel = (channel: RTCDataChannel) => {
@@ -125,31 +119,116 @@ export default function LiveVideoPanel({
       channel.onopen = () => sendMeta();
       channel.onmessage = (ev) => {
         try {
-          const data = JSON.parse(ev.data as string) as SignalMessage;
-          if (data.type === "referral" && data.referral) onReferral?.(data.referral);
+          const data = JSON.parse(ev.data as string) as {
+            type?: string;
+            referral?: IncomingReferral;
+          };
+          if (data.type === "referral" && data.referral) {
+            onReferral?.(data.referral);
+          }
         } catch {
-          /* ignore */
+          /* yok say */
         }
       };
     };
 
-    const makeOffer = async () => {
-      const pc = ensurePc();
-      const channel = pc.createDataChannel("sentry-meta");
-      bindDataChannel(channel);
-      const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true });
-      await pc.setLocalDescription(offer);
-      send({ type: "offer", sdp: pc.localDescription ?? offer, to: peerIdRef.current ?? undefined });
+    const startPeer = (remotePeerId: string, initiator: boolean) => {
+      if (pcRef.current) return;
+      remotePeerIdRef.current = remotePeerId;
+      const pc = new RTCPeerConnection({ iceServers: RTC_ICE_SERVERS });
+      pcRef.current = pc;
+
+      const stream = streamRef.current;
+      if (stream) stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+
+      pc.ontrack = (e) => {
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = e.streams[0];
+          void remoteVideoRef.current.play().catch(() => undefined);
+        }
+      };
+
+      pc.onicecandidate = (e) => {
+        if (e.candidate) {
+          send({
+            type: "signal",
+            to: remotePeerId,
+            data: {
+              type: "candidate",
+              candidate: {
+                candidate: e.candidate.candidate,
+                sdpMLineIndex: e.candidate.sdpMLineIndex,
+                sdpMid: e.candidate.sdpMid,
+              },
+            },
+          });
+        }
+      };
+
+      pc.onconnectionstatechange = () => {
+        if (cancelled) return;
+        if (pc.connectionState === "connected") {
+          setConnected(true);
+          onStatus?.(
+            role === "mother"
+              ? "Ebe/hemşire ile canlı bağlantı kuruldu"
+              : "Hekim ile canlı bağlantı kuruldu",
+          );
+          sendMeta();
+        } else if (
+          pc.connectionState === "failed" ||
+          pc.connectionState === "disconnected"
+        ) {
+          setConnected(false);
+          onStatus?.("Bağlantı koptu");
+        }
+      };
+
+      pc.ondatachannel = (e) => bindDataChannel(e.channel);
+
+      if (initiator) {
+        bindDataChannel(pc.createDataChannel("sentry-meta"));
+        void (async () => {
+          const offer = await pc.createOffer({
+            offerToReceiveAudio: true,
+            offerToReceiveVideo: true,
+          });
+          await pc.setLocalDescription(offer);
+          if (!cancelled) {
+            send({ type: "signal", to: remotePeerId, data: pc.localDescription ?? offer });
+          }
+        })();
+      }
     };
 
-    const handleOffer = async (msg: SignalMessage) => {
-      peerIdRef.current = msg.from ?? null;
-      const pc = ensurePc();
-      if (msg.sdp) await pc.setRemoteDescription(msg.sdp);
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-      send({ type: "answer", sdp: pc.localDescription ?? answer, to: peerIdRef.current ?? undefined });
-      sendMeta();
+    const onRemoteSignal = async (from: string, data: PeerSignal) => {
+      if (!pcRef.current) {
+        // Karşı taraf başlatıcı: gelen offer ile eşi kur.
+        startPeer(from, false);
+      }
+      const pc = pcRef.current;
+      if (!pc) return;
+      remotePeerIdRef.current = from;
+
+      if (data.sdp && data.type) {
+        await pc.setRemoteDescription({
+          type: data.type as RTCSdpType,
+          sdp: data.sdp,
+        });
+        if (data.type === "offer") {
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          if (!cancelled) {
+            send({ type: "signal", to: from, data: pc.localDescription ?? answer });
+          }
+        }
+      } else if (data.candidate) {
+        try {
+          await pc.addIceCandidate(data.candidate);
+        } catch {
+          /* yok say */
+        }
+      }
     };
 
     const openSignaling = () => {
@@ -161,11 +240,14 @@ export default function LiveVideoPanel({
         return;
       }
       wsRef.current = ws;
+
       ws.onopen = () => {
-        onStatus?.("Sinyal sunucusuna bağlanıldı — hekim/ebe bekleniyor");
-        send({ type: "join", room: roomId, role, name: role === "mother" ? "Anne" : "Hasta" });
+        onStatus?.("Sinyal sunucusuna bağlanıldı");
+        send({ type: "join", roomId: LOBBY_ROOM });
       };
-      ws.onerror = () => onError?.("Sinyal sunucusuna bağlanılamadı: " + getSignalWsUrl());
+      ws.onerror = () =>
+        onError?.("Sinyal sunucusuna bağlanılamadı: " + getSignalWsUrl());
+
       ws.onmessage = async (ev) => {
         let msg: SignalMessage;
         try {
@@ -173,28 +255,51 @@ export default function LiveVideoPanel({
         } catch {
           return;
         }
-        if (msg.type === "joined") {
-          if (msg.peers && msg.peers.length) {
-            peerIdRef.current = msg.peers[0].id;
-            await makeOffer();
+
+        if (msg.type === "welcome") {
+          myPeerIdRef.current = msg.peerId ?? null;
+        } else if (msg.type === "joined") {
+          if (msg.peerId) myPeerIdRef.current = msg.peerId;
+          if (msg.roomId === LOBBY_ROOM) {
+            // Lobiye katıldık: hasta bilgisini panele duyur.
+            send({
+              type: "broadcast",
+              roomId: LOBBY_ROOM,
+              data: {
+                kind: "incoming-call",
+                roomId,
+                patient: patient ?? { nationalId: "", name: role === "mother" ? "Anne" : "Hasta" },
+              },
+            });
+            onStatus?.(
+              role === "mother"
+                ? "Nöbetçi ebe/hemşire aranıyor…"
+                : "Nöbetçi hekim aranıyor…",
+            );
+          } else if (msg.roomId === roomId) {
+            inCallRoomRef.current = true;
+            const mine = myPeerIdRef.current ?? "";
+            (msg.peers ?? []).forEach((peerId) =>
+              startPeer(peerId, mine.localeCompare(peerId) < 0),
+            );
+          }
+        } else if (msg.type === "broadcast") {
+          const data = msg.data as { kind?: string; roomId?: string } | undefined;
+          if (!data) return;
+          if (data.kind === "call-accepted" && data.roomId === roomId) {
+            onStatus?.("Arama kabul edildi — görüşmeye geçiliyor");
+            send({ type: "join", roomId });
+          } else if (data.kind === "call-rejected" && data.roomId === roomId) {
+            onError?.("Arama şu an yanıtlanamadı. Lütfen daha sonra tekrar deneyin.");
+            onStatus?.("Arama reddedildi");
           }
         } else if (msg.type === "peer-joined") {
-          peerIdRef.current = msg.id ?? null;
-          onStatus?.("Hekim/ebe katıldı — bağlantı kuruluyor");
-        } else if (msg.type === "offer") {
-          await handleOffer(msg);
-        } else if (msg.type === "answer") {
-          if (pcRef.current && msg.sdp) await pcRef.current.setRemoteDescription(msg.sdp);
-        } else if (msg.type === "candidate") {
-          if (pcRef.current && msg.candidate) {
-            try {
-              await pcRef.current.addIceCandidate(msg.candidate);
-            } catch {
-              /* ignore */
-            }
+          if (inCallRoomRef.current && msg.peerId) {
+            const mine = myPeerIdRef.current ?? "";
+            startPeer(msg.peerId, mine.localeCompare(msg.peerId) < 0);
           }
-        } else if (msg.type === "referral" && msg.referral) {
-          onReferral?.(msg.referral);
+        } else if (msg.type === "signal") {
+          if (msg.from && msg.data) await onRemoteSignal(msg.from, msg.data as PeerSignal);
         } else if (msg.type === "peer-left") {
           setConnected(false);
           onStatus?.("Karşı taraf ayrıldı");
@@ -239,7 +344,7 @@ export default function LiveVideoPanel({
         try {
           dcRef.current.close();
         } catch {
-          /* ignore */
+          /* yok say */
         }
         dcRef.current = null;
       }
@@ -248,15 +353,12 @@ export default function LiveVideoPanel({
         pcRef.current = null;
       }
       if (wsRef.current) {
-        try {
-          if (wsRef.current.readyState === WebSocket.OPEN) wsRef.current.send(JSON.stringify({ type: "bye" }));
-        } catch {
-          /* ignore */
-        }
         wsRef.current.close();
         wsRef.current = null;
       }
-      peerIdRef.current = null;
+      myPeerIdRef.current = null;
+      remotePeerIdRef.current = null;
+      inCallRoomRef.current = false;
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((t) => t.stop());
         streamRef.current = null;
@@ -264,7 +366,7 @@ export default function LiveVideoPanel({
       if (localEl) localEl.srcObject = null;
       if (remoteEl) remoteEl.srcObject = null;
     };
-  }, [active, roomId, role, metadata, onError, onStatus, onReferral]);
+  }, [active, roomId, role, patient, metadata, onError, onStatus, onReferral]);
 
   // Mikrofon aç/kapa: ses track'ini etkinleştir/pasifleştir.
   useEffect(() => {
