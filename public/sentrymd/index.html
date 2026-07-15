@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SentryMD — Doktor / Hemşire Paneli</title>
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <section id="login-screen" class="smd-login">
+    <div class="smd-login-card">
+      <h1>SentryMD</h1>
+      <p class="smd-subtitle">Rol tabanlı doktor / hemşire / yönetici girişi</p>
+      <div id="login-error" class="smd-error smd-hidden"></div>
+      <form id="login-form">
+        <div class="smd-form-group">
+          <label for="username">Kullanıcı adı</label>
+          <input id="username" name="username" type="text" placeholder="dr.ahmet" autocomplete="username" required />
+        </div>
+        <div class="smd-form-group">
+          <label for="password">Şifre</label>
+          <input id="password" name="password" type="password" placeholder="••••••" autocomplete="current-password" required />
+        </div>
+        <button type="submit" class="smd-btn smd-btn-primary" style="width:100%">Giriş Yap</button>
+      </form>
+      <div style="margin-top:18px; font-size:0.78rem; color:var(--md-muted)">
+        <strong>Demo hesaplar:</strong><br />
+        <code>dr.ahmet</code> / <code>dr123</code> — Doktor<br />
+        <code>hs.ayse</code> / <code>nurse123</code> — Hemşire<br />
+        <code>yönetici</code> / <code>yönetici123</code> — Yönetici
+      </div>
+    </div>
+  </section>
+
+  <section id="app-shell" class="smd-hidden" style="flex:1; display:flex; flex-direction:column;">
+    <header class="smd-header">
+      <div class="smd-header-brand">
+        <div class="smd-logo">MD</div>
+        <div>
+          <div class="smd-header-title">SentryMD</div>
+          <div style="font-size:0.72rem; color:var(--md-muted)">Tele-Tıp &amp; Hasta Yönetimi</div>
+        </div>
+      </div>
+      <div class="smd-header-meta">
+        <span id="user-name">—</span>
+        <span id="user-role" class="smd-role-badge">—</span>
+        <button id="logout-btn" class="smd-btn smd-btn-ghost">Çıkış</button>
+      </div>
+    </header>
+
+    <main class="smd-main">
+      <div class="smd-grid">
+        <div class="smd-card" style="display:flex; flex-direction:column; gap:12px;">
+          <h2>Hasta Listesi</h2>
+          <input id="patient-search" class="smd-patient-search" type="search" placeholder="Hasta adı veya T.C. kimlik no ile ara…" />
+          <div style="overflow:auto; flex:1;">
+            <table class="smd-patient-table">
+              <thead>
+                <tr>
+                  <th>Ad Soyad</th>
+                  <th>T.C. Kimlik No</th>
+                  <th>Yaş</th>
+                  <th>Kronik</th>
+                  <th>Risk</th>
+                </tr>
+              </thead>
+              <tbody id="patients-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="smd-card smd-call-panel">
+          <h2>Tele-Tıp Görüşmesi</h2>
+          <div class="smd-room-input">
+            <input id="room-id" type="text" placeholder="Oda adı (örn: hasta-1)" />
+            <button id="join-room-btn" class="smd-btn smd-btn-secondary">Odaya Gir</button>
+          </div>
+          <div class="smd-room-input">
+            <button id="create-room-btn" class="smd-btn smd-btn-ghost" style="flex:1">Yeni Oda Oluştur</button>
+            <button id="leave-room-btn" class="smd-btn smd-btn-danger smd-hidden">Odayı Terket</button>
+          </div>
+          <div id="call-status" class="smd-status">Bekleniyor…</div>
+          <div id="videos" class="smd-video-grid">
+            <div class="smd-video-box" id="local-video-box">
+              <video id="local-video" autoplay muted playsinline></video>
+              <span class="smd-video-label">Siz</span>
+            </div>
+          </div>
+          <div class="smd-card" style="background:var(--md-primary-soft); border-color:#bbf7d0;">
+            <strong>WebRTC Signaling Adresi</strong>
+            <code id="signaling-url" style="display:block; margin-top:6px; font-size:0.78rem; word-break:break-all;">wss://…/api/webrtc/signaling</code>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="smd-footer-note">
+      <span>SentryMD — KVKK uyumlu, hasta verileri statik demo verisidir.</span>
+      <span id="connection-dot">●</span>
+    </footer>
+  </section>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

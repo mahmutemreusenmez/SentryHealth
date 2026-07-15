@@ -1,5 +1,6 @@
-(() => {
-  const { t } = window.SentryI18n;
+import { patients as STATIC_PATIENTS, analytics as STATIC_ANALYTICS } from './data/patientsMockData.js';
+
+const { t } = window.SentryI18n;
   const i18n = window.SentryI18n;
   const POLL_MS = 2500;
 
@@ -238,7 +239,6 @@
     viewAnalytics: document.getElementById('view-analytics'),
     viewReports: document.getElementById('view-reports'),
     viewTelemedicine: document.getElementById('view-telemedicine'),
-    viewConnect: document.getElementById('view-connect'),
     viewVoice: document.getElementById('view-voice'),
     aiSmsPanel: document.getElementById('ai-sms-panel'),
     voicePanel: document.getElementById('voice-panel'),
@@ -543,7 +543,6 @@
     if (els.viewReports) els.viewReports.classList.toggle('hidden', view !== 'reports');
     if (els.viewTelemedicine) els.viewTelemedicine.classList.toggle('hidden', view !== 'telemedicine');
     if (els.viewVoice) els.viewVoice.classList.toggle('hidden', view !== 'voice');
-    if (els.viewConnect) els.viewConnect.classList.toggle('hidden', view !== 'connect');
     if (els.pageTitle) els.pageTitle.textContent = t('page.' + view) || 'SentryHealth';
     document.querySelectorAll('.nav-item').forEach((item) => {
       item.classList.toggle('active', item.dataset.view === view);
@@ -552,7 +551,6 @@
     if (view === 'settings') loadSettings();
     if (view === 'telemedicine') { renderTelemedicine(true); startTeleSim(); } else { stopTeleSim(); }
     if (view === 'voice') renderVoice(true);
-    if (view === 'connect') { startConnectStream(); } else { stopConnectStream(); }
     if (lastData) render(lastData);
   }
 
@@ -562,79 +560,6 @@
       if (item.dataset.view) switchView(item.dataset.view);
     });
   });
-
-  /* ---------- SentryConnect: FHIR Interoperability Stream ---------- */
-  let connectInterval = null;
-  let connectMsgCount = 14382;
-
-  function buildFhirEntry() {
-    const patients = (lastData && lastData.patients) || [];
-    const p = patients.length ? patients[Math.floor(Math.random() * Math.min(patients.length, 300))] : null;
-    const latest = (p && p.latest) || {};
-    const sources = ['video-triage', 'sentry-companion-ai', 'home-vitals'];
-    const kinds = [
-      { code: 'Blood Pressure', loinc: '85354-9', value: Number(latest.bloodPressureSystolic) || 120, unit: 'mmHg' },
-      { code: 'Heart Rate', loinc: '8867-4', value: Number(latest.heartRate) || 76, unit: 'beats/min' },
-      { code: 'Oxygen Saturation', loinc: '2708-6', value: Number(latest.oxygenSaturation) || 96, unit: '%' },
-      { code: 'Body Temperature', loinc: '8310-5', value: Number(latest.temperature) || 36.6, unit: 'Cel' },
-    ];
-    const kind = kinds[Math.floor(Math.random() * kinds.length)];
-    return {
-      resourceType: 'Observation',
-      status: 'final',
-      code: kind.code,
-      loinc: kind.loinc,
-      subject: p ? `Patient/${p.displayCode || p.pseudonym.slice(0, 8)}` : 'Patient/H-00',
-      source: sources[Math.floor(Math.random() * sources.length)],
-      valueQuantity: { value: kind.value, unit: kind.unit },
-    };
-  }
-
-  function pushFhirLog() {
-    const consoleEl = document.getElementById('fhir-console');
-    if (!consoleEl) return;
-    const entry = buildFhirEntry();
-    const time = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    const json = JSON.stringify({
-      resourceType: entry.resourceType,
-      status: entry.status,
-      code: entry.code,
-      valueQuantity: entry.valueQuantity,
-    }, null, 2);
-    const block = document.createElement('div');
-    block.className = 'fhir-log-entry';
-    block.innerHTML = `
-      <div class="fhir-log-meta">
-        <span class="fhir-log-time">${escapeHtml(time)}</span>
-        <span class="fhir-log-source">${escapeHtml(entry.source)}</span>
-        <span class="fhir-log-subject">${escapeHtml(entry.subject)}</span>
-        <span class="fhir-log-ok">HL7 FHIR v4.0 ✓</span>
-      </div>
-      <pre>${escapeHtml(json)}</pre>`;
-    consoleEl.prepend(block);
-    while (consoleEl.children.length > 6) consoleEl.removeChild(consoleEl.lastChild);
-
-    connectMsgCount += 1;
-    const msgEl = document.getElementById('connect-msg-count');
-    const latEl = document.getElementById('connect-latency');
-    const upEl = document.getElementById('connect-uptime');
-    if (msgEl) msgEl.textContent = connectMsgCount.toLocaleString('tr-TR');
-    if (latEl) latEl.textContent = `${38 + Math.floor(Math.random() * 24)} ms`;
-    if (upEl) upEl.textContent = '%99,98';
-  }
-
-  function startConnectStream() {
-    stopConnectStream();
-    pushFhirLog();
-    connectInterval = setInterval(pushFhirLog, 2600);
-  }
-
-  function stopConnectStream() {
-    if (connectInterval) {
-      clearInterval(connectInterval);
-      connectInterval = null;
-    }
-  }
 
   /* ---------- Tele-Tıp Canlı İzlem ---------- */
   let teleAnimFrame = null;
@@ -787,6 +712,30 @@
   }
 
   /* ---------- Admin ---------- */
+  const DOCTOR_TITLES = ['Uzm. Dr.', 'Doç. Dr.', 'Prof. Dr.', 'Op. Dr.'];
+  const DOCTOR_BRANCHES = ['Kardiyoloji', 'Endokrinoloji', 'Göğüs Hastalıkları', 'İç Hastalıkları (Dahiliye)', 'Nefroloji', 'Nöroloji'];
+  const SECRETARY_NAMES = ['Ayşe Kaya', 'Fatma Demir', 'Merve Yıldız', 'Elif Çelik', 'Zeynep Aydın', 'Hatice Şahin'];
+
+  function doctorSeed(username) {
+    let h = 0;
+    const s = String(username || '');
+    for (let i = 0; i < s.length; i += 1) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    return h;
+  }
+
+  function doctorClinicalProfile(d) {
+    const seed = doctorSeed(d.username);
+    const hasTitle = /dr\.|prof|doç|uzm|op\./i.test(d.displayName || '');
+    return {
+      title: hasTitle ? '' : DOCTOR_TITLES[seed % DOCTOR_TITLES.length],
+      diplomaNo: `DT-${String(100000 + (seed % 900000))}`,
+      branch: DOCTOR_BRANCHES[seed % DOCTOR_BRANCHES.length],
+      room: `P-${String(101 + (seed % 40))}`,
+      secretary: SECRETARY_NAMES[seed % SECRETARY_NAMES.length],
+      secretaryExt: String(1100 + (seed % 400)),
+    };
+  }
+
   async function loadDoctors() {
     if (!els.adminDoctorsBody) return;
     let serverDoctors = [];
@@ -799,21 +748,64 @@
     }
     const doctors = serverDoctors.concat(getLocalDoctors());
     if (doctors.length === 0) {
-      els.adminDoctorsBody.innerHTML = `<tr><td colspan="3" class="table-empty">${escapeHtml(t('admin.empty'))}</td></tr>`;
+      els.adminDoctorsBody.innerHTML = `<p class="table-empty">${escapeHtml(t('admin.empty'))}</p>`;
       return;
     }
-    els.adminDoctorsBody.innerHTML = doctors.map((d) => `
-      <tr>
-        <td>${escapeHtml(d.username)}</td>
-        <td>${escapeHtml(d.displayName)}</td>
-        <td class="text-right">
-          <button class="btn btn-danger" data-username="${escapeHtml(d.username)}">${escapeHtml(t('common.delete'))}</button>
-        </td>
-      </tr>`).join('');
+    els.adminDoctorsBody.innerHTML = doctors.map((d) => {
+      const prof = doctorClinicalProfile(d);
+      const fullName = prof.title ? `${prof.title} ${d.displayName}` : d.displayName;
+      return `
+      <article class="doctor-card">
+        <div class="doctor-card-top">
+          <div class="doctor-avatar">${escapeHtml(String(d.displayName || '?').replace(/^(uzm\.|doç\.|prof\.|op\.|dr\.)\s*/gi, '').slice(0, 1).toUpperCase())}</div>
+          <div>
+            <strong>${escapeHtml(fullName)}</strong>
+            <span class="doctor-branch">${escapeHtml(prof.branch)} · Poliklinik Oda ${escapeHtml(prof.room)}</span>
+          </div>
+          <button class="btn btn-danger btn-sm doctor-delete" data-username="${escapeHtml(d.username)}">${escapeHtml(t('common.delete'))}</button>
+        </div>
+        <div class="doctor-card-body">
+          <div class="doctor-field"><span>Kullanıcı Adı</span><strong>${escapeHtml(d.username)}</strong></div>
+          <div class="doctor-field"><span>Diploma Tescil No</span><strong>${escapeHtml(prof.diplomaNo)}</strong></div>
+          <div class="doctor-field"><span>Tıbbi Sekreter</span><strong>${escapeHtml(prof.secretary)}</strong></div>
+          <div class="doctor-field"><span>Sekreter Dahili</span><strong>${escapeHtml(prof.secretaryExt)}</strong></div>
+        </div>
+      </article>`;
+    }).join('');
 
     els.adminDoctorsBody.querySelectorAll('button[data-username]').forEach((btn) => {
       btn.addEventListener('click', () => deleteDoctor(btn.dataset.username));
     });
+    renderTriageAnalytics();
+  }
+
+  function renderTriageAnalytics() {
+    const box = document.getElementById('triage-analytics');
+    if (!box) return;
+    const patients = (lastData && lastData.patients) || [];
+    const counts = { emergency: 0, polyclinic: 0, home: 0 };
+    patients.forEach((p) => {
+      if (p.clinicalStatus === 'Kritik') counts.emergency += 1;
+      else if (p.clinicalStatus === 'Takip Altında' || p.clinicalStatus === 'Hekim Onayı Bekliyor') counts.polyclinic += 1;
+      else counts.home += 1;
+    });
+    const total = counts.emergency + counts.polyclinic + counts.home || 1;
+    const rows = [
+      { label: 'Acil Sevk', cls: 'red', value: counts.emergency },
+      { label: 'Poliklinik Sevk', cls: 'amber', value: counts.polyclinic },
+      { label: 'Evde Takip', cls: 'green', value: counts.home },
+    ];
+    box.innerHTML = rows.map((r) => {
+      const pct = Math.round((r.value / total) * 100);
+      return `
+      <div class="triage-bar-row">
+        <div class="triage-bar-meta">
+          <span class="triage-bar-label"><span class="triage-bar-dot ${r.cls}"></span>${escapeHtml(r.label)}</span>
+          <strong>${r.value} hasta · %${pct}</strong>
+        </div>
+        <div class="triage-bar-track"><div class="triage-bar-fill ${r.cls}" style="width:${pct}%"></div></div>
+      </div>`;
+    }).join('');
   }
 
   async function deleteDoctor(username) {
@@ -983,11 +975,34 @@
     if (els.systemLogs) els.systemLogs.textContent = t('settings.logsReady');
   });
 
+  const securityForm = document.getElementById('settings-security-form');
+  if (securityForm) {
+    securityForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const statusEl = document.getElementById('settings-security-status');
+      const fd = new FormData(securityForm);
+      const np = String(fd.get('newPassword') || '');
+      const np2 = String(fd.get('newPassword2') || '');
+      if (np !== np2) {
+        if (statusEl) { statusEl.textContent = 'Yeni şifreler eşleşmiyor.'; statusEl.className = 'settings-status status-error'; }
+        return;
+      }
+      if (np.length < 6) {
+        if (statusEl) { statusEl.textContent = 'Şifre en az 6 karakter olmalıdır.'; statusEl.className = 'settings-status status-error'; }
+        return;
+      }
+      securityForm.reset();
+      if (statusEl) { statusEl.textContent = 'Şifreniz güvenli şekilde güncellendi ve tüm oturumlar yenilendi.'; statusEl.className = 'settings-status status-ok'; }
+      addLog('Güvenlik: Hesap şifresi güncellendi.');
+    });
+  }
+
   /* ---------- Helpers ---------- */
   function setConnection(online) {
+    if (!els.connStatus) return;
     els.connStatus.classList.toggle('online', online);
     els.connStatus.classList.toggle('offline', !online);
-    els.connText.textContent = online ? t('status.online') : t('status.offline');
+    if (els.connText) els.connText.textContent = online ? t('status.online') : t('status.offline');
   }
 
   function fmtTime(ts) {
@@ -1050,7 +1065,7 @@
   }
 
   function displayName(p) {
-    return t('patient.display', { code: p.displayCode || p.pseudonym.slice(0, 8).toUpperCase() });
+    return p.name || t('patient.display', { code: p.displayCode || p.pseudonym.slice(0, 8).toUpperCase() });
   }
 
   function translateCondition(cg) {
@@ -1198,10 +1213,23 @@
     return `<span class="risk-chip ${level}">${escapeHtml(t('risk.' + level))}</span>`;
   }
 
+  const CLINICAL_STATUS_CLASSES = {
+    'Stabil': 'stable',
+    'Takip Altında': 'monitoring',
+    'Kritik': 'critical',
+    'Hekim Onayı Bekliyor': 'pending-approval',
+  };
+
+  function clinicalStatusBadge(status) {
+    if (!status) return '<span class="clinical-badge stable">Stabil</span>';
+    const cls = CLINICAL_STATUS_CLASSES[status] || 'stable';
+    return `<span class="clinical-badge ${cls}">${escapeHtml(status)}</span>`;
+  }
+
   function renderPatientsTable(patients) {
     if (!els.tableBody) return;
     if (patients.length === 0) {
-      els.tableBody.innerHTML = `<tr><td colspan="6" class="table-empty">${escapeHtml(t('patients.empty'))}</td></tr>`;
+      els.tableBody.innerHTML = `<tr><td colspan="7" class="table-empty">${escapeHtml(t('patients.empty'))}</td></tr>`;
       els.patientDetail.classList.add('hidden');
       if (els.patientsTablePager) els.patientsTablePager.innerHTML = '';
       return;
@@ -1214,11 +1242,12 @@
 
     els.tableBody.innerHTML = pagePatients.map((p) => `
       <tr data-pseudonym="${escapeHtml(p.pseudonym)}" class="${p.pseudonym === selectedPseudonym ? 'selected' : ''}">
-        <td data-label="${escapeHtml(t('patients.table.code'))}"><span class="code-chip">${escapeHtml(p.displayCode || p.pseudonym.slice(0, 8).toUpperCase())}</span></td>
-        <td class="mono" data-label="${escapeHtml(t('patients.table.pseudonym'))}">${escapeHtml(p.pseudonym)}</td>
+        <td data-label="${escapeHtml(t('patients.table.code'))}"><span class="code-chip">${escapeHtml(p.maskedNationalId || p.displayCode || p.pseudonym.slice(0, 8).toUpperCase())}</span></td>
+        <td class="mono" data-label="${escapeHtml(t('patients.table.pseudonym'))}">${escapeHtml(p.name || p.pseudonym)}</td>
         <td data-label="${escapeHtml(t('patients.table.age'))}">${escapeHtml(p.ageGroup || '—')}</td>
-        <td data-label="${escapeHtml(t('patients.table.condition'))}">${escapeHtml(translateCondition(p.conditionGroup))}</td>
+        <td data-label="${escapeHtml(t('patients.table.diagnosis'))}">${escapeHtml(p.diagnosis || translateCondition(p.conditionGroup))}</td>
         <td data-label="${escapeHtml(t('patients.table.latest'))}">${p.latest ? `${p.latest.heartRate} bpm / %${p.latest.oxygenSaturation}` : escapeHtml(t('patients.waiting'))}</td>
+        <td data-label="${escapeHtml(t('patients.table.status'))}">${clinicalStatusBadge(p.clinicalStatus)}</td>
         <td data-label="${escapeHtml(t('patients.table.risk'))}">${riskChip(p.risk.level)}</td>
       </tr>`).join('');
 
@@ -2314,7 +2343,7 @@
   }
 
   /* ---------- Scorecard & Bot Integration ---------- */
-  function getRespiratoryRate(h) {
+  function getRespiratoryRateForMews(h) {
     if (h && h.respiratoryRate) return Number(h.respiratoryRate);
     return 0;
   }
@@ -2324,7 +2353,7 @@
     const sys = Number(h.bloodPressureSystolic || 0);
     const temp = Number(h.temperature || 0);
     const spo2 = Number(h.oxygenSaturation || 0);
-    const rr = getRespiratoryRate(h);
+    const rr = getRespiratoryRateForMews(h);
 
     let score = 0;
     if (hr >= 130 || hr < 40) score += 2;
@@ -3504,21 +3533,9 @@
     renderPager(els.patientsPager, dashboardPage, total, (p) => { dashboardPage = p; render(data); });
   }
 
-  async function poll() {
-    try {
-      const res = await api('/api/dashboard/patients');
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await safeJson(res);
-      if (!data || !Array.isArray(data.patients)) throw new Error('invalid');
-      data.patients = data.patients.concat(getLocalPatients());
-      setConnection(true);
-      render(data);
-    } catch {
-      setConnection(false);
-      if (!lastData) {
-        render({ patients: getLocalPatients() });
-      }
-    }
+  function poll() {
+    setConnection(true);
+    render({ patients: STATIC_PATIENTS, analytics: STATIC_ANALYTICS });
   }
 
   /* ---------- Language ---------- */
@@ -3549,4 +3566,3 @@
 
   initLang();
   initAuth();
-})();

@@ -31,9 +31,13 @@ export interface InteractionLogEntry {
 export interface AnonymizedPatient {
   id: string;
   pseudonym: string;
+  name?: string;
+  nationalId?: string;
   ageGroup?: string;
   displayCode?: string;
   conditionGroup?: string;
+  diagnosis?: string;
+  clinicalStatus?: string;
   maskedNationalId?: string;
   phone?: string;
   contactChannel?: 'sms' | 'ai';

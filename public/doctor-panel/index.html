@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SentryMD — Doktor Paneli</title>
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Login (sadece doktor/hemşire) -->
+  <section id="login-screen" class="dp-login">
+    <div class="dp-login-card">
+      <h1>🩺 SentryMD Doktor Paneli</h1>
+      <p class="dp-subtitle">Bu panele yalnızca doktor ve hemşireler giriş yapabilir.</p>
+      <div id="login-error" class="dp-error dp-hidden"></div>
+      <form id="login-form">
+        <div class="dp-form-group">
+          <label for="username">Kullanıcı adı</label>
+          <input id="username" name="username" type="text" placeholder="dr.ahmet" autocomplete="username" required />
+        </div>
+        <div class="dp-form-group">
+          <label for="password">Şifre</label>
+          <input id="password" name="password" type="password" placeholder="••••••" autocomplete="current-password" required />
+        </div>
+        <button type="submit" class="dp-btn dp-btn-primary" style="width:100%">Giriş Yap</button>
+      </form>
+      <div class="dp-demo-info">
+        <strong>Demo hesaplar:</strong><br />
+        <code>dr.ahmet</code> / <code>dr123</code> — Doktor<br />
+        <code>hs.ayse</code> / <code>nurse123</code> — Hemşire
+      </div>
+    </div>
+  </section>
+
+  <!-- Panel -->
+  <section id="panel" class="dp-hidden" style="flex:1; display:flex; flex-direction:column;">
+    <header class="dp-header">
+      <div class="dp-header-brand">
+        <div class="dp-logo">MD</div>
+        <div>
+          <div class="dp-header-title">SentryMD Doktor Paneli</div>
+          <div class="dp-header-sub">Canlı Triyaj &amp; Kronik Takip</div>
+        </div>
+      </div>
+      <div class="dp-header-meta">
+        <span id="listener-status" class="dp-listener-status"><span id="listener-dot" class="dp-dot"></span><span id="listener-text">Dinleyici kapalı</span></span>
+        <span id="user-name">—</span>
+        <span id="user-role" class="dp-role-badge">—</span>
+        <button id="logout-btn" class="dp-btn dp-btn-ghost">Çıkış</button>
+      </div>
+    </header>
+
+    <main class="dp-main">
+      <!-- Sol: çağrı alanı -->
+      <div class="dp-card dp-call-area">
+        <h2>Canlı Triyaj Görüşmesi</h2>
+
+        <div id="call-idle" class="dp-call-idle">
+          <div class="dp-pulse">📡</div>
+          <strong>Gelen aramalar dinleniyor…</strong>
+          <span>Mobil uygulamadan bir triyaj araması geldiğinde burada göreceksiniz.</span>
+        </div>
+
+        <div id="call-active" class="dp-hidden" style="display:flex; flex-direction:column; gap:12px;">
+          <div class="dp-videos">
+            <div class="dp-video-box">
+              <video id="remote-video" autoplay playsinline></video>
+              <span class="dp-video-label" id="remote-label">Hasta</span>
+            </div>
+            <div class="dp-video-box">
+              <video id="local-video" autoplay muted playsinline></video>
+              <span class="dp-video-label">Siz</span>
+            </div>
+          </div>
+          <div id="call-status" class="dp-call-status">Bağlanıyor…</div>
+          <div class="dp-call-controls">
+            <button id="end-call-btn" class="dp-btn dp-btn-danger">📵 Görüşmeyi Bitir</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sağ: hasta kronik takip verileri -->
+      <div class="dp-card dp-sidebar">
+        <h2>Hasta Kronik Takip Verileri</h2>
+        <div id="patient-empty" class="dp-empty-side">Aktif arama yok. Arama geldiğinde hastanın verileri burada görünecek.</div>
+        <div id="patient-panel" class="dp-hidden">
+          <div class="dp-patient-name" id="p-name">—</div>
+          <div class="dp-patient-sub" id="p-sub">—</div>
+
+          <h2 style="margin-top:8px;">Son Ölçümler</h2>
+          <div class="dp-vitals-grid" id="p-vitals"></div>
+
+          <h2 style="margin-top:14px;">Tanı &amp; Eşikler</h2>
+          <ul class="dp-list" id="p-thresholds"></ul>
+
+          <h2 style="margin-top:14px;">Etkileşim Geçmişi</h2>
+          <ul class="dp-list" id="p-log"></ul>
+
+          <h2 style="margin-top:14px;">Yakını</h2>
+          <ul class="dp-list" id="p-caregiver"></ul>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <!-- Gelen arama pop-up -->
+  <div id="incoming-modal" class="dp-modal-backdrop dp-hidden">
+    <div class="dp-modal">
+      <div class="dp-ring-icon">📞</div>
+      <h3>Gelen Canlı Triyaj Araması</h3>
+      <div class="caller" id="incoming-caller">Hasta arıyor…</div>
+      <div class="dp-modal-actions">
+        <button id="reject-call-btn" class="dp-btn dp-btn-ghost">Reddet</button>
+        <button id="accept-call-btn" class="dp-btn dp-btn-primary">✅ Kabul Et</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
