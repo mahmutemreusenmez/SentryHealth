@@ -10,24 +10,31 @@ interface Client {
 const rooms = new Map<string, Map<string, WebSocket>>();
 const peerMap = new Map<string, WebSocket>();
 
-const server = http.createServer((req, res) => {
-  res.writeHead(200, {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
+/**
+ * WebRTC sinyal protokolünü mevcut bir HTTP sunucusuna bağlar.
+ *
+ * Aynı oda tabanlı mantık hem bağımsız (Vercel) sunucuda hem de yerel Express
+ * sunucusunda (canlı triyaj) yeniden kullanılır. Protokol:
+ *  - welcome / join -> joined / peer-joined / peer-left
+ *  - broadcast (oda içi duyuru) ve signal (SDP/ICE hedefli aktarım)
+ */
+export function attachWebrtcSignaling(
+  server: http.Server,
+  path = '/api/webrtc/signaling',
+): WebSocketServer {
+  // noServer + yönlendirmeli upgrade: aynı HTTP sunucusunda /rtc gibi başka bir
+  // WebSocket yoluyla birlikte çakışmadan çalışabilmesi için.
+  const wss = new WebSocketServer({ noServer: true });
+  server.on('upgrade', (req, socket, head) => {
+    if ((req.url ?? '').split('?')[0] === path) {
+      wss.handleUpgrade(req, socket, head, (ws) => wss.emit('connection', ws, req));
+    }
   });
-  const host = req.headers.host || 'localhost';
-  res.end(
-    JSON.stringify({
-      ok: true,
-      type: 'webrtc-signaling',
-      url: `wss://${host}/api/webrtc/signaling`,
-    }),
-  );
-});
+  wss.on('connection', handleConnection);
+  return wss;
+}
 
-const wss = new WebSocketServer({ server, path: '/api/webrtc/signaling' });
-
-wss.on('connection', (ws) => {
+function handleConnection(ws: WebSocket) {
   const peerId = `${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
   const client: Client = { ws, peerId, roomId: null };
   peerMap.set(peerId, ws);
@@ -113,6 +120,24 @@ wss.on('connection', (ws) => {
       }
     }
   });
+}
+
+// Bağımsız çalıştırma (ör. Vercel): kendi HTTP sunucusunu oluşturup bağlar.
+const server = http.createServer((req, res) => {
+  res.writeHead(200, {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+  });
+  const host = req.headers.host || 'localhost';
+  res.end(
+    JSON.stringify({
+      ok: true,
+      type: 'webrtc-signaling',
+      url: `wss://${host}/api/webrtc/signaling`,
+    }),
+  );
 });
+
+attachWebrtcSignaling(server);
 
 export default server;
