@@ -57,7 +57,7 @@ export default function VideoTriageScreen() {
   // İzin reddedilince uygulamayı çökertme; şık izin talep modalı göster.
   const onPanelError = useCallback((message: string) => {
     setError(message);
-    if (message.includes("izin") || message.includes("desteklemiyor")) {
+    if (message.includes("izn") || message.includes("desteklemiyor")) {
       setPermissionModal(true);
     }
   }, []);

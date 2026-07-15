@@ -79,7 +79,7 @@ export default function BabyScreen() {
   // İzin reddedilince çökertme; şık e-Nabız izin modalını göster.
   const onPanelError = useCallback((message: string) => {
     setError(message);
-    if (message.includes("izin") || message.includes("desteklemiyor")) {
+    if (message.includes("izn") || message.includes("desteklemiyor")) {
       setPermissionModal(true);
     }
   }, []);
