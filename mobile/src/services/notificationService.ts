@@ -1,8 +1,19 @@
+import { Platform } from "react-native";
+
 import type {
   HealthTask,
   ScheduledNotification,
   SimNotification,
 } from "../data/types";
+
+/** Yaklaşan aşı bildirimi için gereken en az bilgi (BabyContext'ten gelir). */
+export interface VaccineReminderInput {
+  id: string;
+  name: string;
+  dose: string;
+  /** Planlanan tarih (ISO, YYYY-MM-DD). */
+  dueDate: string;
+}
 
 /**
  * Simüle edilmiş arka plan bildirim servisi.
@@ -36,12 +47,24 @@ function nextFireTime(time: string, leadMinutes: number): number {
   return fire.getTime();
 }
 
+/** İlaç görevi için özel, hastanın anlayacağı bildirim gövdesi üretir. */
+function taskBody(task: HealthTask): string {
+  if (task.category === "medication") {
+    return `İlaç Vakti: Lütfen ${task.title} almayı unutmayın.`;
+  }
+  return `${task.time} — ${task.title}${
+    task.detail ? ` (${task.detail})` : ""
+  } zamanı yaklaşıyor.`;
+}
+
 class ReminderService {
   private listeners = new Set<NotificationListener>();
   private simListeners = new Set<SimNotificationListener>();
   private scheduled: ScheduledNotification[] = [];
+  private vaccineScheduled: ScheduledNotification[] = [];
   private timer: ReturnType<typeof setInterval> | null = null;
   private expo: typeof import("expo-notifications") | null = null;
+  private channelReady = false;
 
   constructor() {
     // Native modül varsa yükle; yoksa sessizce simülasyon moduna geç.
@@ -83,16 +106,39 @@ class ReminderService {
       .map((task) => ({
         id: `notif-${task.id}`,
         taskId: task.id,
-        title: "Sağlık Hatırlatıcısı",
-        body: `${task.time} — ${task.title}${
-          task.detail ? ` (${task.detail})` : ""
-        } zamanı yaklaşıyor.`,
+        title:
+          task.category === "medication"
+            ? "İlaç Hatırlatıcısı"
+            : "Sağlık Hatırlatıcısı",
+        body: taskBody(task),
         fireAt: nextFireTime(task.time, REMINDER_LEAD_MINUTES),
         fired: false,
       }));
 
     void this.scheduleWithExpo();
     this.ensureRunning();
+  }
+
+  /**
+   * Yaklaşan aşı günleri için otonom yerel bildirim planlar (SentryBaby).
+   * Aşı gününün sabahı (09:00) tetiklenir; geçmiş günler bir sonraki güne alınır.
+   */
+  scheduleVaccines(vaccines: VaccineReminderInput[]): void {
+    const now = Date.now();
+    this.vaccineScheduled = vaccines.map((v) => {
+      const fire = new Date(`${v.dueDate}T09:00:00`);
+      const fireAt =
+        fire.getTime() <= now ? now + 5 * 60 * 1000 : fire.getTime();
+      return {
+        id: `vaccine-${v.id}`,
+        taskId: v.id,
+        title: "Aşı Zamanı Yaklaşıyor",
+        body: `SentryBaby: ${v.name} (${v.dose}) aşısının günü yaklaştı. Aile sağlığı merkezinden randevu alın.`,
+        fireAt,
+        fired: false,
+      };
+    });
+    void this.scheduleWithExpo();
   }
 
   /**
@@ -136,22 +182,39 @@ class ReminderService {
     this.listeners.forEach((listener) => listener(notif));
   }
 
+  /** Android bildirim kanalını (yalnızca bir kez) hazırlar. */
+  private async ensureAndroidChannel(): Promise<void> {
+    if (!this.expo || this.channelReady || Platform.OS !== "android") return;
+    await this.expo.setNotificationChannelAsync("sentry-reminders", {
+      name: "SentryCompanion Hatırlatıcılar",
+      importance: this.expo.AndroidImportance.HIGH,
+      lightColor: "#10b981",
+    });
+    this.channelReady = true;
+  }
+
   private async scheduleWithExpo(): Promise<void> {
     if (!this.expo) return;
     try {
       const { status } = await this.expo.getPermissionsAsync();
       if (status !== "granted") {
-        await this.expo.requestPermissionsAsync();
+        const req = await this.expo.requestPermissionsAsync();
+        if (!req.granted && req.status !== "granted") return;
       }
+      await this.ensureAndroidChannel();
       await this.expo.cancelAllScheduledNotificationsAsync();
-      for (const notif of this.scheduled) {
+      const all = [...this.scheduled, ...this.vaccineScheduled];
+      for (const notif of all) {
         const seconds = Math.max(
           1,
           Math.round((notif.fireAt - Date.now()) / 1000),
         );
         await this.expo.scheduleNotificationAsync({
           content: { title: notif.title, body: notif.body },
-          trigger: { seconds },
+          trigger:
+            Platform.OS === "android"
+              ? { seconds, channelId: "sentry-reminders" }
+              : { seconds },
         });
       }
     } catch {

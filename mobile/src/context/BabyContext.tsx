@@ -19,6 +19,7 @@ import type {
   GrowthMeasurement,
   VaccineEntry,
 } from "../data/types";
+import { reminderService } from "../services/notificationService";
 import { STORAGE_KEYS, loadJSON, saveJSON } from "../services/storageService";
 
 /** Aşı takvimindeki bir kaydın hesaplanmış (tarih + durum) görünümü. */
@@ -145,6 +146,21 @@ export function BabyProvider({ children }: { children: React.ReactNode }) {
     () => vaccines.filter((v) => v.upcoming || v.overdue),
     [vaccines],
   );
+
+  // Yaklaşan aşılar için otonom yerel bildirim planla (yalnızca yeni doğan varsa).
+  useEffect(() => {
+    if (!hydrated) return;
+    reminderService.scheduleVaccines(
+      hasNewborn
+        ? dueVaccines.map((v) => ({
+            id: v.id,
+            name: v.name,
+            dose: v.dose,
+            dueDate: v.dueDate,
+          }))
+        : [],
+    );
+  }, [hydrated, hasNewborn, dueVaccines]);
 
   const setHasNewborn = useCallback((value: boolean) => {
     setHasNewbornState(value);

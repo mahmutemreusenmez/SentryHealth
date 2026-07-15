@@ -8,10 +8,10 @@ import {
   LogIn,
   ShieldCheck,
 } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
-  ActivityIndicator,
+  Animated,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -22,7 +22,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { PressableScale } from "../components/ui";
 import { useAuth } from "../context/AuthContext";
+import { successFeedback } from "../services/hapticsService";
 import {
   TEST_ACCOUNTS,
   loginSchema,
@@ -32,6 +34,21 @@ import {
 export default function AuthScreen() {
   const { auth, login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const progress = useRef(new Animated.Value(0)).current;
+
+  // Giriş sırasında ~1.5 sn'lik "Kimlik Doğrulanıyor…" ilerleme çubuğu.
+  useEffect(() => {
+    if (auth.isLoading) {
+      progress.setValue(0);
+      Animated.timing(progress, {
+        toValue: 1,
+        duration: 1500,
+        useNativeDriver: false,
+      }).start();
+    } else {
+      progress.setValue(0);
+    }
+  }, [auth.isLoading, progress]);
 
   const {
     control,
@@ -43,9 +60,10 @@ export default function AuthScreen() {
     mode: "onTouched",
   });
 
-  const onSubmit = handleSubmit((values) =>
-    login(values.nationalId, values.password),
-  );
+  const onSubmit = handleSubmit((values) => {
+    successFeedback();
+    login(values.nationalId, values.password);
+  });
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={["top", "bottom"]}>
@@ -176,22 +194,36 @@ export default function AuthScreen() {
             ) : null}
 
             {/* e-Devlet Kapısı ile Giriş Yap butonu */}
-            <Pressable
+            <PressableScale
               onPress={onSubmit}
               disabled={auth.isLoading}
-              className={`mt-2 flex-row items-center justify-center overflow-hidden rounded-2xl py-4 shadow-sm ${
-                auth.isLoading ? "bg-edevlet/70" : "bg-edevlet"
+              accessibilityRole="button"
+              accessibilityLabel="e-Devlet Kapısı ile giriş yap"
+              className={`mt-2 items-center justify-center overflow-hidden rounded-2xl py-4 shadow-sm ${
+                auth.isLoading ? "bg-edevlet/80" : "bg-edevlet"
               }`}
             >
               {auth.isLoading ? (
-                <>
-                  <ActivityIndicator color="#ffffff" />
-                  <Text className="ml-2 text-sm font-bold text-white">
-                    Doğrulanıyor...
+                <View className="w-full items-center">
+                  <Text className="text-sm font-bold text-white">
+                    Kimlik Doğrulanıyor…
                   </Text>
-                </>
+                  <View className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/25">
+                    <Animated.View
+                      style={{
+                        height: "100%",
+                        borderRadius: 999,
+                        backgroundColor: "#ffffff",
+                        width: progress.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: ["8%", "100%"],
+                        }),
+                      }}
+                    />
+                  </View>
+                </View>
               ) : (
-                <>
+                <View className="flex-row items-center justify-center">
                   <View className="mr-2 h-6 w-6 items-center justify-center rounded bg-white">
                     <Text className="text-[13px] font-black text-edevlet">e</Text>
                   </View>
@@ -199,9 +231,9 @@ export default function AuthScreen() {
                     e-Devlet Kapısı ile Giriş Yap
                   </Text>
                   <LogIn size={16} color="#ffffff" style={{ marginLeft: 6 }} />
-                </>
+                </View>
               )}
-            </Pressable>
+            </PressableScale>
 
             <Text className="mt-3 text-center text-[10px] text-muted">
               Bu bir simülasyondur; gerçek e-Devlet doğrulaması yapılmaz.

@@ -1,9 +1,66 @@
 import type { LucideIcon } from "lucide-react-native";
 import { CheckCircle2 } from "lucide-react-native";
-import React from "react";
-import { Text, View } from "react-native";
+import React, { useRef } from "react";
+import {
+  Animated,
+  Pressable,
+  Text,
+  View,
+  type GestureResponderEvent,
+  type PressableProps,
+} from "react-native";
 
 import type { ScreeningRecommendation } from "../data/types";
+import { tapFeedback } from "../services/hapticsService";
+
+/**
+ * Basıldığında hafifçe küçülen (mikro-animasyon) ve dokunsal geri bildirim
+ * veren buton. Yaşlı ve yeni ebeveyn dostu premium his için tüm ana
+ * aksiyonlarda kullanılır. `Pressable` ile bire bir aynı arayüze sahiptir.
+ */
+export function PressableScale({
+  children,
+  onPress,
+  onPressIn,
+  onPressOut,
+  disabled,
+  style,
+  ...rest
+}: PressableProps) {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  const animateTo = (toValue: number) =>
+    Animated.spring(scale, {
+      toValue,
+      useNativeDriver: true,
+      speed: 40,
+      bounciness: 6,
+    }).start();
+
+  return (
+    <Animated.View style={{ transform: [{ scale }] }}>
+      <Pressable
+        {...rest}
+        disabled={disabled}
+        style={style}
+        onPressIn={(e: GestureResponderEvent) => {
+          if (!disabled) animateTo(0.96);
+          onPressIn?.(e);
+        }}
+        onPressOut={(e: GestureResponderEvent) => {
+          animateTo(1);
+          onPressOut?.(e);
+        }}
+        onPress={(e: GestureResponderEvent) => {
+          if (!disabled) tapFeedback();
+          onPress?.(e);
+        }}
+      >
+        {children}
+      </Pressable>
+    </Animated.View>
+  );
+}
 
 export function Card({
   children,

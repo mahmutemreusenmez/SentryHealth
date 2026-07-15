@@ -10,11 +10,13 @@ import {
   VideoOff,
 } from "lucide-react-native";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import Barcode from "../components/Barcode";
 import LiveVideoPanel, { type IncomingReferral } from "../components/LiveVideoPanel";
+import PermissionModal from "../components/PermissionModal";
+import { PressableScale } from "../components/ui";
 import { usePatient } from "../context/PatientContext";
 import type { ReferralLevel, TriageReferral } from "../data/types";
 import { triageChannel } from "../services/triageChannel";
@@ -49,6 +51,23 @@ export default function VideoTriageScreen() {
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [referral, setReferral] = useState<TriageReferral | null>(null);
+  const [permissionModal, setPermissionModal] = useState(false);
+  const [attemptKey, setAttemptKey] = useState(0);
+
+  // İzin reddedilince uygulamayı çökertme; şık izin talep modalı göster.
+  const onPanelError = useCallback((message: string) => {
+    setError(message);
+    if (message.includes("izin") || message.includes("desteklemiyor")) {
+      setPermissionModal(true);
+    }
+  }, []);
+
+  // "İzin Ver ve Tekrar Dene": paneli yeniden kur (getUserMedia yeniden istenir).
+  const retryPermission = useCallback(() => {
+    setPermissionModal(false);
+    setError(null);
+    setAttemptKey((k) => k + 1);
+  }, []);
 
   // Hastanın canlı metadata'sı (hekim ekranına aktarılır).
   const metadata = useMemo(() => {
@@ -156,12 +175,13 @@ export default function VideoTriageScreen() {
         >
           {/* Gerçek canlı kamera akışı (aktifken) */}
           <LiveVideoPanel
+            key={attemptKey}
             active={active}
             muted={muted}
             roomId={roomId}
             role="patient"
             metadata={metadata}
-            onError={setError}
+            onError={onPanelError}
             onStatus={setStatus}
             onReferral={onIncomingReferral}
           />
@@ -221,7 +241,7 @@ export default function VideoTriageScreen() {
                   </Text>
                 </View>
               ) : (
-                <Pressable
+                <PressableScale
                   onPress={onRedCode}
                   className="mt-2 flex-row items-center justify-center rounded-lg border border-danger bg-danger/20 px-3 py-2"
                 >
@@ -229,7 +249,7 @@ export default function VideoTriageScreen() {
                   <Text className="ml-2 text-[11px] font-semibold text-white">
                     Kırmızı Kod Sevk Kararı (Refakatçiyi Bilgilendir)
                   </Text>
-                </Pressable>
+                </PressableScale>
               )}
             </View>
           ) : null}
@@ -237,7 +257,7 @@ export default function VideoTriageScreen() {
 
         {/* Kontroller */}
         <View className="mt-4 flex-row items-center justify-center">
-          <Pressable
+          <PressableScale
             onPress={() => setMuted((m) => !m)}
             disabled={!active}
             className={`mr-4 h-14 w-14 items-center justify-center rounded-full ${
@@ -249,28 +269,28 @@ export default function VideoTriageScreen() {
             ) : (
               <Mic size={22} color={active ? "#1f2937" : "#9ca3af"} />
             )}
-          </Pressable>
+          </PressableScale>
 
           {active ? (
-            <Pressable
+            <PressableScale
               onPress={endCall}
-              className="flex-row items-center rounded-full bg-danger px-6 py-4"
+              className="flex-row items-center rounded-full bg-danger px-8 py-4"
             >
               <PhoneOff size={20} color="#ffffff" />
               <Text className="ml-2 text-base font-semibold text-white">
                 Görüşmeyi Bitir
               </Text>
-            </Pressable>
+            </PressableScale>
           ) : (
-            <Pressable
+            <PressableScale
               onPress={startCall}
-              className="flex-row items-center rounded-full bg-brand px-6 py-4"
+              className="flex-row items-center rounded-full bg-brand px-8 py-4"
             >
               <Video size={20} color="#ffffff" />
               <Text className="ml-2 text-base font-semibold text-white">
                 Görüşmeyi Başlat
               </Text>
-            </Pressable>
+            </PressableScale>
           )}
         </View>
 
@@ -305,6 +325,12 @@ export default function VideoTriageScreen() {
           simülasyondur; gerçek tıbbi teşhis yerine geçmez.
         </Text>
       </ScrollView>
+
+      <PermissionModal
+        visible={permissionModal}
+        onRetry={retryPermission}
+        onClose={() => setPermissionModal(false)}
+      />
     </SafeAreaView>
   );
 }

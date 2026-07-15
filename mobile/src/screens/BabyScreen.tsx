@@ -30,8 +30,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import GrowthChart from "../components/GrowthChart";
 import LiveVideoPanel, { type IncomingReferral } from "../components/LiveVideoPanel";
+import PermissionModal from "../components/PermissionModal";
 import VaccineCalendar from "../components/VaccineCalendar";
-import { Card, EmptyState, SectionHeader } from "../components/ui";
+import { Card, EmptyState, PressableScale, SectionHeader } from "../components/ui";
 import { useBaby } from "../context/BabyContext";
 import { GROWTH_REFERENCE, classifyPercentile } from "../data/growthReference";
 import type {
@@ -72,6 +73,22 @@ export default function BabyScreen() {
   const [active, setActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [referral, setReferral] = useState<NurseReferral | null>(null);
+  const [permissionModal, setPermissionModal] = useState(false);
+  const [attemptKey, setAttemptKey] = useState(0);
+
+  // İzin reddedilince çökertme; şık e-Nabız izin modalını göster.
+  const onPanelError = useCallback((message: string) => {
+    setError(message);
+    if (message.includes("izin") || message.includes("desteklemiyor")) {
+      setPermissionModal(true);
+    }
+  }, []);
+
+  const retryPermission = useCallback(() => {
+    setPermissionModal(false);
+    setError(null);
+    setAttemptKey((k) => k + 1);
+  }, []);
 
   // Ebe/hemşire panelinden gelen canlı yönlendirmeyi dinle (barkod belirir).
   useEffect(() => {
@@ -190,12 +207,13 @@ export default function BabyScreen() {
               style={{ height: active ? 240 : 130 }}
             >
               <LiveVideoPanel
+                key={attemptKey}
                 active={active}
                 muted={false}
                 roomId={roomId}
                 role="mother"
                 metadata={metadata}
-                onError={setError}
+                onError={onPanelError}
                 onReferral={onIncomingReferral}
               />
               {!active ? (
@@ -219,28 +237,32 @@ export default function BabyScreen() {
             </View>
 
             {active ? (
-              <Pressable
+              <PressableScale
                 onPress={() => setActive(false)}
-                className="flex-row items-center justify-center rounded-2xl bg-danger py-3"
+                accessibilityRole="button"
+                accessibilityLabel="Görüşmeyi bitir"
+                className="flex-row items-center justify-center rounded-2xl bg-danger py-4"
               >
                 <PhoneOff size={18} color="#ffffff" />
-                <Text className="ml-2 text-sm font-bold text-white">
+                <Text className="ml-2 text-base font-bold text-white">
                   Görüşmeyi Bitir
                 </Text>
-              </Pressable>
+              </PressableScale>
             ) : (
-              <Pressable
+              <PressableScale
                 onPress={() => {
                   setError(null);
                   setActive(true);
                 }}
-                className="flex-row items-center justify-center rounded-2xl bg-brand py-3"
+                accessibilityRole="button"
+                accessibilityLabel="Ebe veya hemşireye canlı bağlan"
+                className="flex-row items-center justify-center rounded-2xl bg-brand py-4"
               >
                 <Video size={18} color="#ffffff" />
-                <Text className="ml-2 text-sm font-bold text-white">
+                <Text className="ml-2 text-base font-bold text-white">
                   Ebe / Hemşireye Bağlan
                 </Text>
-              </Pressable>
+              </PressableScale>
             )}
 
             <Text className="mt-2 text-center text-[10px] text-muted">
@@ -371,17 +393,25 @@ export default function BabyScreen() {
           </Card>
 
           {/* Ebe/Hemşire paneli (rol arayüzü) */}
-          <Pressable
+          <PressableScale
             onPress={() => navigation.navigate("NursePanel")}
+            accessibilityRole="button"
+            accessibilityLabel="Ebe veya hemşire panelini aç"
             className="flex-row items-center justify-center rounded-xl border border-blue bg-white py-3"
           >
             <Droplets size={16} color="#0284c7" />
             <Text className="ml-2 text-sm font-bold text-blue-dark">
               Ebe / Hemşire Panelini Aç
             </Text>
-          </Pressable>
+          </PressableScale>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <PermissionModal
+        visible={permissionModal}
+        onRetry={retryPermission}
+        onClose={() => setPermissionModal(false)}
+      />
     </SafeAreaView>
   );
 }

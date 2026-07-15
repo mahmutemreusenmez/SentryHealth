@@ -66,10 +66,12 @@ export default function LiveVideoPanel({
   const dcRef = useRef<RTCDataChannel | null>(null);
   const peerIdRef = useRef<string | null>(null);
   const [connected, setConnected] = useState(false);
+  const [permissionDenied, setPermissionDenied] = useState(false);
 
   useEffect(() => {
     if (!active) return;
     let cancelled = false;
+    setPermissionDenied(false);
     const localEl = localVideoRef.current;
     const remoteEl = remoteVideoRef.current;
 
@@ -218,6 +220,7 @@ export default function LiveVideoPanel({
         } catch {
           if (!cancelled) {
             // Kamera yoksa alıcı (receive-only) modda sinyalleşmeye devam et.
+            setPermissionDenied(true);
             onError?.("Kamera/mikrofon izni reddedildi veya cihaz bulunamadı.");
           }
         }
@@ -322,6 +325,115 @@ export default function LiveVideoPanel({
       >
         {connected ? "CANLI · P2P bağlı" : "Bağlanıyor…"}
       </div>
+
+      {/* Bağlanılıyor: donuk kare yerine dalgalı nabız animasyonu */}
+      {!connected ? (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 14,
+            background:
+              "radial-gradient(circle at center, rgba(16,185,129,0.18), rgba(0,0,0,0.55))",
+          }}
+        >
+          <style>
+            {`@keyframes sentryPulse{0%{transform:scale(0.72);opacity:0.85}70%{transform:scale(1.9);opacity:0}100%{opacity:0}}
+              @keyframes sentryDots{0%,80%,100%{opacity:0.3}40%{opacity:1}}`}
+          </style>
+          <div
+            style={{
+              position: "relative",
+              width: 84,
+              height: 84,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {[0, 0.5, 1].map((delay) => (
+              <span
+                key={delay}
+                style={{
+                  position: "absolute",
+                  width: 84,
+                  height: 84,
+                  borderRadius: 999,
+                  border: "2px solid rgba(16,185,129,0.7)",
+                  animation: `sentryPulse 1.8s ease-out ${delay}s infinite`,
+                }}
+              />
+            ))}
+            <div
+              style={{
+                width: 52,
+                height: 52,
+                borderRadius: 999,
+                backgroundColor: "#10b981",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 0 24px rgba(16,185,129,0.6)",
+              }}
+            >
+              <svg
+                width="26"
+                height="26"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#fff"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M3 12h4l2 5 4-14 2 9h6" />
+              </svg>
+            </div>
+          </div>
+          <div
+            style={{
+              color: "#fff",
+              fontSize: 13,
+              fontWeight: 700,
+              letterSpacing: 0.2,
+            }}
+          >
+            {permissionDenied
+              ? "Kamerasız bağlanılıyor…"
+              : role === "mother"
+                ? "Ebe / hemşireye bağlanılıyor…"
+                : "Hekime bağlanılıyor…"}
+            {[".", ".", "."].map((dot, i) => (
+              <span
+                key={i}
+                style={{
+                  animation: `sentryDots 1.4s ${i * 0.2}s infinite`,
+                }}
+              >
+                {dot}
+              </span>
+            ))}
+          </div>
+          {permissionDenied ? (
+            <div
+              style={{
+                color: "rgba(255,255,255,0.7)",
+                fontSize: 11,
+                maxWidth: 260,
+                textAlign: "center",
+                lineHeight: 1.5,
+              }}
+            >
+              Kamera/mikrofon bulunamadı; görüşme sesli ve canlı metadata
+              modunda sürüyor.
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -115,7 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: true,
         nationalId,
       });
-    }, 1600);
+    }, 1500);
   }, []);
 
   const logout = useCallback(() => {
