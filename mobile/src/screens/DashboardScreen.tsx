@@ -26,6 +26,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import GuardianPanel from "../components/GuardianPanel";
 import HealthTrends from "../components/HealthTrends";
+import LanguageSwitcher from "../components/LanguageSwitcher";
 import LabAnalyzer from "../components/LabAnalyzer";
 import MewsCard from "../components/MewsCard";
 import PulseWidgets from "../components/PulseWidgets";
@@ -34,6 +35,7 @@ import WeeklyCompliance from "../components/WeeklyCompliance";
 import { SectionHeader, StatusBadge } from "../components/ui";
 import { useAccessibility } from "../context/AccessibilityContext";
 import { usePatient } from "../context/PatientContext";
+import { useLocale } from "../i18n/LocaleContext";
 import { WEEKLY_COMPLIANCE } from "../data/mockData";
 import { COLORS } from "../theme/colors";
 import type {
@@ -79,6 +81,7 @@ export default function DashboardScreen() {
   } = usePatient();
   const { surface, fontScale, highContrast, toggleAccessibilityMode } =
     useAccessibility();
+  const { t } = useLocale();
   const navigation = useNavigation<DashboardNav>();
   const firstName = profile.fullName.split(" ")[0];
   const title = honorific(profile.gender);
@@ -112,6 +115,11 @@ export default function DashboardScreen() {
         className="flex-1"
         contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
       >
+        {/* Dil seçici (TR / EN / AR) */}
+        <View className="mb-3 flex-row justify-end">
+          <LanguageSwitcher />
+        </View>
+
         {/* e-Nabız kurumsal başlık */}
         <View className="mb-5 flex-row items-center justify-between">
           <View className="flex-1">
@@ -119,7 +127,7 @@ export default function DashboardScreen() {
               className="text-sm text-muted"
               style={{ color: surface.muted, fontSize: 14 * fontScale }}
             >
-              Sağlıklı Günler,
+              {t("dashboard.greeting")}
             </Text>
             <Text
               className="text-2xl font-bold text-ink"
@@ -167,7 +175,7 @@ export default function DashboardScreen() {
               className="ml-2 text-base font-bold"
               style={{ color: surface.ink, fontSize: 16 * fontScale }}
             >
-              Klinik Erken Uyarı (MEWS)
+              {t("dashboard.mewsTitle")}
             </Text>
           </View>
           <MewsCard

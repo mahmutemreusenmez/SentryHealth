@@ -14,11 +14,13 @@ import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import Barcode from "../components/Barcode";
+import ConfirmCallModal from "../components/ConfirmCallModal";
 import LiveVideoPanel, { type IncomingReferral } from "../components/LiveVideoPanel";
 import PermissionModal from "../components/PermissionModal";
 import { PrivacyShieldModal } from "../components/PrivacyShield";
 import { PressableScale } from "../components/ui";
 import { usePatient } from "../context/PatientContext";
+import { useLocale } from "../i18n/LocaleContext";
 import type { ReferralLevel, TriageReferral } from "../data/types";
 import { makeCallRoomId } from "../services/rtcConfig";
 import { triageChannel } from "../services/triageChannel";
@@ -35,7 +37,9 @@ const ANALYSIS_LINES = [
 
 export default function VideoTriageScreen() {
   const { profile, raiseCriticalAlert } = usePatient();
+  const { t } = useLocale();
   const [active, setActive] = useState(false);
+  const [confirmGate, setConfirmGate] = useState(false);
   const [privacyGate, setPrivacyGate] = useState(false);
   const [muted, setMuted] = useState(false);
   const [lineIndex, setLineIndex] = useState(0);
@@ -116,9 +120,15 @@ export default function VideoTriageScreen() {
     raiseCriticalAlert();
   };
 
-  // Canlı görüşme öncesi KVKK/GDPR "Privacy Shield" bilgilendirmesini göster.
+  // 1. aşama: yanlış basmayı önleyen çift onay modalı (arama henüz başlamaz).
   const startCall = () => {
     setError(null);
+    setConfirmGate(true);
+  };
+
+  // 2. aşama: onaydan sonra KVKK/GDPR "Privacy Shield" bilgilendirmesi.
+  const confirmCallAndProceed = () => {
+    setConfirmGate(false);
     setPrivacyGate(true);
   };
 
@@ -278,7 +288,7 @@ export default function VideoTriageScreen() {
             >
               <PhoneOff size={20} color="#ffffff" />
               <Text className="ml-2 text-base font-semibold text-white">
-                Görüşmeyi Bitir
+                {t("triage.endCall")}
               </Text>
             </PressableScale>
           ) : (
@@ -288,7 +298,7 @@ export default function VideoTriageScreen() {
             >
               <Video size={20} color="#ffffff" />
               <Text className="ml-2 text-base font-semibold text-white">
-                Görüşmeyi Başlat
+                {t("triage.startCall")}
               </Text>
             </PressableScale>
           )}
@@ -325,6 +335,15 @@ export default function VideoTriageScreen() {
           zeka analizi bir simülasyondur; gerçek tıbbi teşhis yerine geçmez.
         </Text>
       </ScrollView>
+
+      <ConfirmCallModal
+        visible={confirmGate}
+        title={t("confirm.triage.title")}
+        message={t("confirm.triage.message")}
+        acceptLabel={t("confirm.triage.accept")}
+        onAccept={confirmCallAndProceed}
+        onCancel={() => setConfirmGate(false)}
+      />
 
       <PrivacyShieldModal
         visible={privacyGate}

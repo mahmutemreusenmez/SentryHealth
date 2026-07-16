@@ -29,6 +29,9 @@ export interface PatientProfile {
 /** Uygulama genelinde kullanılan hasta profili tipi (PatientProfile ile aynı). */
 export type UserProfile = PatientProfile;
 
+/** Giriş yapan kullanıcının rolü (hasta veya hekim/sağlık personeli). */
+export type UserRole = "patient" | "doctor";
+
 /** e-Devlet Kapısı kimlik doğrulama durumunu tutan global state. */
 export interface AuthenticationState {
   /** "Giriş Başarılı" bayrağı */
@@ -37,6 +40,8 @@ export interface AuthenticationState {
   isLoading: boolean;
   /** Giriş yapan kullanıcının T.C. Kimlik Numarası */
   nationalId: string | null;
+  /** Giriş yapan kullanıcının rolü (hasta / hekim). */
+  role: UserRole;
   /** Doğrulama hatası mesajı */
   error: string | null;
 }
@@ -376,6 +381,8 @@ export type RootTabParamList = {
 export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
+  /** Giriş yapan hekimin ana ekranı (SentryMD Mobil Hekim Paneli). */
+  DoctorHome: undefined;
   DoctorPanel: undefined;
   NursePanel: undefined;
 };

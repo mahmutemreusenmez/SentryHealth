@@ -24,6 +24,7 @@ import AuthScreen from "../screens/AuthScreen";
 import BabyScreen from "../screens/BabyScreen";
 import ChatScreen from "../screens/ChatScreen";
 import DashboardScreen from "../screens/DashboardScreen";
+import DoctorHomeScreen from "../screens/DoctorHomeScreen";
 import DoctorPanelScreen from "../screens/DoctorPanelScreen";
 import NursePanelScreen from "../screens/NursePanelScreen";
 import PharmacyScreen from "../screens/PharmacyScreen";
@@ -58,6 +59,7 @@ const linking: LinkingOptions<RootStackParamList> = {
           Profile: "profil",
         },
       },
+      DoctorHome: "hekim",
       DoctorPanel: "doctor-panel",
       NursePanel: "nurse-panel",
     },
@@ -128,7 +130,12 @@ export default function RootNavigator() {
         screenOptions={{ headerShown: false, animation: "fade" }}
       >
         {auth.isAuthenticated ? (
-          <Stack.Screen name="Main" component={MainTabs} />
+          auth.role === "doctor" ? (
+            // Hekim/sağlık personeli: hasta sekmeleri yerine SentryMD paneli.
+            <Stack.Screen name="DoctorHome" component={DoctorHomeScreen} />
+          ) : (
+            <Stack.Screen name="Main" component={MainTabs} />
+          )
         ) : (
           <Stack.Screen name="Auth" component={AuthScreen} />
         )}

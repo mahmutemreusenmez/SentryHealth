@@ -22,8 +22,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import LanguageSwitcher from "../components/LanguageSwitcher";
 import { PressableScale } from "../components/ui";
 import { useAuth } from "../context/AuthContext";
+import { useLocale } from "../i18n/LocaleContext";
 import { successFeedback } from "../services/hapticsService";
 import {
   TEST_ACCOUNTS,
@@ -33,6 +35,7 @@ import {
 
 export default function AuthScreen() {
   const { auth, login } = useAuth();
+  const { t } = useLocale();
   const [showPassword, setShowPassword] = useState(false);
   const progress = useRef(new Animated.Value(0)).current;
 
@@ -80,6 +83,11 @@ export default function AuthScreen() {
           }}
           keyboardShouldPersistTaps="handled"
         >
+          {/* Dil seçici (TR / EN / AR) */}
+          <View className="mb-2 flex-row justify-end">
+            <LanguageSwitcher />
+          </View>
+
           {/* Kurumsal logolar */}
           <View className="mb-8 items-center">
             <View className="flex-row items-center">
@@ -100,15 +108,14 @@ export default function AuthScreen() {
           {/* Giriş formu */}
           <View className="rounded-3xl border border-line bg-white p-6 shadow-sm">
             <Text className="mb-1 text-xl font-bold tracking-tight text-ink">
-              Güvenli Giriş
+              {t("auth.title")}
             </Text>
             <Text className="mb-5 text-xs leading-5 text-muted">
-              Sağlık kaydınıza erişmek için e-Devlet Kapısı ile kimliğinizi
-              doğrulayın.
+              {t("auth.subtitle")}
             </Text>
 
             <Text className="mb-1 text-xs font-medium text-muted">
-              T.C. Kimlik Numarası
+              {t("auth.tc")}
             </Text>
             <Controller
               control={control}
@@ -122,7 +129,7 @@ export default function AuthScreen() {
                   <ShieldCheck size={18} color="#6b7280" />
                   <TextInput
                     value={value}
-                    onChangeText={(t) => onChange(t.replace(/[^0-9]/g, ""))}
+                    onChangeText={(text) => onChange(text.replace(/[^0-9]/g, ""))}
                     onBlur={onBlur}
                     keyboardType="number-pad"
                     maxLength={11}
@@ -143,7 +150,7 @@ export default function AuthScreen() {
             )}
 
             <Text className="mb-1 text-xs font-medium text-muted">
-              e-Devlet Şifresi
+              {t("auth.password")}
             </Text>
             <Controller
               control={control}
@@ -206,7 +213,7 @@ export default function AuthScreen() {
               {auth.isLoading ? (
                 <View className="w-full items-center">
                   <Text className="text-sm font-bold text-white">
-                    Kimlik Doğrulanıyor…
+                    {t("auth.verifying")}
                   </Text>
                   <View className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/25">
                     <Animated.View
@@ -228,7 +235,7 @@ export default function AuthScreen() {
                     <Text className="text-[13px] font-black text-edevlet">e</Text>
                   </View>
                   <Text className="text-sm font-bold text-white">
-                    e-Devlet Kapısı ile Giriş Yap
+                    {t("auth.login")}
                   </Text>
                   <LogIn size={16} color="#ffffff" style={{ marginLeft: 6 }} />
                 </View>
@@ -243,27 +250,40 @@ export default function AuthScreen() {
           {/* Demo/test giriş bilgileri */}
           <View className="mt-4 rounded-3xl border border-line bg-white p-5">
             <Text className="mb-1 text-xs font-bold text-ink">
-              Test Giriş Bilgisi
+              {t("auth.testInfo")}
             </Text>
             <Text className="mb-3 text-[11px] leading-4 text-muted">
-              Aşağıdaki bilgilerle doğrudan giriş yapabilirsiniz.
+              {t("auth.testHint")}
             </Text>
             {TEST_ACCOUNTS.map((account) => (
               <View
                 key={account.nationalId}
-                className="flex-row items-center justify-between rounded-2xl bg-brand-light px-4 py-3"
+                className="mb-2 flex-row items-center justify-between rounded-2xl bg-brand-light px-4 py-3"
               >
                 <View>
-                  <Text className="text-[10px] font-medium text-muted">
-                    T.C. Kimlik No
-                  </Text>
+                  <View className="mb-0.5 flex-row items-center">
+                    <View
+                      className={`mr-2 rounded-full px-2 py-0.5 ${
+                        account.role === "doctor" ? "bg-blue" : "bg-brand"
+                      }`}
+                    >
+                      <Text className="text-[9px] font-bold text-white">
+                        {account.role === "doctor"
+                          ? t("auth.roleDoctor")
+                          : t("auth.rolePatient")}
+                      </Text>
+                    </View>
+                    <Text className="text-[10px] font-medium text-muted">
+                      {t("auth.tc")}
+                    </Text>
+                  </View>
                   <Text className="text-[13px] font-bold text-ink">
                     {account.nationalId}
                   </Text>
                 </View>
                 <View className="items-end">
                   <Text className="text-[10px] font-medium text-muted">
-                    e-Devlet Şifresi
+                    {t("auth.password")}
                   </Text>
                   <Text className="text-[13px] font-bold text-ink">
                     {account.password}

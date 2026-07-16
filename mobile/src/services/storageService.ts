@@ -31,6 +31,7 @@ export const STORAGE_KEYS = {
   fhirBundle: "sentry_fhir_bundle",
   accessibility: "sentry_a11y",
   privacyConsent: "sentry_privacy_consent",
+  locale: "sentry_locale",
 } as const;
 
 /** Web AES anahtar materyalinin saklandığı localStorage anahtarı (yalnızca web). */

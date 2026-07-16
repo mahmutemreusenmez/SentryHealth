@@ -10,25 +10,28 @@ import { AuthProvider } from "./src/context/AuthContext";
 import { BabyProvider } from "./src/context/BabyContext";
 import { PatientProvider } from "./src/context/PatientContext";
 import { PrivacyProvider } from "./src/context/PrivacyContext";
+import { LocaleProvider } from "./src/i18n/LocaleContext";
 import RootNavigator from "./src/navigation/RootNavigator";
 
 export default function App() {
   return (
     <SafeAreaProvider>
-      <AccessibilityProvider>
-        <PrivacyProvider>
-          <AuthProvider>
-            <PatientProvider>
-              <BabyProvider>
-                <StatusBar style="light" backgroundColor="#00875A" />
-                <RootNavigator />
-                <OfflineBar />
-                <NotificationBanner />
-              </BabyProvider>
-            </PatientProvider>
-          </AuthProvider>
-        </PrivacyProvider>
-      </AccessibilityProvider>
+      <LocaleProvider>
+        <AccessibilityProvider>
+          <PrivacyProvider>
+            <AuthProvider>
+              <PatientProvider>
+                <BabyProvider>
+                  <StatusBar style="light" backgroundColor="#00875A" />
+                  <RootNavigator />
+                  <OfflineBar />
+                  <NotificationBanner />
+                </BabyProvider>
+              </PatientProvider>
+            </AuthProvider>
+          </PrivacyProvider>
+        </AccessibilityProvider>
+      </LocaleProvider>
     </SafeAreaProvider>
   );
 }

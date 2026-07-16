@@ -28,6 +28,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import ConfirmCallModal from "../components/ConfirmCallModal";
 import GrowthChart from "../components/GrowthChart";
 import LiveVideoPanel, { type IncomingReferral } from "../components/LiveVideoPanel";
 import PermissionModal from "../components/PermissionModal";
@@ -35,6 +36,7 @@ import { PrivacyShieldModal } from "../components/PrivacyShield";
 import VaccineCalendar from "../components/VaccineCalendar";
 import { Card, EmptyState, PressableScale, SectionHeader } from "../components/ui";
 import { useBaby } from "../context/BabyContext";
+import { useLocale } from "../i18n/LocaleContext";
 import { GROWTH_REFERENCE, classifyPercentile } from "../data/growthReference";
 import type {
   GrowthMetric,
@@ -44,7 +46,7 @@ import type {
   RootTabParamList,
 } from "../data/types";
 import { babyChannel } from "../services/babyChannel";
-import { makeCallRoomId } from "../services/rtcConfig";
+import { BABY_LOBBY_ROOM, makeCallRoomId } from "../services/rtcConfig";
 import { speak } from "../services/speechService";
 
 type BabyNav = CompositeNavigationProp<
@@ -70,9 +72,11 @@ export default function BabyScreen() {
     addGrowthMeasurement,
   } = useBaby();
   const navigation = useNavigation<BabyNav>();
+  const { t } = useLocale();
 
   const [metric, setMetric] = useState<GrowthMetric>("weightKg");
   const [active, setActive] = useState(false);
+  const [confirmGate, setConfirmGate] = useState(false);
   const [privacyGate, setPrivacyGate] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [referral, setReferral] = useState<NurseReferral | null>(null);
@@ -218,6 +222,7 @@ export default function BabyScreen() {
                 active={active}
                 muted={false}
                 roomId={roomId}
+                lobbyRoom={BABY_LOBBY_ROOM}
                 role="mother"
                 patient={patient}
                 metadata={metadata}
@@ -253,22 +258,22 @@ export default function BabyScreen() {
               >
                 <PhoneOff size={18} color="#ffffff" />
                 <Text className="ml-2 text-base font-bold text-white">
-                  Görüşmeyi Bitir
+                  {t("triage.endCall")}
                 </Text>
               </PressableScale>
             ) : (
               <PressableScale
                 onPress={() => {
                   setError(null);
-                  setPrivacyGate(true);
+                  setConfirmGate(true);
                 }}
                 accessibilityRole="button"
-                accessibilityLabel="Ebe veya hemşireye canlı bağlan"
+                accessibilityLabel={t("nurse.connect")}
                 className="flex-row items-center justify-center rounded-2xl bg-brand py-4"
               >
                 <Video size={18} color="#ffffff" />
                 <Text className="ml-2 text-base font-bold text-white">
-                  Ebe / Hemşireye Bağlan
+                  {t("nurse.connect")}
                 </Text>
               </PressableScale>
             )}
@@ -415,6 +420,18 @@ export default function BabyScreen() {
           </PressableScale>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <ConfirmCallModal
+        visible={confirmGate}
+        title={t("confirm.nurse.title")}
+        message={t("confirm.nurse.message")}
+        acceptLabel={t("confirm.nurse.accept")}
+        onAccept={() => {
+          setConfirmGate(false);
+          setPrivacyGate(true);
+        }}
+        onCancel={() => setConfirmGate(false)}
+      />
 
       <PrivacyShieldModal
         visible={privacyGate}
