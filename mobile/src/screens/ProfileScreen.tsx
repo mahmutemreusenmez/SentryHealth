@@ -6,7 +6,6 @@ import {
   ClipboardList,
   Contrast,
   CreditCard,
-  FileJson,
   HeartPulse,
   LogOut,
   PlusCircle,
@@ -57,7 +56,7 @@ function isValidNationalId(id: string): boolean {
 }
 
 export default function ProfileScreen() {
-  const { profile, recommendations, vitals, fhirBundle, updateProfile, saveVitals } =
+  const { profile, recommendations, vitals, updateProfile, saveVitals } =
     usePatient();
   const { logout } = useAuth();
   const {
@@ -320,12 +319,12 @@ export default function ProfileScreen() {
             />
           </View>
 
-          {/* Erişilebilirlik (WCAG 2.1) + KVKK/FHIR bilgisi */}
+          {/* Erişilebilirlik ve gizlilik */}
           <View className="mt-5">
             <Card>
               <SectionHeader
                 title="Erişilebilirlik ve Gizlilik"
-                subtitle="WCAG 2.1 · KVKK/GDPR · HL7 FHIR"
+                subtitle="Yazı boyutu, kontrast ve güvenli kayıt"
                 icon={Accessibility}
               />
               <ToggleRow
@@ -343,12 +342,9 @@ export default function ProfileScreen() {
                 onToggle={toggleHighContrast}
               />
               <View className="mt-2 flex-row items-start rounded-xl bg-brand-light/60 p-3">
-                <FileJson size={16} color="#BE123C" />
-                <Text className="ml-2 flex-1 text-[11px] leading-4 text-brand-dark">
-                  Verileriniz HL7 FHIR (R4) standardında saklanır:{" "}
-                  {fhirBundle.entry.length} kaynak (Patient + Observation).
-                  Kimlik bilginiz KVKK/GDPR gereği pseudonimize edilir; ham
-                  tutulmaz.
+                <Text className="flex-1 text-[11px] leading-4 text-brand-dark">
+                  Sağlık verileriniz cihazınızda güvenli (şifreli) olarak
+                  saklanır; kimlik bilginiz ham olarak tutulmaz.
                 </Text>
               </View>
             </Card>

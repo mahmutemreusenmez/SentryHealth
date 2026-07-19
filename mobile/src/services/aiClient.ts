@@ -67,7 +67,7 @@ function buildSystemPrompt(
     ? `Son ölçülen vitaller — Tansiyon: ${vitals.systolic}/${vitals.diastolic} mmHg, Nabız: ${vitals.pulse}/dk, Kan şekeri: ${vitals.glucose} mg/dL.`
     : "Henüz kayıtlı vital ölçümü yok.";
   return [
-    "Sen SentryCompanion AI adında, Türkçe konuşan bir klinik sağlık asistanısın.",
+    "Sen Türkçe konuşan bir klinik sağlık asistanısın.",
     "Kronik hastalar ve yaşlı bireyler için proaktif, tıbbi dilde ama anlaşılır tavsiyeler verirsin.",
     "Teşhis koymaz, hekimin yerini almazsın; şiddetli belirtilerde 112'ye yönlendirirsin.",
     `Hasta: ${profile.fullName}, ${profile.age} yaşında. Kronik durum: ${conditions}.`,

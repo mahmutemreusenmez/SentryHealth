@@ -16,6 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Barcode from "../components/Barcode";
 import ConfirmCallModal from "../components/ConfirmCallModal";
 import LiveVideoPanel, { type IncomingReferral } from "../components/LiveVideoPanel";
+import LiveChatPanel from "../components/LiveChatPanel";
 import PermissionModal from "../components/PermissionModal";
 import { PrivacyShieldModal } from "../components/PrivacyShield";
 import { PressableScale } from "../components/ui";
@@ -28,11 +29,11 @@ import { triageChannel } from "../services/triageChannel";
 /** Hekim panelindeki kayıtlı demo hastasıyla eşleşen T.C. kimlik numarası. */
 const TRIAGE_PATIENT_ID = "10000000000";
 
-const ANALYSIS_LINES = [
-  "Analiz Ediliyor: Ses tonunda nefes darlığı tespiti... SpO2 takibi öneriliyor.",
-  "Analiz Ediliyor: Konuşma temposu normal, oksijen satürasyonu izleniyor.",
-  "Analiz Ediliyor: Öksürük paterni değerlendiriliyor... Ek bulgu saptanmadı.",
-  "Analiz Ediliyor: Kalp atım sesleri stabil, tansiyon geçmişiyle karşılaştırılıyor.",
+const CALL_NOTES = [
+  "Canlı görüşme sürüyor. Vital bulgularınız sağlık personeliyle paylaşılıyor.",
+  "Sağlık personeli sizi değerlendiriyor. Lütfen hatta kalın.",
+  "Şikayetlerinizi net bir şekilde anlatabilirsiniz.",
+  "Görüşme güvenli bağlantı üzerinden yürütülüyor.",
 ];
 
 export default function VideoTriageScreen() {
@@ -150,7 +151,7 @@ export default function VideoTriageScreen() {
       return;
     }
     const timer = setInterval(() => {
-      setLineIndex((i) => (i + 1) % ANALYSIS_LINES.length);
+      setLineIndex((i) => (i + 1) % CALL_NOTES.length);
     }, 3500);
     return () => clearInterval(timer);
   }, [active]);
@@ -172,7 +173,7 @@ export default function VideoTriageScreen() {
               Canlı Triyaj Odası
             </Text>
             <Text className="text-xs text-muted">
-              Yapay Zeka Hekimi Bağlantısı · WebRTC
+              Sağlık personeline canlı bağlantı
             </Text>
           </View>
         </View>
@@ -237,10 +238,10 @@ export default function VideoTriageScreen() {
           {active ? (
             <View className="rounded-2xl bg-black/50 px-4 py-3">
               <Text className="text-[11px] font-semibold text-brand">
-                Klinik Not (Otomatik) · Oda: {roomId}
+                Görüşme Notu · Oda: {roomId}
               </Text>
               <Text className="mt-1 text-xs leading-5 text-white">
-                {ANALYSIS_LINES[lineIndex]}
+                {CALL_NOTES[lineIndex]}
               </Text>
               {redCode ? (
                 <View className="mt-2 flex-row items-center rounded-lg bg-danger px-3 py-2">
@@ -329,10 +330,20 @@ export default function VideoTriageScreen() {
           </View>
         ) : null}
 
+        {/* Hasta – sağlık personeli canlı sohbeti (görüşme aktifken) */}
+        {active ? (
+          <View className="mt-4">
+            <LiveChatPanel
+              roomId={roomId}
+              from="patient"
+              title="Sağlık Personeli ile Sohbet"
+            />
+          </View>
+        ) : null}
+
         <Text className="mt-3 text-center text-[11px] text-muted">
-          Görüntülü görüşme, SentryHealth web sitesinin WebRTC sinyal sunucusu
-          (/api/webrtc/signaling) üzerinden hekim paneline canlı bağlanır. Yapay
-          zeka analizi bir simülasyondur; gerçek tıbbi teşhis yerine geçmez.
+          Görüntülü görüşme, sağlık personeli paneline canlı bağlanır. Bu ekran
+          klinik ön değerlendirme amaçlıdır; kesin tıbbi teşhis yerine geçmez.
         </Text>
       </ScrollView>
 

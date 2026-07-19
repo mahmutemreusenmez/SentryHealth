@@ -26,8 +26,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import GuardianPanel from "../components/GuardianPanel";
 import HealthTrends from "../components/HealthTrends";
-import LanguageSwitcher from "../components/LanguageSwitcher";
-import LabAnalyzer from "../components/LabAnalyzer";
 import MewsCard from "../components/MewsCard";
 import PulseWidgets from "../components/PulseWidgets";
 import VoiceConfirmButton from "../components/VoiceConfirmButton";
@@ -117,11 +115,6 @@ export default function DashboardScreen() {
         className="flex-1"
         contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
       >
-        {/* Dil seçici (TR / EN / AR) */}
-        <View className="mb-3 flex-row justify-end">
-          <LanguageSwitcher />
-        </View>
-
         {/* e-Nabız kurumsal başlık */}
         <View className="mb-5 flex-row items-center justify-between">
           <View className="flex-1">
@@ -169,7 +162,7 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        {/* Klinik Karar Destek Sistemi (CDSS) — MEWS erken uyarı kartı */}
+        {/* Klinik erken uyarı kartı */}
         <View className="mb-4">
           <View className="mb-2 flex-row items-center">
             <ShieldPlus size={16} color={COLORS.brandDark} />
@@ -203,7 +196,7 @@ export default function DashboardScreen() {
           {hasNewborn ? (
             <QuickAccessCard
               icon={Baby}
-              label="BebekNöbeti"
+              label="Yeni Doğan"
               onPress={() => navigation.navigate("Baby")}
               isLast
             />
@@ -246,16 +239,13 @@ export default function DashboardScreen() {
           ) : null}
         </Pressable>
 
-        {/* SentryPulse: giyilebilir cihaz canlı vitalleri */}
+        {/* Giyilebilir cihaz canlı vitalleri */}
         <PulseWidgets
           onNavigateTriage={() => navigation.navigate("Triage")}
         />
 
         {/* Sesli İlaç Onay Modülü */}
         <VoiceConfirmButton />
-
-        {/* SentryLens: tahlil raporu yükleme + AI analiz */}
-        <LabAnalyzer />
 
         {/* Yaklaşan randevu (MHRS) */}
         <View className="mb-6 rounded-2xl bg-blue p-4 shadow-sm">
@@ -343,7 +333,7 @@ export default function DashboardScreen() {
           )}
         </View>
 
-        {/* Hasta Yakını (SentryGuardian) Erişim Paneli */}
+        {/* Hasta Yakını Erişim Paneli */}
         <View className="mt-6">
           <GuardianPanel guardian={guardian} alerts={guardianAlerts} />
         </View>

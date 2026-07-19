@@ -1,11 +1,6 @@
-import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
-import type { CompositeNavigationProp } from "@react-navigation/native";
-import { useNavigation } from "@react-navigation/native";
-import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   Baby,
   CalendarClock,
-  Droplets,
   PhoneOff,
   Plus,
   Ruler,
@@ -31,6 +26,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import ConfirmCallModal from "../components/ConfirmCallModal";
 import GrowthChart from "../components/GrowthChart";
 import LiveVideoPanel, { type IncomingReferral } from "../components/LiveVideoPanel";
+import LiveChatPanel from "../components/LiveChatPanel";
 import PermissionModal from "../components/PermissionModal";
 import { PrivacyShieldModal } from "../components/PrivacyShield";
 import VaccineCalendar from "../components/VaccineCalendar";
@@ -42,17 +38,10 @@ import type {
   GrowthMetric,
   NurseReferral,
   NurseReferralLevel,
-  RootStackParamList,
-  RootTabParamList,
 } from "../data/types";
 import { babyChannel } from "../services/babyChannel";
 import { BABY_LOBBY_ROOM, makeCallRoomId } from "../services/rtcConfig";
 import { speak } from "../services/speechService";
-
-type BabyNav = CompositeNavigationProp<
-  BottomTabNavigationProp<RootTabParamList, "Baby">,
-  NativeStackNavigationProp<RootStackParamList>
->;
 
 const METRICS: { key: GrowthMetric; label: string; unit: string }[] = [
   { key: "weightKg", label: "Kilo", unit: "kg" },
@@ -71,7 +60,6 @@ export default function BabyScreen() {
     toggleVaccine,
     addGrowthMeasurement,
   } = useBaby();
-  const navigation = useNavigation<BabyNav>();
   const { t } = useLocale();
 
   const [metric, setMetric] = useState<GrowthMetric>("weightKg");
@@ -181,7 +169,7 @@ export default function BabyScreen() {
               </Text>
             </View>
             <View className="rounded-xl border border-brand-light bg-white px-3 py-2">
-              <Text className="text-xs font-bold text-brand-dark">SentryBaby</Text>
+              <Text className="text-xs font-bold text-brand-dark">Yeni Doğan</Text>
               <Text className="text-[9px] text-muted">Aile Hekimliği</Text>
             </View>
           </View>
@@ -239,7 +227,7 @@ export default function BabyScreen() {
               ) : (
                 <View className="rounded-2xl bg-black/50 px-3 py-2">
                   <Text className="text-[11px] font-semibold text-brand">
-                    Canlı Metadata · Oda: {roomId}
+                    Görüşme Bilgisi · Oda: {roomId}
                   </Text>
                   <Text className="mt-1 text-[11px] text-white">
                     Ateş {vitals.temperature.toFixed(1)}°C · Kilo{" "}
@@ -280,11 +268,20 @@ export default function BabyScreen() {
 
             <Text className="mt-2 text-center text-[10px] text-muted">
               Bebek vital verileri (ateş, kilo, emzirme sıklığı) görüşmede
-              ebe/hemşirenin ekranına canlı metadata olarak aktarılır. Bağlantı,
-              SentryHealth web sitesinin WebRTC sinyal sunucusu
-              (/api/webrtc/signaling) üzerinden kurulur; jüri sunumu için
-              simülasyondur.
+              sağlık personelinin ekranına canlı olarak aktarılır. Bağlantı,
+              sağlık personeli paneline canlı kurulur.
             </Text>
+
+            {/* Anne – sağlık personeli canlı sohbeti (görüşme aktifken) */}
+            {active ? (
+              <View className="mt-3">
+                <LiveChatPanel
+                  roomId={roomId}
+                  from="patient"
+                  title="Sağlık Personeli ile Sohbet"
+                />
+              </View>
+            ) : null}
           </Card>
 
           {/* Ebe/hemşireden gelen canlı yönlendirme barkodu */}
@@ -313,11 +310,11 @@ export default function BabyScreen() {
             </View>
           ) : null}
 
-          {/* Persentil (gelişim) grafiği */}
+          {/* Gelişim grafiği */}
           <Card className="mb-5">
             <SectionHeader
-              title="Gelişim (Persentil) Grafiği"
-              subtitle="WHO standart eğrisi üzerinde bebeğinizin yeri"
+              title="Gelişim Grafiği"
+              subtitle="Standart gelişim eğrisi üzerinde bebeğinizin yeri"
               icon={TrendingUp}
             />
             <View className="mb-3 flex-row">
@@ -405,19 +402,6 @@ export default function BabyScreen() {
               </Text>
             </Pressable>
           </Card>
-
-          {/* Ebe/Hemşire paneli (rol arayüzü) */}
-          <PressableScale
-            onPress={() => navigation.navigate("NursePanel")}
-            accessibilityRole="button"
-            accessibilityLabel="Ebe veya hemşire panelini aç"
-            className="flex-row items-center justify-center rounded-xl border border-blue bg-white py-3"
-          >
-            <Droplets size={16} color="#0284c7" />
-            <Text className="ml-2 text-sm font-bold text-blue-dark">
-              Ebe / Hemşire Panelini Aç
-            </Text>
-          </PressableScale>
         </ScrollView>
       </KeyboardAvoidingView>
 

@@ -25,9 +25,7 @@ import BabyScreen from "../screens/BabyScreen";
 import ChatScreen from "../screens/ChatScreen";
 import DashboardScreen from "../screens/DashboardScreen";
 import DoctorHomeScreen from "../screens/DoctorHomeScreen";
-import DoctorPanelScreen from "../screens/DoctorPanelScreen";
 import MedicationScreen from "../screens/MedicationScreen";
-import NursePanelScreen from "../screens/NursePanelScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import VideoTriageScreen from "../screens/VideoTriageScreen";
 
@@ -37,13 +35,13 @@ const TABS: Record<
 > = {
   Dashboard: { icon: Home, label: "Ana Sayfa" },
   Triage: { icon: Video, label: "Canlı Triyaj" },
-  Chat: { icon: MessageCircle, label: "AI Sohbet" },
+  Chat: { icon: MessageCircle, label: "Sağlık Sohbeti" },
   Medication: { icon: Pill, label: "İlaç Takibi" },
   Baby: { icon: Baby, label: "Yeni Doğan" },
   Profile: { icon: User, label: "Profil" },
 };
 
-/** Web derlemesi için derin bağlantı (ör. /doctor-panel) eşlemesi. */
+/** Web derlemesi için derin bağlantı eşlemesi. */
 const linking: LinkingOptions<RootStackParamList> = {
   prefixes: [],
   config: {
@@ -59,9 +57,7 @@ const linking: LinkingOptions<RootStackParamList> = {
           Profile: "profil",
         },
       },
-      DoctorHome: "hekim",
-      DoctorPanel: "doctor-panel",
-      NursePanel: "nurse-panel",
+      DoctorHome: "personel",
     },
   },
 };
@@ -131,7 +127,7 @@ export default function RootNavigator() {
       >
         {auth.isAuthenticated ? (
           auth.role === "doctor" ? (
-            // Hekim/sağlık personeli: hasta sekmeleri yerine SentryMD paneli.
+            // Sağlık personeli: hasta sekmeleri yerine birleşik personel paneli.
             <Stack.Screen name="DoctorHome" component={DoctorHomeScreen} />
           ) : (
             <Stack.Screen name="Main" component={MainTabs} />
@@ -139,10 +135,6 @@ export default function RootNavigator() {
         ) : (
           <Stack.Screen name="Auth" component={AuthScreen} />
         )}
-        {/* SentryMD hekim paneli: /doctor-panel derin bağlantısıyla erişilir. */}
-        <Stack.Screen name="DoctorPanel" component={DoctorPanelScreen} />
-        {/* SentryBaby ebe/hemşire paneli: /nurse-panel derin bağlantısı. */}
-        <Stack.Screen name="NursePanel" component={NursePanelScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

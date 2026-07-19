@@ -29,8 +29,8 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     createMessage(
       "assistant",
-      `Merhaba ${profile.fullName.split(" ")[0]}, ben SentryCompanion. ` +
-        "Kronik takip verilerinizi analiz ederek yardımcı olurum. " +
+      `Merhaba ${profile.fullName.split(" ")[0]}, ben sağlık asistanınızım. ` +
+        "Kronik takip verilerinizi değerlendirerek yardımcı olurum. " +
         "Sağlığınızla ilgili sorularınızı sesli veya yazılı sorabilirsiniz.",
     ),
   ]);
@@ -96,7 +96,7 @@ export default function ChatScreen() {
     setBusy(false);
   };
 
-  // Sesli giriş simülasyonu: gerçek dağıtımda expo-speech / STT bağlanacak.
+  // Sesli giriş: gerçek dağıtımda expo-speech / STT bağlanacak.
   const toggleVoice = () => {
     if (listening) {
       setListening(false);
@@ -112,8 +112,8 @@ export default function ChatScreen() {
   const statusLabel = !online
     ? "Çevrimdışı — yerel öneriler"
     : apiEnabled
-      ? "Canlı AI bağlantısı"
-      : "Çevrimdışı Mod (anahtar yok)";
+      ? "Canlı bağlantı"
+      : "Çevrimdışı (bağlantı anahtarı yok)";
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={["top"]}>
@@ -124,7 +124,7 @@ export default function ChatScreen() {
         </View>
         <View className="flex-1">
           <Text className="text-base font-bold text-ink">
-            SentryCompanion AI
+            Sağlık Sohbeti
           </Text>
           <View className="flex-row items-center">
             {online && apiEnabled ? (

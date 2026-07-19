@@ -22,7 +22,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import LanguageSwitcher from "../components/LanguageSwitcher";
 import { PressableScale } from "../components/ui";
 import { useAuth } from "../context/AuthContext";
 import { useLocale } from "../i18n/LocaleContext";
@@ -83,11 +82,6 @@ export default function AuthScreen() {
           }}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Dil seçici (TR / EN / AR) */}
-          <View className="mb-2 flex-row justify-end">
-            <LanguageSwitcher />
-          </View>
-
           {/* Kurumsal logolar */}
           <View className="mb-8 items-center">
             <View className="flex-row items-center">
@@ -101,7 +95,7 @@ export default function AuthScreen() {
             </View>
             <Text className="mt-4 text-xl font-bold text-ink">e-Nabız</Text>
             <Text className="text-xs text-muted">
-              T.C. Sağlık Bakanlığı · SentryCompanion AI
+              T.C. Sağlık Bakanlığı · Dijital Sağlık Asistanı
             </Text>
           </View>
 
@@ -242,9 +236,6 @@ export default function AuthScreen() {
               )}
             </PressableScale>
 
-            <Text className="mt-3 text-center text-[10px] text-muted">
-              Bu bir simülasyondur; gerçek e-Devlet doğrulaması yapılmaz.
-            </Text>
           </View>
 
           {/* Demo/test giriş bilgileri */}

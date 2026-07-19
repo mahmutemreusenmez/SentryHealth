@@ -133,7 +133,7 @@ class ReminderService {
         id: `vaccine-${v.id}`,
         taskId: v.id,
         title: "Aşı Zamanı Yaklaşıyor",
-        body: `SentryBaby: ${v.name} (${v.dose}) aşısının günü yaklaştı. Aile sağlığı merkezinden randevu alın.`,
+        body: `${v.name} (${v.dose}) aşısının günü yaklaştı. Aile sağlığı merkezinden randevu alın.`,
         fireAt,
         fired: false,
       };
@@ -186,7 +186,7 @@ class ReminderService {
   private async ensureAndroidChannel(): Promise<void> {
     if (!this.expo || this.channelReady || Platform.OS !== "android") return;
     await this.expo.setNotificationChannelAsync("sentry-reminders", {
-      name: "SentryCompanion Hatırlatıcılar",
+      name: "e-Nabız Hatırlatıcılar",
       importance: this.expo.AndroidImportance.HIGH,
       lightColor: "#E11D48",
     });

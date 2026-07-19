@@ -4,7 +4,7 @@ import { warningFeedback } from "./hapticsService";
 import { BABY_LOBBY_ROOM, LOBBY_ROOM, getSignalWsUrl } from "./rtcConfig";
 
 /**
- * SentryMD hekim/ebe paneli için gelen canlı triyaj çağrılarını dinleyen kanca.
+ * Sağlık Personeli Paneli için gelen canlı triyaj çağrılarını dinleyen kanca.
  *
  * Kronik (`triage-lobby`) ve yeni doğan (`baby-triage-lobby`) lobilerine ayrı
  * WebSocket bağlantılarıyla katılır (sinyal sunucusu bir istemciyi aynı anda

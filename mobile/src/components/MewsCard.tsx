@@ -84,7 +84,7 @@ export default function MewsCard({
             className="text-xs font-bold text-white"
             style={{ fontSize: 12 * fontScale }}
           >
-            {t(`mews.band.${BAND_KEY[result.band]}`)} · MEWS {result.total}
+            {t(`mews.band.${BAND_KEY[result.band]}`)} · Skor {result.total}
           </Text>
         </View>
       </View>

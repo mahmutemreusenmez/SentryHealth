@@ -4,16 +4,19 @@ import {
   Home,
   Hospital,
   LogOut,
+  MessageCircle,
   PhoneOff,
+  Share2,
   Siren,
   Stethoscope,
+  Users,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import Barcode from "../components/Barcode";
-import LanguageSwitcher from "../components/LanguageSwitcher";
+import LiveChatPanel from "../components/LiveChatPanel";
 import LiveVideoPanel from "../components/LiveVideoPanel";
 import { PressableScale } from "../components/ui";
 import { useAuth } from "../context/AuthContext";
@@ -23,6 +26,15 @@ import { tapFeedback } from "../services/hapticsService";
 import { BABY_LOBBY_ROOM, LOBBY_ROOM } from "../services/rtcConfig";
 import { buildReferral, triageChannel } from "../services/triageChannel";
 import { useDoctorLobby, type IncomingCall } from "../services/useDoctorLobby";
+
+/** Panele giriş yapan sağlık personelinin görev rolü. */
+type StaffRole = "doctor" | "nurse" | "midwife";
+
+const STAFF_ROLES: { role: StaffRole; key: string }[] = [
+  { role: "doctor", key: "doctor.roleDoctor" },
+  { role: "nurse", key: "doctor.roleNurse" },
+  { role: "midwife", key: "doctor.roleMidwife" },
+];
 
 const REFERRAL_BUTTONS: {
   level: ReferralLevel;
@@ -36,21 +48,28 @@ const REFERRAL_BUTTONS: {
 ];
 
 /**
- * SentryMD Mobil Hekim Paneli — giriş yapan hekimin (rol: doctor) ana ekranı.
+ * Sağlık Personeli Paneli — giriş yapan personelin (Hekim / Hemşire / Ebe)
+ * ortak ana ekranı.
  *
- * `useDoctorLobby` ile kronik ve yeni doğan lobilerinden gelen canlı triyaj
- * çağrılarını gerçek zamanlı dinler; her yeni çağrıda push-banner + haptic
- * tetiklenir. Hekim "Kabul Et" dediğinde ilgili `call-*` odasına alıcı
- * (receiver) modda katılır ve WebRTC görüşme kurulur; görüşme sırasında 3 yönlü
- * sevk kararı hastaya canlı barkod olarak iletilir.
+ * `useDoctorLobby` ile genel/kronik ve yeni doğan lobilerinden gelen tüm canlı
+ * destek istekleri tek bir "Gelen İstekler" kuyruğunda toplanır; her yeni
+ * istekte push-banner + haptic tetiklenir. Personel isteği Hemşire/Ebe ile
+ * paylaşıp koordine edebilir, "Kabul Et" ile ilgili `call-*` odasına alıcı
+ * modda katılıp görüşmeyi yürütür, hasta ile canlı sohbete geçebilir ve
+ * görüşme sırasında sevk kararını hastaya canlı barkod olarak iletir.
  */
 export default function DoctorHomeScreen() {
   const { auth, logout } = useAuth();
   const { t } = useLocale();
   const { queue, connected, dismiss } = useDoctorLobby();
+  const [role, setRole] = useState<StaffRole>("doctor");
+  const [assignments, setAssignments] = useState<Record<string, StaffRole>>({});
   const [activeCall, setActiveCall] = useState<IncomingCall | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [issued, setIssued] = useState<TriageReferral | null>(null);
+
+  const roleLabel = (r: StaffRole): string =>
+    t(STAFF_ROLES.find((s) => s.role === r)?.key ?? "doctor.roleDoctor");
 
   const accept = (call: IncomingCall) => {
     tapFeedback();
@@ -58,6 +77,18 @@ export default function DoctorHomeScreen() {
     setStatus(null);
     setActiveCall(call);
     dismiss(call.roomId);
+  };
+
+  // İsteği paydaş rollere (Hekim → Hemşire → Ebe → Hekim) döngüsel paylaştırır.
+  const share = (call: IncomingCall) => {
+    tapFeedback();
+    setAssignments((prev) => {
+      const order: StaffRole[] = ["doctor", "nurse", "midwife"];
+      const current = prev[call.roomId];
+      const next =
+        order[(order.indexOf(current ?? "doctor") + 1) % order.length];
+      return { ...prev, [call.roomId]: next };
+    });
   };
 
   const endCall = () => {
@@ -75,7 +106,7 @@ export default function DoctorHomeScreen() {
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={["top"]}>
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
-        {/* Başlık + dil seçici + çıkış */}
+        {/* Başlık + çıkış */}
         <View className="mb-4 flex-row items-center">
           <View className="mr-3 h-11 w-11 items-center justify-center rounded-full bg-blue-light">
             <Stethoscope size={22} color="#0369a1" />
@@ -84,7 +115,6 @@ export default function DoctorHomeScreen() {
             <Text className="text-base font-bold text-ink">{t("doctor.title")}</Text>
             <Text className="text-xs text-muted">{t("doctor.subtitle")}</Text>
           </View>
-          <LanguageSwitcher compact />
         </View>
 
         <View className="mb-4 flex-row items-center justify-between rounded-2xl border border-line bg-white px-4 py-3">
@@ -95,7 +125,9 @@ export default function DoctorHomeScreen() {
               }`}
             />
             <Text className="text-xs font-semibold text-ink">
-              {auth.nationalId ? `Dr. ${auth.nationalId}` : "SentryMD"}
+              {auth.nationalId
+                ? `${roleLabel(role)} · ${auth.nationalId}`
+                : roleLabel(role)}
             </Text>
           </View>
           <PressableScale
@@ -111,6 +143,38 @@ export default function DoctorHomeScreen() {
           </PressableScale>
         </View>
 
+        {/* Görev rolü seçimi (Hekim / Hemşire / Ebe) */}
+        <View className="mb-4 rounded-2xl border border-line bg-white p-3">
+          <View className="mb-2 flex-row items-center">
+            <Users size={15} color="#0369a1" />
+            <Text className="ml-2 text-xs font-bold text-ink">
+              {t("doctor.roleTitle")}
+            </Text>
+          </View>
+          <View className="flex-row">
+            {STAFF_ROLES.map((s) => {
+              const activeRole = s.role === role;
+              return (
+                <PressableScale
+                  key={s.role}
+                  onPress={() => setRole(s.role)}
+                  className={`mr-2 flex-1 items-center rounded-xl py-2.5 ${
+                    activeRole ? "bg-brand" : "bg-surface"
+                  }`}
+                >
+                  <Text
+                    className={`text-xs font-bold ${
+                      activeRole ? "text-white" : "text-muted"
+                    }`}
+                  >
+                    {t(s.key)}
+                  </Text>
+                </PressableScale>
+              );
+            })}
+          </View>
+        </View>
+
         {activeCall ? (
           <CallView
             call={activeCall}
@@ -121,7 +185,13 @@ export default function DoctorHomeScreen() {
             onEnd={endCall}
           />
         ) : (
-          <QueueView queue={queue} onAccept={accept} />
+          <QueueView
+            queue={queue}
+            assignments={assignments}
+            roleLabel={roleLabel}
+            onAccept={accept}
+            onShare={share}
+          />
         )}
       </ScrollView>
     </SafeAreaView>
@@ -130,10 +200,16 @@ export default function DoctorHomeScreen() {
 
 function QueueView({
   queue,
+  assignments,
+  roleLabel,
   onAccept,
+  onShare,
 }: {
   queue: IncomingCall[];
+  assignments: Record<string, StaffRole>;
+  roleLabel: (role: StaffRole) => string;
   onAccept: (call: IncomingCall) => void;
+  onShare: (call: IncomingCall) => void;
 }) {
   const { t } = useLocale();
   return (
@@ -161,6 +237,7 @@ function QueueView({
         queue.map((call) => {
           const isBaby = call.lobby === "baby";
           const Icon = isBaby ? Baby : Stethoscope;
+          const assignedTo = assignments[call.roomId];
           return (
             <View
               key={call.roomId}
@@ -190,17 +267,39 @@ function QueueView({
                 </Text>
               ) : null}
 
-              <PressableScale
-                onPress={() => onAccept(call)}
-                accessibilityRole="button"
-                accessibilityLabel={t("doctor.accept")}
-                className="flex-row items-center justify-center rounded-xl bg-brand py-3.5"
-              >
-                <Stethoscope size={17} color="#ffffff" />
-                <Text className="ml-2 text-sm font-bold text-white">
-                  {t("doctor.accept")}
-                </Text>
-              </PressableScale>
+              {assignedTo ? (
+                <View className="mb-3 flex-row items-center rounded-xl bg-blue-light/50 px-3 py-2">
+                  <Users size={13} color="#0369a1" />
+                  <Text className="ml-2 text-[11px] font-semibold text-blue-dark">
+                    {t("doctor.sharedWith")}: {roleLabel(assignedTo)}
+                  </Text>
+                </View>
+              ) : null}
+
+              <View className="flex-row">
+                <PressableScale
+                  onPress={() => onShare(call)}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("doctor.shareTitle")}
+                  className="mr-2 flex-row items-center justify-center rounded-xl border border-blue bg-white px-4 py-3.5"
+                >
+                  <Share2 size={16} color="#0284c7" />
+                  <Text className="ml-2 text-sm font-bold text-blue-dark">
+                    {t("doctor.share")}
+                  </Text>
+                </PressableScale>
+                <PressableScale
+                  onPress={() => onAccept(call)}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("doctor.accept")}
+                  className="flex-1 flex-row items-center justify-center rounded-xl bg-brand py-3.5"
+                >
+                  <Stethoscope size={17} color="#ffffff" />
+                  <Text className="ml-2 text-sm font-bold text-white">
+                    {t("doctor.accept")}
+                  </Text>
+                </PressableScale>
+              </View>
             </View>
           );
         })
@@ -225,6 +324,7 @@ function CallView({
   onEnd: () => void;
 }) {
   const { t } = useLocale();
+  const [showChat, setShowChat] = useState(false);
   const lobbyRoom = call.lobby === "baby" ? BABY_LOBBY_ROOM : LOBBY_ROOM;
 
   return (
@@ -259,6 +359,29 @@ function CallView({
           <Text className="mt-2 text-[11px] leading-5 text-ink">{call.metadata}</Text>
         ) : null}
       </View>
+
+      {/* Hasta ile canlı sohbete geçiş */}
+      <PressableScale
+        onPress={() => setShowChat((s) => !s)}
+        accessibilityRole="button"
+        accessibilityLabel={t("doctor.chatOpen")}
+        className="mb-3 flex-row items-center justify-center rounded-2xl border border-blue bg-white py-3.5"
+      >
+        <MessageCircle size={17} color="#0284c7" />
+        <Text className="ml-2 text-sm font-bold text-blue-dark">
+          {showChat ? t("doctor.chatBack") : t("doctor.chatOpen")}
+        </Text>
+      </PressableScale>
+
+      {showChat ? (
+        <View className="mb-3">
+          <LiveChatPanel
+            roomId={call.roomId}
+            from="staff"
+            title={t("doctor.chatTitle")}
+          />
+        </View>
+      ) : null}
 
       <View className="rounded-2xl border border-line bg-white p-4">
         <Text className="mb-3 text-sm font-bold text-ink">
