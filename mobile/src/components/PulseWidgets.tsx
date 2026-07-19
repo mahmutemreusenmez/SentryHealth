@@ -22,9 +22,9 @@ import Sparkline from "./Sparkline";
 const HISTORY_LEN = 16;
 
 /**
- * SentryPulse — giyilebilir cihaz (HealthKit / Google Fit) simülasyon widget'ı.
- * İzin alındıktan sonra canlı Nabız/SpO2/Adım verisini gösterir; nabız kritik
- * eşiği aşınca "Kritik Vital Uyarısı" verip kullanıcıyı Triyaj'a yönlendirir.
+ * Giyilebilir cihaz vital widget'ı. İzin alındıktan sonra canlı Nabız/SpO2/Adım
+ * verisini gösterir; nabız kritik eşiği aşınca "Kritik Vital Uyarısı" verip
+ * kullanıcıyı Triyaj'a yönlendirir.
  */
 export default function PulseWidgets({
   onNavigateTriage,
@@ -76,8 +76,8 @@ export default function PulseWidgets({
     return (
       <Card className="mb-5">
         <SectionHeader
-          title="SentryPulse · Giyilebilir Cihaz"
-          subtitle="Akıllı saat vital verileri (HealthKit / Google Fit)"
+          title="Giyilebilir Cihaz"
+          subtitle="Akıllı saat vital verileri"
           icon={Watch}
         />
         <Text className="mb-3 text-xs leading-5 text-muted">
@@ -108,7 +108,7 @@ export default function PulseWidgets({
   return (
     <Card className="mb-5">
       <SectionHeader
-        title="SentryPulse · Canlı Vitaller"
+        title="Canlı Vitaller"
         subtitle="Giyilebilir cihazdan anlık veri"
         icon={Watch}
       />
@@ -116,7 +116,7 @@ export default function PulseWidgets({
       <View className="flex-row justify-between">
         <VitalWidget
           icon={HeartPulse}
-          color={critical ? "#dc2626" : "#00875A"}
+          color={critical ? "#dc2626" : "#E11D48"}
           label="Nabız"
           value={sample ? `${sample.heartRate}` : "—"}
           unit="atım/dk"
@@ -130,7 +130,7 @@ export default function PulseWidgets({
         />
         <VitalWidget
           icon={Footprints}
-          color="#006644"
+          color="#BE123C"
           label="Adım"
           value={sample ? `${sample.steps}` : "—"}
           unit="bugün"
@@ -146,7 +146,7 @@ export default function PulseWidgets({
         </View>
         <Sparkline
           data={hrHistory}
-          color={critical ? "#dc2626" : "#00875A"}
+          color={critical ? "#dc2626" : "#E11D48"}
           width={280}
           height={44}
         />
@@ -180,7 +180,7 @@ export default function PulseWidgets({
           className="mt-3 items-center rounded-xl border border-line py-2"
         >
           <Text className="text-[11px] font-semibold text-muted">
-            Kritik Nabız Senaryosunu Simüle Et (Demo)
+            Kritik Nabız Senaryosunu Dene
           </Text>
         </Pressable>
       )}

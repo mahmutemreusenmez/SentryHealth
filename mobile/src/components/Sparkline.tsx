@@ -5,7 +5,7 @@ import Svg, { Circle, Path } from "react-native-svg";
 /** Basit, gözü yormayan SVG çizgi grafiği (canlı vital trendi için). */
 export default function Sparkline({
   data,
-  color = "#00875A",
+  color = "#E11D48",
   width = 120,
   height = 40,
   strokeWidth = 2,

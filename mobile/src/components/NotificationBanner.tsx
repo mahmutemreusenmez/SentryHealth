@@ -139,7 +139,7 @@ export default function NotificationBanner() {
           <View className="flex-1">
             <View className="flex-row items-center">
               <Text className="text-[10px] font-bold uppercase tracking-wide text-white/80">
-                SentryCompanion AI
+                e-Nabız Bildirimi
               </Text>
             </View>
             <Text className="text-sm font-bold text-white">{active.title}</Text>

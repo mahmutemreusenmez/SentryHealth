@@ -3,14 +3,16 @@ import {
   Activity,
   Baby,
   CheckCircle2,
+  ChevronRight,
   ClipboardList,
   Contrast,
   CreditCard,
-  FileJson,
   HeartPulse,
+  Lock,
   LogOut,
   PlusCircle,
   Save,
+  Stethoscope,
   Type,
   User,
 } from "lucide-react-native";
@@ -57,9 +59,9 @@ function isValidNationalId(id: string): boolean {
 }
 
 export default function ProfileScreen() {
-  const { profile, recommendations, vitals, fhirBundle, updateProfile, saveVitals } =
+  const { profile, recommendations, vitals, updateProfile, saveVitals } =
     usePatient();
-  const { logout } = useAuth();
+  const { auth, login, logout } = useAuth();
   const {
     largeText,
     highContrast,
@@ -114,14 +116,42 @@ export default function ProfileScreen() {
           contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
           keyboardShouldPersistTaps="handled"
         >
-          <View className="mb-5 items-center">
-            <View className="h-20 w-20 items-center justify-center rounded-full bg-brand">
-              <User size={40} color="#ffffff" />
+          {/* e-Nabız kurumsal kimlik kartı */}
+          <View className="mb-5 overflow-hidden rounded-3xl border border-line bg-white shadow-sm">
+            <View className="flex-row items-center bg-brand px-5 py-4">
+              <View className="h-14 w-14 items-center justify-center rounded-2xl bg-white/20">
+                <User size={28} color="#ffffff" />
+              </View>
+              <View className="ml-3 flex-1">
+                <Text className="text-lg font-bold text-white">
+                  {profile.fullName}
+                </Text>
+                <Text className="text-[11px] text-white/85">
+                  e-Nabız Kişisel Sağlık Kaydı
+                </Text>
+              </View>
+              <View className="rounded-lg bg-white/20 px-2.5 py-1">
+                <Text className="text-[10px] font-bold text-white">
+                  {profile.bloodType}
+                </Text>
+              </View>
             </View>
-            <Text className="mt-2 text-xl font-bold text-ink">
-              {profile.fullName}
-            </Text>
-            <Text className="text-xs text-muted">Hasta Profili</Text>
+            <View className="flex-row flex-wrap px-5 py-4">
+              <IdentityItem label="T.C. Kimlik No" value={profile.nationalId} />
+              <IdentityItem label="Kan Grubu" value={profile.bloodType} />
+              <IdentityItem
+                label="Yaş / Cinsiyet"
+                value={`${profile.age} · ${
+                  GENDERS.find((g) => g.value === profile.gender)?.label ??
+                  "Belirtilmedi"
+                }`}
+              />
+              <IdentityItem
+                label="Aile Hekimi"
+                value={profile.familyPhysician}
+                wide
+              />
+            </View>
           </View>
 
           {/* Kişisel bilgiler */}
@@ -218,7 +248,7 @@ export default function ProfileScreen() {
                     }`}
                   >
                     {active ? (
-                      <CheckCircle2 size={15} color="#006644" />
+                      <CheckCircle2 size={15} color="#BE123C" />
                     ) : (
                       <PlusCircle size={15} color="#6b7280" />
                     )}
@@ -274,7 +304,7 @@ export default function ProfileScreen() {
             {hasNewborn ? (
               <View className="mb-3 flex-row items-center rounded-xl bg-brand-light px-3 py-2.5">
                 <View className="mr-3 h-9 w-9 items-center justify-center rounded-full bg-white">
-                  <Baby size={18} color="#006644" />
+                  <Baby size={18} color="#BE123C" />
                 </View>
                 <View className="flex-1">
                   <Text className="text-sm font-bold text-ink">
@@ -320,12 +350,12 @@ export default function ProfileScreen() {
             />
           </View>
 
-          {/* Erişilebilirlik (WCAG 2.1) + KVKK/FHIR bilgisi */}
+          {/* Erişilebilirlik ve gizlilik */}
           <View className="mt-5">
             <Card>
               <SectionHeader
                 title="Erişilebilirlik ve Gizlilik"
-                subtitle="WCAG 2.1 · KVKK/GDPR · HL7 FHIR"
+                subtitle="Yazı boyutu, kontrast ve güvenli kayıt"
                 icon={Accessibility}
               />
               <ToggleRow
@@ -343,15 +373,17 @@ export default function ProfileScreen() {
                 onToggle={toggleHighContrast}
               />
               <View className="mt-2 flex-row items-start rounded-xl bg-brand-light/60 p-3">
-                <FileJson size={16} color="#006644" />
-                <Text className="ml-2 flex-1 text-[11px] leading-4 text-brand-dark">
-                  Verileriniz HL7 FHIR (R4) standardında saklanır:{" "}
-                  {fhirBundle.entry.length} kaynak (Patient + Observation).
-                  Kimlik bilginiz KVKK/GDPR gereği pseudonimize edilir; ham
-                  tutulmaz.
+                <Text className="flex-1 text-[11px] leading-4 text-brand-dark">
+                  Sağlık verileriniz cihazınızda güvenli (şifreli) olarak
+                  saklanır; kimlik bilginiz ham olarak tutulmaz.
                 </Text>
               </View>
             </Card>
+          </View>
+
+          {/* Sağlık personeli paneline geçiş */}
+          <View className="mt-5">
+            <StaffAccessCard onLogin={login} error={auth.error} />
           </View>
 
           {/* e-Devlet oturumunu kapat */}
@@ -367,6 +399,109 @@ export default function ProfileScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+  );
+}
+
+function IdentityItem({
+  label,
+  value,
+  wide,
+}: {
+  label: string;
+  value: string;
+  wide?: boolean;
+}) {
+  return (
+    <View className="mb-3" style={{ width: wide ? "100%" : "50%" }}>
+      <Text className="text-[10px] font-medium uppercase tracking-wide text-muted">
+        {label}
+      </Text>
+      <Text className="mt-0.5 text-sm font-bold text-ink">{value}</Text>
+    </View>
+  );
+}
+
+function StaffAccessCard({
+  onLogin,
+  error,
+}: {
+  onLogin: (nationalId: string, password: string) => void;
+  error: string | null;
+}) {
+  const [open, setOpen] = useState(false);
+  const [nationalId, setNationalId] = useState("");
+  const [password, setPassword] = useState("");
+
+  const submit = () => onLogin(nationalId.trim(), password);
+
+  return (
+    <View className="rounded-2xl border border-line bg-white p-4">
+      <Pressable
+        onPress={() => setOpen((o) => !o)}
+        accessibilityRole="button"
+        accessibilityLabel="Sağlık personeli girişi"
+        className="flex-row items-center"
+      >
+        <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-blue-light">
+          <Stethoscope size={20} color="#0369a1" />
+        </View>
+        <View className="flex-1">
+          <Text className="text-sm font-bold text-ink">
+            Sağlık Personeli Girişi
+          </Text>
+          <Text className="mt-0.5 text-[11px] text-muted">
+            Hekim / Hemşire / Ebe paneline geçiş
+          </Text>
+        </View>
+        <ChevronRight
+          size={18}
+          color="#6b7280"
+          style={{ transform: [{ rotate: open ? "90deg" : "0deg" }] }}
+        />
+      </Pressable>
+
+      {open ? (
+        <View className="mt-4">
+          <View className="mb-2 flex-row items-center rounded-2xl border border-line bg-surface px-4">
+            <User size={18} color="#6b7280" />
+            <TextInput
+              value={nationalId}
+              onChangeText={(t) => setNationalId(t.replace(/[^0-9]/g, ""))}
+              keyboardType="number-pad"
+              maxLength={11}
+              placeholder="T.C. Kimlik No"
+              placeholderTextColor="#9ca3af"
+              className="ml-2 flex-1 py-3 text-ink"
+            />
+          </View>
+          <View className="mb-2 flex-row items-center rounded-2xl border border-line bg-surface px-4">
+            <Lock size={18} color="#6b7280" />
+            <TextInput
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              placeholder="Şifre"
+              placeholderTextColor="#9ca3af"
+              className="ml-2 flex-1 py-3 text-ink"
+              onSubmitEditing={submit}
+              returnKeyType="go"
+            />
+          </View>
+          {error ? (
+            <Text className="mb-2 text-[11px] text-danger">{error}</Text>
+          ) : null}
+          <Pressable
+            onPress={submit}
+            className="flex-row items-center justify-center rounded-xl bg-blue py-3"
+          >
+            <Stethoscope size={16} color="#ffffff" />
+            <Text className="ml-2 text-sm font-bold text-white">
+              Panele Giriş Yap
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
+    </View>
   );
 }
 
@@ -392,7 +527,7 @@ function ToggleRow({
       className="mb-2 flex-row items-center rounded-xl border border-line bg-surface px-3 py-3"
     >
       <View className="mr-3 h-9 w-9 items-center justify-center rounded-full bg-brand-light">
-        <Icon size={18} color="#006644" />
+        <Icon size={18} color="#BE123C" />
       </View>
       <View className="flex-1">
         <Text className="text-sm font-semibold text-ink">{label}</Text>

@@ -15,8 +15,11 @@
 
 const DEFAULT_WS_URL = "ws://localhost:3000/api/webrtc/signaling";
 
-/** Doktor/hemşire panelinin dinlediği ortak lobi odası. */
+/** Kronik/genel triyaj hekiminin dinlediği ortak lobi odası. */
 export const LOBBY_ROOM = "triage-lobby";
+
+/** Yeni doğan ebe/hemşire triyajının kullandığı ayrı lobi odası. */
+export const BABY_LOBBY_ROOM = "baby-triage-lobby";
 
 /** Canlı görüşme WebSocket sinyal adresini döndürür. */
 export function getSignalWsUrl(): string {

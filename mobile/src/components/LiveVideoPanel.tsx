@@ -39,6 +39,17 @@ export interface LiveVideoPanelProps {
   muted: boolean;
   /** Bu görüşme için üretilen benzersiz çağrı odası (ör. call-abc123). */
   roomId: string;
+  /**
+   * Dinlenen lobi odası. Kronik triyaj için `triage-lobby` (varsayılan),
+   * yeni doğan ebe/hemşire triyajı için `baby-triage-lobby`.
+   */
+  lobbyRoom?: string;
+  /**
+   * `caller` (varsayılan): hasta/anne — lobiye katılıp `incoming-call`
+   * duyurur. `receiver`: hekim/ebe — doğrudan çağrı odasına katılıp
+   * lobideki hastaya `call-accepted` gönderir.
+   */
+  mode?: "caller" | "receiver";
   /** Bu eşin rolü (ör. "patient" | "mother"). */
   role?: string;
   /** Hekim/hemşire paneline duyurulacak hasta kimliği. */
@@ -73,6 +84,8 @@ export default function LiveVideoPanel({
   active,
   muted,
   roomId,
+  lobbyRoom = LOBBY_ROOM,
+  mode = "caller",
   role = "patient",
   patient,
   metadata,
@@ -243,7 +256,17 @@ export default function LiveVideoPanel({
 
       ws.onopen = () => {
         onStatus?.("Sinyal sunucusuna bağlanıldı");
-        send({ type: "join", roomId: LOBBY_ROOM });
+        if (mode === "receiver") {
+          // Hekim/ebe: doğrudan çağrı odasına katıl ve lobideki hastaya kabulü duyur.
+          send({ type: "join", roomId });
+          send({
+            type: "broadcast",
+            roomId: lobbyRoom,
+            data: { kind: "call-accepted", roomId },
+          });
+        } else {
+          send({ type: "join", roomId: lobbyRoom });
+        }
       };
       ws.onerror = () =>
         onError?.("Sinyal sunucusuna bağlanılamadı: " + getSignalWsUrl());
@@ -260,15 +283,29 @@ export default function LiveVideoPanel({
           myPeerIdRef.current = msg.peerId ?? null;
         } else if (msg.type === "joined") {
           if (msg.peerId) myPeerIdRef.current = msg.peerId;
-          if (msg.roomId === LOBBY_ROOM) {
+          if (msg.roomId === lobbyRoom) {
+            const callPatient =
+              patient ?? { nationalId: "", name: role === "mother" ? "Anne" : "Hasta" };
             // Lobiye katıldık: hasta bilgisini panele duyur.
             send({
               type: "broadcast",
-              roomId: LOBBY_ROOM,
+              roomId: lobbyRoom,
               data: {
                 kind: "incoming-call",
                 roomId,
-                patient: patient ?? { nationalId: "", name: role === "mother" ? "Anne" : "Hasta" },
+                patient: callPatient,
+              },
+            });
+            // Ek "patient-calling" push-bildirimi (broadcast ile taşınır):
+            // hekim/ebe panelinde banner + haptic tetikler.
+            send({
+              type: "broadcast",
+              roomId: lobbyRoom,
+              data: {
+                kind: "patient-calling",
+                roomId,
+                patient: callPatient,
+                metadata: metadata ?? "",
               },
             });
             onStatus?.(
@@ -370,7 +407,7 @@ export default function LiveVideoPanel({
       if (localEl) localEl.srcObject = null;
       if (remoteEl) remoteEl.srcObject = null;
     };
-  }, [active, roomId, role, patient, metadata, onError, onStatus, onReferral]);
+  }, [active, roomId, lobbyRoom, mode, role, patient, metadata, onError, onStatus, onReferral]);
 
   // Mikrofon aç/kapa: ses track'ini etkinleştir/pasifleştir.
   useEffect(() => {
@@ -406,14 +443,15 @@ export default function LiveVideoPanel({
         muted
         style={{
           position: "absolute",
-          bottom: 12,
-          left: 12,
-          width: 96,
-          height: 72,
+          bottom: 16,
+          left: 16,
+          width: 120,
+          height: 160,
           objectFit: "cover",
-          borderRadius: 10,
-          border: "2px solid rgba(255,255,255,0.6)",
+          borderRadius: 16,
+          border: "2.5px solid rgba(255,255,255,0.85)",
           backgroundColor: "#111",
+          boxShadow: "0 6px 20px rgba(0,0,0,0.45)",
         }}
       />
       <div
@@ -421,7 +459,7 @@ export default function LiveVideoPanel({
           position: "absolute",
           top: 12,
           right: 12,
-          backgroundColor: connected ? "#00875A" : "rgba(0,0,0,0.55)",
+          backgroundColor: connected ? "#E11D48" : "rgba(0,0,0,0.55)",
           color: "#fff",
           fontSize: 11,
           fontWeight: 700,
@@ -479,7 +517,7 @@ export default function LiveVideoPanel({
                 width: 52,
                 height: 52,
                 borderRadius: 999,
-                backgroundColor: "#00875A",
+                backgroundColor: "#E11D48",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",

@@ -1,4 +1,4 @@
-import { Cloud, CloudOff, Mic, Send, Sparkles, Square } from "lucide-react-native";
+import { Cloud, CloudOff, HeartPulse, Mic, Send, Square } from "lucide-react-native";
 import React, { useEffect, useRef, useState } from "react";
 import {
   FlatList,
@@ -29,9 +29,9 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     createMessage(
       "assistant",
-      `Merhaba ${profile.fullName.split(" ")[0]}, ben SentryCompanion. ` +
-        "Kronik takip verilerinizi analiz ederek yardımcı olurum. " +
-        "Sağlığınızla ilgili sorularınızı sesli veya yazılı sorabilirsiniz.",
+      `Sayın ${profile.fullName.split(" ")[0]}, Merkezi Sağlık Sistemi Asistanı'na hoş geldiniz. ` +
+        "Sağlık kayıtlarınıza ve kronik takip verilerinize göre size yönlendirme sunar; " +
+        "sorularınızı sesli veya yazılı iletebilirsiniz.",
     ),
   ]);
   const [input, setInput] = useState("");
@@ -96,7 +96,6 @@ export default function ChatScreen() {
     setBusy(false);
   };
 
-  // Sesli giriş simülasyonu: gerçek dağıtımda expo-speech / STT bağlanacak.
   const toggleVoice = () => {
     if (listening) {
       setListening(false);
@@ -110,25 +109,25 @@ export default function ChatScreen() {
   };
 
   const statusLabel = !online
-    ? "Çevrimdışı — yerel öneriler"
+    ? "Çevrimdışı · yerel yönlendirme"
     : apiEnabled
-      ? "Canlı AI bağlantısı"
-      : "Çevrimdışı Mod (anahtar yok)";
+      ? "Merkezi sisteme bağlı"
+      : "Yerel yönlendirme modu";
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={["top"]}>
       {/* Başlık */}
       <View className="flex-row items-center border-b border-line bg-white px-4 py-3">
         <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-brand">
-          <Sparkles size={20} color="#ffffff" />
+          <HeartPulse size={20} color="#ffffff" />
         </View>
         <View className="flex-1">
           <Text className="text-base font-bold text-ink">
-            SentryCompanion AI
+            Merkezi Sağlık Sistemi Asistanı
           </Text>
           <View className="flex-row items-center">
             {online && apiEnabled ? (
-              <Cloud size={11} color="#006644" />
+              <Cloud size={11} color="#BE123C" />
             ) : (
               <CloudOff size={11} color="#6b7280" />
             )}
@@ -184,7 +183,7 @@ export default function ChatScreen() {
             {listening ? (
               <Square size={18} color="#ffffff" />
             ) : (
-              <Mic size={20} color="#006644" />
+              <Mic size={20} color="#BE123C" />
             )}
           </Pressable>
           <TextInput
@@ -229,7 +228,7 @@ const Bubble = React.memo(function Bubble({
         }`}
       >
         <Text className={isUser ? "text-white" : "text-ink"}>
-          {isTyping ? "yazıyor…" : message.text}
+          {isTyping ? "yanıt hazırlanıyor…" : message.text}
         </Text>
       </View>
       <View

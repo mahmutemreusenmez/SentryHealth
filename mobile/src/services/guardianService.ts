@@ -77,7 +77,7 @@ export function buildPulseAlert(
   return {
     id: nextId("alert"),
     kind: "critical-triage",
-    message: `SentryCompanion Kritik Uyarı: Yakınınız ${firstName} Bey'in nabzı ${bpm} atım/dk ölçüldü (kritik eşik). Lütfen acilen ulaşın.`,
+    message: `Kritik Uyarı: Yakınınız ${firstName} Bey'in nabzı ${bpm} atım/dk ölçüldü (kritik eşik). Lütfen acilen ulaşın.`,
     timestamp: Date.now(),
   };
 }
@@ -88,7 +88,7 @@ export function buildMissedDoseAlert(profile: PatientProfile): GuardianAlert {
   return {
     id: nextId("alert"),
     kind: "missed-dose",
-    message: `SentryCompanion Bilgilendirmesi: Yakınınız ${firstName} Bey akşam dozaj ilacını saatinde almamıştır. Lütfen kontrol ediniz.`,
+    message: `Bilgilendirme: Yakınınız ${firstName} Bey akşam dozaj ilacını saatinde almamıştır. Lütfen kontrol ediniz.`,
     timestamp: Date.now(),
   };
 }
@@ -99,7 +99,7 @@ export function buildCriticalAlert(profile: PatientProfile): GuardianAlert {
   return {
     id: nextId("alert"),
     kind: "critical-triage",
-    message: `SentryCompanion Kritik Uyarı: Yakınınız ${firstName} Bey için triyaj değerlendirmesinde acil (kırmızı kod) sevk önerildi. Lütfen acilen ulaşın.`,
+    message: `Kritik Uyarı: Yakınınız ${firstName} Bey için triyaj değerlendirmesinde acil (kırmızı kod) sevk önerildi. Lütfen acilen ulaşın.`,
     timestamp: Date.now(),
   };
 }

@@ -5,10 +5,10 @@
  * ikon gibi doğrudan `color` alan bileşenlerde bu sabitler kullanılır.
  */
 export const COLORS = {
-  /** e-Nabız kurumsal yeşili. */
-  brand: "#00875A",
-  brandDark: "#006644",
-  brandLight: "#d1fae5",
+  /** e-Nabız kurumsal kırmızısı (baskın marka rengi). */
+  brand: "#E11D48",
+  brandDark: "#BE123C",
+  brandLight: "#ffe4e6",
   /** Sağlık Bakanlığı mavisi. */
   blue: "#0284c7",
   blueDark: "#0369a1",
@@ -17,6 +17,10 @@ export const COLORS = {
   edevlet: "#c20c18",
   danger: "#dc2626",
   amber: "#d97706",
+  /** Klinik "iyi/stabil" yeşili — marka renginden bağımsız semantik renk. */
+  success: "#16a34a",
+  successDark: "#15803d",
+  successLight: "#dcfce7",
   white: "#ffffff",
   ink: "#1f2937",
   muted: "#6b7280",
@@ -24,9 +28,12 @@ export const COLORS = {
   surface: "#f8fafc",
 } as const;
 
-/** MEWS klinik risk bandı renkleri (Yeşil / Sarı / Kırmızı). */
+/**
+ * MEWS klinik risk bandı renkleri (Yeşil / Sarı / Kırmızı).
+ * Klinik güvenlik için marka renginden bağımsızdır: "stabil" her zaman yeşil kalır.
+ */
 export const MEWS_BAND_COLOR = {
-  green: COLORS.brand,
+  green: COLORS.success,
   yellow: COLORS.amber,
   red: COLORS.edevlet,
 } as const;

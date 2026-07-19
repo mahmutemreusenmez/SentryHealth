@@ -10,7 +10,7 @@ import { Text, View } from "react-native";
 import type { Guardian, GuardianAlert } from "../data/types";
 
 /**
- * Hasta Yakını (SentryGuardian) Erişim Paneli.
+ * Hasta Yakını Erişim Paneli.
  * Kayıtlı refakatçiyi, otomatik SMS bilgilendirme durumunu ve kritik/kaçırılan
  * doz senaryolarında refakatçiye gidecek otonom SMS taslaklarını gösterir.
  */
@@ -25,11 +25,11 @@ export default function GuardianPanel({
     <View className="rounded-2xl border border-line bg-white p-4 shadow-sm">
       <View className="mb-3 flex-row items-center">
         <View className="mr-2 h-9 w-9 items-center justify-center rounded-full bg-brand-light">
-          <ShieldCheck size={18} color="#006644" />
+          <ShieldCheck size={18} color="#BE123C" />
         </View>
         <View className="flex-1">
           <Text className="text-lg font-bold text-ink">
-            Hasta Yakını (SentryGuardian)
+            Hasta Yakını
           </Text>
           <Text className="text-xs text-muted">
             Refakatçi erişim ve bilgilendirme paneli

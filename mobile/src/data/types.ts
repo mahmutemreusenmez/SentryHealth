@@ -24,19 +24,28 @@ export interface PatientProfile {
   age: number;
   gender: Gender;
   chronicConditions: ChronicCondition[];
+  /** Kan grubu (ör. "A Rh+"). */
+  bloodType: string;
+  /** Bağlı olunan aile hekimi. */
+  familyPhysician: string;
 }
 
 /** Uygulama genelinde kullanılan hasta profili tipi (PatientProfile ile aynı). */
 export type UserProfile = PatientProfile;
 
+/** Giriş yapan kullanıcının rolü (hasta veya hekim/sağlık personeli). */
+export type UserRole = "patient" | "doctor";
+
 /** e-Devlet Kapısı kimlik doğrulama durumunu tutan global state. */
 export interface AuthenticationState {
   /** "Giriş Başarılı" bayrağı */
   isAuthenticated: boolean;
-  /** Sahte e-Devlet doğrulaması sürerken true */
+  /** Kimlik doğrulaması sürerken true */
   isLoading: boolean;
   /** Giriş yapan kullanıcının T.C. Kimlik Numarası */
   nationalId: string | null;
+  /** Giriş yapan kullanıcının rolü (hasta / hekim). */
+  role: UserRole;
   /** Doğrulama hatası mesajı */
   error: string | null;
 }
@@ -165,7 +174,7 @@ export interface GuardianAlert {
   timestamp: number;
 }
 
-/** Jüri için canlı push bildirim simülatörü kart türü */
+/** Canlı push bildirim kart türü */
 export type SimNotificationKind =
   | "medication"
   | "critical"
@@ -206,33 +215,34 @@ export interface SyncQueueItem {
 /* Sürüm 2.0 — Gelişmiş Klinik ve Donanımsal Entegrasyon               */
 /* ------------------------------------------------------------------ */
 
-/** SentryPharmacy: bir ilacın stok/dozaj takibi. */
-export interface MedicationStock {
-  /** İlgili sağlık görevi (HealthTask) kimliği. */
-  taskId: string;
+/** İlaç Takip Sistemi: bir ilacın açlık/tokluk durumu. */
+export type MedicationFoodTiming = "before" | "after" | "independent";
+
+/**
+ * İlaç Takip Sistemi (MedicationTracker) — hastanın takip ettiği bir ilaç.
+ * Eczane modülünün yerini alan yeni klinik ilaç takip modeli.
+ */
+export interface Medication {
+  id: string;
   /** İlaç adı (ör. "Metformin 1000 mg"). */
   name: string;
-  /** Kalan adet (tablet/doz). */
-  remaining: number;
-  /** Günlük tüketilen doz sayısı. */
-  dailyDose: number;
+  /** Dozaj (ör. "1 Tablet", "2 Puf"). */
+  dosage: string;
+  /** Periyot (ör. "Günde 2 kez", "8 saatte bir"). */
+  period: string;
+  /** Açlık / tokluk / bağımsız. */
+  foodTiming: MedicationFoodTiming;
+  /** Bir sonraki doz saati "HH:MM" (Yaklaşan İlaçlar sıralaması için). */
+  nextTime: string;
+  /** İlgili sağlık görevi (HealthTask) kimliği — varsa. */
+  taskId?: string;
+  /** Kalan adet (tablet/doz) — reçete yenileme uyarısı için opsiyonel. */
+  remaining?: number;
+  /** Günlük tüketilen doz sayısı — reçete yenileme uyarısı için opsiyonel. */
+  dailyDose?: number;
 }
 
-/** SentryPharmacy: nöbetçi eczane kaydı. */
-export interface PharmacyInfo {
-  id: string;
-  name: string;
-  phone: string;
-  address: string;
-  district: string;
-  /** Simüle edilmiş kullanıcı konumuna uzaklık (km). */
-  distanceKm: number;
-  /** Rota tarifi için enlem/boylam. */
-  lat: number;
-  lng: number;
-}
-
-/** SentryPulse: giyilebilir cihazdan gelen anlık vital örneği. */
+/** Giyilebilir cihazdan gelen anlık vital örneği. */
 export interface PulseSample {
   /** Nabız — atım/dk. */
   heartRate: number;
@@ -244,39 +254,13 @@ export interface PulseSample {
   at: number;
 }
 
-/** SentryPulse: giyilebilir cihaz erişim izni durumu. */
+/** Giyilebilir cihaz erişim izni durumu. */
 export type WearablePermission = "unknown" | "granted" | "denied";
 
-/** SentryLens: tahlildeki tek bir laboratuvar bulgusu. */
-export interface LabFinding {
-  /** Test adı (ör. "B12 Vitamini"). */
-  name: string;
-  value: number;
-  unit: string;
-  /** Referans alt sınırı. */
-  refLow: number;
-  /** Referans üst sınırı. */
-  refHigh: number;
-  /** Referansa göre durum. */
-  status: "low" | "high" | "normal";
-  /** Hastanın anlayacağı sade, korkutmayan açıklama. */
-  plainSummary: string;
-}
-
-/** SentryLens: yüklenen tahlil raporunun AI analiz sonucu. */
-export interface LabAnalysis {
-  fileName: string;
-  findings: LabFinding[];
-  /** Referans dışı (anormal) bulgu sayısı. */
-  abnormalCount: number;
-  /** Genel, sakinleştirici özet mesajı. */
-  overallSummary: string;
-}
-
-/** SentryMD: hekimin verdiği 3 yönlü sevk kararı seviyesi. */
+/** Hekimin verdiği 3 yönlü sevk kararı seviyesi. */
 export type ReferralLevel = "emergency" | "clinic" | "home";
 
-/** SentryMD: hekimden hastaya canlı iletilen sevk kaydı. */
+/** Hekimden hastaya canlı iletilen sevk kaydı. */
 export interface TriageReferral {
   id: string;
   level: ReferralLevel;
@@ -367,7 +351,7 @@ export type RootTabParamList = {
   Dashboard: undefined;
   Triage: undefined;
   Chat: undefined;
-  Pharmacy: undefined;
+  Medication: undefined;
   Baby: undefined;
   Profile: undefined;
 };
@@ -376,9 +360,23 @@ export type RootTabParamList = {
 export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
-  DoctorPanel: undefined;
-  NursePanel: undefined;
+  /** Giriş yapan sağlık personelinin ana ekranı (Sağlık Personeli Paneli). */
+  DoctorHome: undefined;
 };
+
+/** Canlı sohbette bir satırı gönderen taraf. */
+export type ChatFrom = "staff" | "patient";
+
+/** Hasta ile sağlık personeli arasındaki canlı sohbet satırı. */
+export interface ChatLine {
+  id: string;
+  /** Görüşme odası anahtarı (call-...). */
+  roomId: string;
+  from: ChatFrom;
+  text: string;
+  /** epoch ms */
+  at: number;
+}
 
 export type ChatRole = "user" | "assistant";
 

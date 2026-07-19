@@ -5,7 +5,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   Accessibility,
   Activity,
-  BellRing,
+  Baby,
   CalendarClock,
   CheckCircle2,
   ChevronRight,
@@ -15,7 +15,7 @@ import {
   LineChart,
   Pill,
   ShieldPlus,
-  Stethoscope,
+  Video,
   Volume2,
   Wind,
 } from "lucide-react-native";
@@ -26,14 +26,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import GuardianPanel from "../components/GuardianPanel";
 import HealthTrends from "../components/HealthTrends";
-import LabAnalyzer from "../components/LabAnalyzer";
 import MewsCard from "../components/MewsCard";
 import PulseWidgets from "../components/PulseWidgets";
 import VoiceConfirmButton from "../components/VoiceConfirmButton";
 import WeeklyCompliance from "../components/WeeklyCompliance";
-import { SectionHeader, StatusBadge } from "../components/ui";
+import { PressableScale, SectionHeader, StatusBadge } from "../components/ui";
 import { useAccessibility } from "../context/AccessibilityContext";
+import { useBaby } from "../context/BabyContext";
 import { usePatient } from "../context/PatientContext";
+import { useLocale } from "../i18n/LocaleContext";
 import { WEEKLY_COMPLIANCE } from "../data/mockData";
 import { COLORS } from "../theme/colors";
 import type {
@@ -71,7 +72,7 @@ export default function DashboardScreen() {
     guardian,
     guardianAlerts,
     completeTask,
-    sendTestNotification,
+    upcomingMedications,
     lowStockMedications,
     mews,
     vitals,
@@ -79,6 +80,8 @@ export default function DashboardScreen() {
   } = usePatient();
   const { surface, fontScale, highContrast, toggleAccessibilityMode } =
     useAccessibility();
+  const { hasNewborn } = useBaby();
+  const { t } = useLocale();
   const navigation = useNavigation<DashboardNav>();
   const firstName = profile.fullName.split(" ")[0];
   const title = honorific(profile.gender);
@@ -119,7 +122,7 @@ export default function DashboardScreen() {
               className="text-sm text-muted"
               style={{ color: surface.muted, fontSize: 14 * fontScale }}
             >
-              Sağlıklı Günler,
+              {t("dashboard.greeting")}
             </Text>
             <Text
               className="text-2xl font-bold text-ink"
@@ -159,7 +162,7 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        {/* Klinik Karar Destek Sistemi (CDSS) — MEWS erken uyarı kartı */}
+        {/* Klinik erken uyarı kartı */}
         <View className="mb-4">
           <View className="mb-2 flex-row items-center">
             <ShieldPlus size={16} color={COLORS.brandDark} />
@@ -167,7 +170,7 @@ export default function DashboardScreen() {
               className="ml-2 text-base font-bold"
               style={{ color: surface.ink, fontSize: 16 * fontScale }}
             >
-              Klinik Erken Uyarı (MEWS)
+              {t("dashboard.mewsTitle")}
             </Text>
           </View>
           <MewsCard
@@ -177,50 +180,72 @@ export default function DashboardScreen() {
           />
         </View>
 
-        {/* Jüri için canlı push bildirim simülatörü */}
-        <Pressable
-          onPress={sendTestNotification}
-          className="mb-4 flex-row items-center justify-center rounded-xl border border-brand bg-brand py-3"
-        >
-          <BellRing size={17} color="#ffffff" />
-          <Text className="ml-2 text-sm font-bold text-white">
-            Test Bildirimi Gönder
-          </Text>
-        </Pressable>
+        {/* Hızlı erişim kartları (e-Nabız net butonları) */}
+        <View className="mb-4 flex-row">
+          <QuickAccessCard
+            icon={Video}
+            label="Canlı Triyaj"
+            onPress={() => navigation.navigate("Triage")}
+          />
+          <QuickAccessCard
+            icon={Pill}
+            label="İlaç Takibi"
+            onPress={() => navigation.navigate("Medication")}
+            isLast={!hasNewborn}
+          />
+          {hasNewborn ? (
+            <QuickAccessCard
+              icon={Baby}
+              label="Yeni Doğan"
+              onPress={() => navigation.navigate("Baby")}
+              isLast
+            />
+          ) : null}
+        </View>
 
-        {/* SentryPharmacy: ilaç azalıyor uyarısı (bitmesine ≤3 gün) */}
-        {lowStockMedications.length > 0 ? (
-          <Pressable
-            onPress={() => navigation.navigate("Pharmacy")}
-            className="mb-4 flex-row items-center rounded-2xl border border-danger bg-danger/5 p-3"
-          >
-            <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-danger/10">
-              <Pill size={20} color="#dc2626" />
+        {/* İlaç Takip Sistemi: yaklaşan ilaçlar özeti + reçete uyarısı */}
+        <Pressable
+          onPress={() => navigation.navigate("Medication")}
+          accessibilityRole="button"
+          accessibilityLabel="İlaç Takip Sistemi'ni aç"
+          className="mb-4 rounded-2xl border border-line bg-white p-4 shadow-sm"
+        >
+          <View className="flex-row items-center">
+            <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-brand-light">
+              <Pill size={20} color={COLORS.brand} />
             </View>
             <View className="flex-1">
-              <Text className="text-sm font-bold text-danger">
-                İlacınız Azalıyor, Reçete Yenileyin
+              <Text className="text-sm font-bold text-ink">
+                İlaç Takip Sistemi
               </Text>
-              <Text className="mt-0.5 text-[11px] text-ink">
-                {lowStockMedications
-                  .map((m) => `${m.name} · ~${m.remaining} gün kaldı`)
+              <Text className="mt-0.5 text-[11px] text-muted">
+                {upcomingMedications.length > 0
+                  ? `Yaklaşan: ${upcomingMedications[0].nextTime} · ${upcomingMedications[0].name}`
+                  : "Henüz ilaç eklenmedi"}
+              </Text>
+            </View>
+            <ChevronRight size={18} color={COLORS.muted} />
+          </View>
+
+          {lowStockMedications.length > 0 ? (
+            <View className="mt-3 flex-row items-center rounded-xl border border-danger bg-danger/5 px-3 py-2">
+              <Pill size={15} color={COLORS.danger} />
+              <Text className="ml-2 flex-1 text-[11px] font-semibold text-danger">
+                Reçete yenileyin: {lowStockMedications
+                  .map((m) => `${m.name} (~${m.remaining} gün)`)
                   .join(" • ")}
               </Text>
             </View>
-            <ChevronRight size={18} color="#dc2626" />
-          </Pressable>
-        ) : null}
+          ) : null}
+        </Pressable>
 
-        {/* SentryPulse: giyilebilir cihaz canlı vitalleri */}
+        {/* Giyilebilir cihaz canlı vitalleri */}
         <PulseWidgets
           onNavigateTriage={() => navigation.navigate("Triage")}
         />
 
         {/* Sesli İlaç Onay Modülü */}
         <VoiceConfirmButton />
-
-        {/* SentryLens: tahlil raporu yükleme + AI analiz */}
-        <LabAnalyzer />
 
         {/* Yaklaşan randevu (MHRS) */}
         <View className="mb-6 rounded-2xl bg-blue p-4 shadow-sm">
@@ -308,25 +333,42 @@ export default function DashboardScreen() {
           )}
         </View>
 
-        {/* Hasta Yakını (SentryGuardian) Erişim Paneli */}
+        {/* Hasta Yakını Erişim Paneli */}
         <View className="mt-6">
           <GuardianPanel guardian={guardian} alerts={guardianAlerts} />
         </View>
-
-        {/* SentryMD: Triyaj Hekimi Paneli (/doctor-panel) */}
-        <Pressable
-          onPress={() => navigation.navigate("DoctorPanel")}
-          className="mt-6 flex-row items-center justify-center rounded-xl border border-blue bg-white py-3"
-        >
-          <Stethoscope size={16} color="#0284c7" />
-          <Text className="ml-2 text-sm font-bold text-blue-dark">
-            SentryMD Hekim Panelini Aç
-          </Text>
-        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );
 }
+
+const QuickAccessCard = React.memo(function QuickAccessCard({
+  icon: Icon,
+  label,
+  onPress,
+  isLast = false,
+}: {
+  icon: LucideIcon;
+  label: string;
+  onPress: () => void;
+  isLast?: boolean;
+}) {
+  return (
+    <PressableScale
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      className={`flex-1 items-center rounded-2xl border border-line bg-white px-2 py-4 shadow-sm ${
+        isLast ? "" : "mr-3"
+      }`}
+    >
+      <View className="mb-2 h-11 w-11 items-center justify-center rounded-full bg-brand-light">
+        <Icon size={22} color={COLORS.brand} />
+      </View>
+      <Text className="text-xs font-semibold text-ink">{label}</Text>
+    </PressableScale>
+  );
+});
 
 const ScreeningCard = React.memo(function ScreeningCard({
   rec,
@@ -398,7 +440,7 @@ const TaskRow = React.memo(function TaskRow({
       <View className="mb-4 flex-1 rounded-2xl border border-line bg-white p-4 shadow-sm">
         <View className="flex-row items-center">
           <View className="mr-3 h-9 w-9 items-center justify-center rounded-full bg-surface">
-            <Icon size={18} color="#006644" />
+            <Icon size={18} color="#BE123C" />
           </View>
           <View className="flex-1">
             <Text className="text-base font-semibold text-ink">
@@ -417,13 +459,13 @@ const TaskRow = React.memo(function TaskRow({
               hitSlop={8}
               className="mr-2 h-8 w-8 items-center justify-center rounded-full bg-brand-light"
             >
-              <Volume2 size={15} color="#006644" />
+              <Volume2 size={15} color="#BE123C" />
             </Pressable>
           ) : null}
 
           {done ? (
             <View className="flex-row items-center">
-              <CheckCircle2 size={22} color="#00875A" />
+              <CheckCircle2 size={22} color="#E11D48" />
             </View>
           ) : null}
         </View>

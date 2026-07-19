@@ -31,7 +31,7 @@ export async function requestWearablePermission(): Promise<boolean> {
 }
 
 interface PulseStreamOptions {
-  /** Belirli bir örnekte kritik nabız enjekte etmek için (jüri demo tetikleyici). */
+  /** Bir sonraki örnekte kritik nabız değeri üretilsin mi? */
   spikeNext?: boolean;
 }
 

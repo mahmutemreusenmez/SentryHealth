@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import type { UserRole } from "../data/types";
+
 /**
  * Profesyonel form doğrulama katmanı (Zod).
  *
@@ -40,11 +42,28 @@ export interface TestAccount {
   nationalId: string;
   password: string;
   fullName: string;
+  role: UserRole;
 }
 
 export const TEST_ACCOUNTS: readonly TestAccount[] = [
-  { nationalId: "11111111111", password: "1234", fullName: "Mahmut Yılmaz" },
+  {
+    nationalId: "11111111111",
+    password: "1234",
+    fullName: "Mahmut Yılmaz",
+    role: "patient",
+  },
+  {
+    nationalId: "22222222222",
+    password: "1234",
+    fullName: "Dr. Selin Kaya",
+    role: "doctor",
+  },
 ] as const;
+
+/** Verilen T.C. numarasına ait rolü döndürür (test hesabı değilse hasta). */
+export function roleForNationalId(nationalId: string): UserRole {
+  return findTestAccount(nationalId)?.role ?? "patient";
+}
 
 /** Verilen T.C. numarası tanımlı bir test hesabına ait mi? */
 export function isTestNationalId(value: string): boolean {

@@ -4,6 +4,7 @@ import { Text, View } from "react-native";
 
 import { PressableScale } from "./ui";
 import { useAccessibility } from "../context/AccessibilityContext";
+import { useLocale } from "../i18n/LocaleContext";
 import type { MewsBand, MewsResult } from "../data/types";
 import { COLORS, MEWS_BAND_COLOR } from "../theme/colors";
 
@@ -16,10 +17,10 @@ import { COLORS, MEWS_BAND_COLOR } from "../theme/colors";
  * şeffaflık için listelenir.
  */
 
-const BAND_TEXT: Record<MewsBand, string> = {
-  green: "YEŞİL",
-  yellow: "SARI",
-  red: "KIRMIZI",
+const BAND_KEY: Record<MewsBand, string> = {
+  green: "green",
+  yellow: "yellow",
+  red: "red",
 };
 
 export default function MewsCard({
@@ -32,6 +33,7 @@ export default function MewsCard({
   onStartTriage: () => void;
 }) {
   const { surface, fontScale } = useAccessibility();
+  const { t } = useLocale();
 
   if (!hasData || !result) {
     return (
@@ -45,15 +47,14 @@ export default function MewsCard({
             className="ml-2 text-sm font-bold"
             style={{ color: surface.ink, fontSize: 14 * fontScale }}
           >
-            Klinik Erken Uyarı (MEWS)
+            {t("dashboard.mewsTitle")}
           </Text>
         </View>
         <Text
           className="mt-1 text-xs"
           style={{ color: surface.muted, fontSize: 12 * fontScale }}
         >
-          Profil ekranından güncel vital ölçümünüzü (solunum, nabız, tansiyon,
-          ateş) girin; erken uyarı skorunuz otomatik hesaplansın.
+          {t("mews.empty")}
         </Text>
       </View>
     );
@@ -76,14 +77,14 @@ export default function MewsCard({
           className="ml-2 flex-1 text-base font-bold text-white"
           style={{ fontSize: 16 * fontScale }}
         >
-          {result.title}
+          {t(`mews.title.${BAND_KEY[result.band]}`)}
         </Text>
         <View className="rounded-full bg-white/25 px-3 py-1">
           <Text
             className="text-xs font-bold text-white"
             style={{ fontSize: 12 * fontScale }}
           >
-            {BAND_TEXT[result.band]} · MEWS {result.total}
+            {t(`mews.band.${BAND_KEY[result.band]}`)} · Skor {result.total}
           </Text>
         </View>
       </View>
@@ -93,7 +94,7 @@ export default function MewsCard({
           className="text-[13px] leading-5"
           style={{ color: surface.ink, fontSize: 13 * fontScale }}
         >
-          {result.guidance}
+          {t(`mews.guidance.${BAND_KEY[result.band]}`)}
         </Text>
 
         {/* Parametre bazlı MEWS dökümü */}
@@ -137,7 +138,7 @@ export default function MewsCard({
           <PressableScale
             onPress={onStartTriage}
             accessibilityRole="button"
-            accessibilityLabel="Canlı triyaj başlat"
+            accessibilityLabel={t("mews.startTriage")}
             className="mt-4 flex-row items-center justify-center rounded-xl py-3"
             style={{ backgroundColor: accent }}
           >
@@ -145,7 +146,7 @@ export default function MewsCard({
               className="text-sm font-bold text-white"
               style={{ fontSize: 14 * fontScale }}
             >
-              Canlı Triyaj Başlat
+              {t("mews.startTriage")}
             </Text>
             <ChevronRight size={16} color={COLORS.white} />
           </PressableScale>

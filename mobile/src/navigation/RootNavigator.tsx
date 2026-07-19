@@ -7,8 +7,8 @@ import {
   Baby,
   HeartPulse,
   Home,
-  MapPin,
   MessageCircle,
+  Pill,
   User,
   Video,
 } from "lucide-react-native";
@@ -24,9 +24,8 @@ import AuthScreen from "../screens/AuthScreen";
 import BabyScreen from "../screens/BabyScreen";
 import ChatScreen from "../screens/ChatScreen";
 import DashboardScreen from "../screens/DashboardScreen";
-import DoctorPanelScreen from "../screens/DoctorPanelScreen";
-import NursePanelScreen from "../screens/NursePanelScreen";
-import PharmacyScreen from "../screens/PharmacyScreen";
+import DoctorHomeScreen from "../screens/DoctorHomeScreen";
+import MedicationScreen from "../screens/MedicationScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import VideoTriageScreen from "../screens/VideoTriageScreen";
 
@@ -36,13 +35,13 @@ const TABS: Record<
 > = {
   Dashboard: { icon: Home, label: "Ana Sayfa" },
   Triage: { icon: Video, label: "Canlı Triyaj" },
-  Chat: { icon: MessageCircle, label: "AI Sohbet" },
-  Pharmacy: { icon: MapPin, label: "Eczane" },
+  Chat: { icon: MessageCircle, label: "Sağlık Sohbeti" },
+  Medication: { icon: Pill, label: "İlaç Takibi" },
   Baby: { icon: Baby, label: "Yeni Doğan" },
   Profile: { icon: User, label: "Profil" },
 };
 
-/** Web derlemesi için derin bağlantı (ör. /doctor-panel) eşlemesi. */
+/** Web derlemesi için derin bağlantı eşlemesi. */
 const linking: LinkingOptions<RootStackParamList> = {
   prefixes: [],
   config: {
@@ -53,13 +52,12 @@ const linking: LinkingOptions<RootStackParamList> = {
           Dashboard: "",
           Triage: "triyaj",
           Chat: "sohbet",
-          Pharmacy: "eczane",
+          Medication: "ilac-takip",
           Baby: "yeni-dogan",
           Profile: "profil",
         },
       },
-      DoctorPanel: "doctor-panel",
-      NursePanel: "nurse-panel",
+      DoctorHome: "personel",
     },
   },
 };
@@ -74,7 +72,7 @@ function MainTabs() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: "#00875A",
+        tabBarActiveTintColor: "#E11D48",
         tabBarInactiveTintColor: "#6b7280",
         tabBarStyle: {
           borderTopColor: "#e5e7eb",
@@ -92,7 +90,7 @@ function MainTabs() {
       <Tab.Screen name="Dashboard" component={DashboardScreen} />
       <Tab.Screen name="Triage" component={VideoTriageScreen} />
       <Tab.Screen name="Chat" component={ChatScreen} />
-      <Tab.Screen name="Pharmacy" component={PharmacyScreen} />
+      <Tab.Screen name="Medication" component={MedicationScreen} />
       {hasNewborn ? (
         <Tab.Screen name="Baby" component={BabyScreen} />
       ) : null}
@@ -108,7 +106,7 @@ function HydrationSplash() {
         <HeartPulse size={30} color="#ffffff" />
       </View>
       <Text className="mt-4 text-base font-bold text-ink">e-Nabız</Text>
-      <ActivityIndicator color="#00875A" style={{ marginTop: 12 }} />
+      <ActivityIndicator color="#E11D48" style={{ marginTop: 12 }} />
     </View>
   );
 }
@@ -119,7 +117,6 @@ export default function RootNavigator() {
 
   if (isHydrating || privacyHydrating) return <HydrationSplash />;
 
-  // KVKK/GDPR "Güvenlik ve İzin Bilgilendirme" (Privacy Shield) — ilk açılış.
   if (!accepted) return <PrivacyShieldScreen onAccept={accept} />;
 
   return (
@@ -128,14 +125,15 @@ export default function RootNavigator() {
         screenOptions={{ headerShown: false, animation: "fade" }}
       >
         {auth.isAuthenticated ? (
-          <Stack.Screen name="Main" component={MainTabs} />
+          auth.role === "doctor" ? (
+            // Sağlık personeli: hasta sekmeleri yerine birleşik personel paneli.
+            <Stack.Screen name="DoctorHome" component={DoctorHomeScreen} />
+          ) : (
+            <Stack.Screen name="Main" component={MainTabs} />
+          )
         ) : (
           <Stack.Screen name="Auth" component={AuthScreen} />
         )}
-        {/* SentryMD hekim paneli: /doctor-panel derin bağlantısıyla erişilir. */}
-        <Stack.Screen name="DoctorPanel" component={DoctorPanelScreen} />
-        {/* SentryBaby ebe/hemşire paneli: /nurse-panel derin bağlantısı. */}
-        <Stack.Screen name="NursePanel" component={NursePanelScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

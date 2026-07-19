@@ -1,11 +1,6 @@
-import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
-import type { CompositeNavigationProp } from "@react-navigation/native";
-import { useNavigation } from "@react-navigation/native";
-import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   Baby,
   CalendarClock,
-  Droplets,
   PhoneOff,
   Plus,
   Ruler,
@@ -28,29 +23,25 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import ConfirmCallModal from "../components/ConfirmCallModal";
 import GrowthChart from "../components/GrowthChart";
 import LiveVideoPanel, { type IncomingReferral } from "../components/LiveVideoPanel";
+import LiveChatPanel from "../components/LiveChatPanel";
 import PermissionModal from "../components/PermissionModal";
 import { PrivacyShieldModal } from "../components/PrivacyShield";
 import VaccineCalendar from "../components/VaccineCalendar";
 import { Card, EmptyState, PressableScale, SectionHeader } from "../components/ui";
 import { useBaby } from "../context/BabyContext";
+import { useLocale } from "../i18n/LocaleContext";
 import { GROWTH_REFERENCE, classifyPercentile } from "../data/growthReference";
 import type {
   GrowthMetric,
   NurseReferral,
   NurseReferralLevel,
-  RootStackParamList,
-  RootTabParamList,
 } from "../data/types";
 import { babyChannel } from "../services/babyChannel";
-import { makeCallRoomId } from "../services/rtcConfig";
+import { BABY_LOBBY_ROOM, makeCallRoomId } from "../services/rtcConfig";
 import { speak } from "../services/speechService";
-
-type BabyNav = CompositeNavigationProp<
-  BottomTabNavigationProp<RootTabParamList, "Baby">,
-  NativeStackNavigationProp<RootStackParamList>
->;
 
 const METRICS: { key: GrowthMetric; label: string; unit: string }[] = [
   { key: "weightKg", label: "Kilo", unit: "kg" },
@@ -69,10 +60,11 @@ export default function BabyScreen() {
     toggleVaccine,
     addGrowthMeasurement,
   } = useBaby();
-  const navigation = useNavigation<BabyNav>();
+  const { t } = useLocale();
 
   const [metric, setMetric] = useState<GrowthMetric>("weightKg");
   const [active, setActive] = useState(false);
+  const [confirmGate, setConfirmGate] = useState(false);
   const [privacyGate, setPrivacyGate] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [referral, setReferral] = useState<NurseReferral | null>(null);
@@ -149,7 +141,7 @@ export default function BabyScreen() {
       ? "#dc2626"
       : referral?.level === "family-health"
         ? "#d97706"
-        : "#00875A";
+        : "#E11D48";
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={["top"]}>
@@ -165,7 +157,7 @@ export default function BabyScreen() {
           {/* Başlık */}
           <View className="mb-4 flex-row items-center">
             <View className="mr-3 h-11 w-11 items-center justify-center rounded-full bg-brand-light">
-              <Baby size={22} color="#006644" />
+              <Baby size={22} color="#BE123C" />
             </View>
             <View className="flex-1">
               <Text className="text-lg font-bold text-ink">
@@ -177,7 +169,7 @@ export default function BabyScreen() {
               </Text>
             </View>
             <View className="rounded-xl border border-brand-light bg-white px-3 py-2">
-              <Text className="text-xs font-bold text-brand-dark">SentryBaby</Text>
+              <Text className="text-xs font-bold text-brand-dark">Yeni Doğan</Text>
               <Text className="text-[9px] text-muted">Aile Hekimliği</Text>
             </View>
           </View>
@@ -210,14 +202,15 @@ export default function BabyScreen() {
             />
 
             <View
-              className="mb-3 justify-end overflow-hidden rounded-3xl bg-ink p-3"
-              style={{ height: active ? 240 : 130 }}
+              className="mb-3 justify-end overflow-hidden rounded-3xl bg-ink p-4"
+              style={{ height: active ? 380 : 150 }}
             >
               <LiveVideoPanel
                 key={attemptKey}
                 active={active}
                 muted={false}
                 roomId={roomId}
+                lobbyRoom={BABY_LOBBY_ROOM}
                 role="mother"
                 patient={patient}
                 metadata={metadata}
@@ -232,11 +225,11 @@ export default function BabyScreen() {
                   </Text>
                 </View>
               ) : (
-                <View className="rounded-2xl bg-black/50 px-3 py-2">
+                <View className="rounded-2xl border-l-4 border-brand bg-black/60 px-5 py-4">
                   <Text className="text-[11px] font-semibold text-brand">
-                    Canlı Metadata · Oda: {roomId}
+                    Görüşme Bilgisi · Oda: {roomId}
                   </Text>
-                  <Text className="mt-1 text-[11px] text-white">
+                  <Text className="mt-1.5 text-xs leading-6 text-white">
                     Ateş {vitals.temperature.toFixed(1)}°C · Kilo{" "}
                     {vitals.weightKg} kg · Emzirme {vitals.feedingsPerDay}/gün
                   </Text>
@@ -253,33 +246,42 @@ export default function BabyScreen() {
               >
                 <PhoneOff size={18} color="#ffffff" />
                 <Text className="ml-2 text-base font-bold text-white">
-                  Görüşmeyi Bitir
+                  {t("triage.endCall")}
                 </Text>
               </PressableScale>
             ) : (
               <PressableScale
                 onPress={() => {
                   setError(null);
-                  setPrivacyGate(true);
+                  setConfirmGate(true);
                 }}
                 accessibilityRole="button"
-                accessibilityLabel="Ebe veya hemşireye canlı bağlan"
+                accessibilityLabel={t("nurse.connect")}
                 className="flex-row items-center justify-center rounded-2xl bg-brand py-4"
               >
                 <Video size={18} color="#ffffff" />
                 <Text className="ml-2 text-base font-bold text-white">
-                  Ebe / Hemşireye Bağlan
+                  {t("nurse.connect")}
                 </Text>
               </PressableScale>
             )}
 
             <Text className="mt-2 text-center text-[10px] text-muted">
               Bebek vital verileri (ateş, kilo, emzirme sıklığı) görüşmede
-              ebe/hemşirenin ekranına canlı metadata olarak aktarılır. Bağlantı,
-              SentryHealth web sitesinin WebRTC sinyal sunucusu
-              (/api/webrtc/signaling) üzerinden kurulur; jüri sunumu için
-              simülasyondur.
+              sağlık personelinin ekranına canlı olarak aktarılır. Bağlantı,
+              sağlık personeli paneline canlı kurulur.
             </Text>
+
+            {/* Anne – sağlık personeli canlı sohbeti (görüşme aktifken) */}
+            {active ? (
+              <View className="mt-3">
+                <LiveChatPanel
+                  roomId={roomId}
+                  from="patient"
+                  title="Sağlık Personeli ile Sohbet"
+                />
+              </View>
+            ) : null}
           </Card>
 
           {/* Ebe/hemşireden gelen canlı yönlendirme barkodu */}
@@ -308,11 +310,11 @@ export default function BabyScreen() {
             </View>
           ) : null}
 
-          {/* Persentil (gelişim) grafiği */}
+          {/* Gelişim grafiği */}
           <Card className="mb-5">
             <SectionHeader
-              title="Gelişim (Persentil) Grafiği"
-              subtitle="WHO standart eğrisi üzerinde bebeğinizin yeri"
+              title="Gelişim Grafiği"
+              subtitle="Standart gelişim eğrisi üzerinde bebeğinizin yeri"
               icon={TrendingUp}
             />
             <View className="mb-3 flex-row">
@@ -351,17 +353,17 @@ export default function BabyScreen() {
             {latest && percentile ? (
               <View
                 className={`mt-3 flex-row items-center rounded-xl px-3 py-2 ${
-                  percentile.tone === "normal" ? "bg-brand-light" : "bg-danger/10"
+                  percentile.tone === "normal" ? "bg-success-light" : "bg-danger/10"
                 }`}
               >
                 <Ruler
                   size={15}
-                  color={percentile.tone === "normal" ? "#006644" : "#dc2626"}
+                  color={percentile.tone === "normal" ? "#15803d" : "#dc2626"}
                 />
                 <Text
                   className={`ml-2 flex-1 text-[11px] font-semibold ${
                     percentile.tone === "normal"
-                      ? "text-brand-dark"
+                      ? "text-success-dark"
                       : "text-danger"
                   }`}
                 >
@@ -394,27 +396,26 @@ export default function BabyScreen() {
               }
               className="mt-1 flex-row items-center justify-center rounded-xl bg-brand-light py-2"
             >
-              <Thermometer size={14} color="#006644" />
+              <Thermometer size={14} color="#BE123C" />
               <Text className="ml-2 text-xs font-semibold text-brand-dark">
                 Yaklaşan Aşıları Sesli Oku
               </Text>
             </Pressable>
           </Card>
-
-          {/* Ebe/Hemşire paneli (rol arayüzü) */}
-          <PressableScale
-            onPress={() => navigation.navigate("NursePanel")}
-            accessibilityRole="button"
-            accessibilityLabel="Ebe veya hemşire panelini aç"
-            className="flex-row items-center justify-center rounded-xl border border-blue bg-white py-3"
-          >
-            <Droplets size={16} color="#0284c7" />
-            <Text className="ml-2 text-sm font-bold text-blue-dark">
-              Ebe / Hemşire Panelini Aç
-            </Text>
-          </PressableScale>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <ConfirmCallModal
+        visible={confirmGate}
+        title={t("confirm.nurse.title")}
+        message={t("confirm.nurse.message")}
+        acceptLabel={t("confirm.nurse.accept")}
+        onAccept={() => {
+          setConfirmGate(false);
+          setPrivacyGate(true);
+        }}
+        onCancel={() => setConfirmGate(false)}
+      />
 
       <PrivacyShieldModal
         visible={privacyGate}
@@ -491,7 +492,7 @@ function AddGrowthForm({
         onPress={() => setOpen(true)}
         className="mt-3 flex-row items-center justify-center rounded-xl border border-brand bg-white py-2.5"
       >
-        <Plus size={15} color="#006644" />
+        <Plus size={15} color="#BE123C" />
         <Text className="ml-2 text-xs font-bold text-brand-dark">
           Yeni Ölçüm Ekle
         </Text>

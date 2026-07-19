@@ -8,19 +8,24 @@ import React, {
   useState,
 } from "react";
 
-import type { AuthenticationState } from "../data/types";
+import type { AuthenticationState, UserRole } from "../data/types";
 import {
   STORAGE_KEYS,
   loadJSON,
   removeKey,
   saveJSON,
 } from "../services/storageService";
-import { findTestAccount, isValidTcKimlik } from "../utils/validation";
+import {
+  findTestAccount,
+  isValidTcKimlik,
+  roleForNationalId,
+} from "../utils/validation";
 
 const INITIAL_AUTH: AuthenticationState = {
   isAuthenticated: false,
   isLoading: false,
   nationalId: null,
+  role: "patient",
   error: null,
 };
 
@@ -28,13 +33,13 @@ const INITIAL_AUTH: AuthenticationState = {
 interface PersistedAuth {
   isAuthenticated: boolean;
   nationalId: string | null;
+  role?: UserRole;
 }
 
 interface AuthContextValue {
   auth: AuthenticationState;
   /** Kalıcı oturum cihaz hafızasından okunurken true (açılış splash'ı için). */
   isHydrating: boolean;
-  /** e-Devlet Kapısı ile sahte giriş: doğrula → yükleniyor → Giriş Başarılı. */
   login: (nationalId: string, password: string) => void;
   logout: () => void;
 }
@@ -56,6 +61,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           isAuthenticated: true,
           isLoading: false,
           nationalId: stored.nationalId,
+          role:
+            stored.role ??
+            roleForNationalId(stored.nationalId ?? ""),
           error: null,
         });
       }
@@ -95,11 +103,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // Sahte e-Devlet doğrulaması: yükleniyor animasyonu sonra Giriş Başarılı.
+    const role = roleForNationalId(nationalId);
+
     setAuth({
       isAuthenticated: false,
       isLoading: true,
       nationalId,
+      role,
       error: null,
     });
 
@@ -109,11 +119,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: true,
         isLoading: false,
         nationalId,
+        role,
         error: null,
       });
       void saveJSON<PersistedAuth>(STORAGE_KEYS.auth, {
         isAuthenticated: true,
         nationalId,
+        role,
       });
     }, 1500);
   }, []);

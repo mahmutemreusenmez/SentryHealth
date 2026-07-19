@@ -7,12 +7,10 @@ interface Rule {
   reply: (profile: PatientProfile) => string;
 }
 
-/** Geçmiş tansiyon ölçümlerinden en yüksek sistolik değeri bulur. */
 function peakSystolic(history: VitalReading[]): VitalReading {
   return history.reduce((max, r) => (r.systolic > max.systolic ? r : max));
 }
 
-/** Global profildeki yaş ve kronik duruma göre kişiselleştirilmiş öneri metni. */
 function personalizedAdvice(profile: PatientProfile): string {
   const parts: string[] = [`Yaşınız ${profile.age}. `];
 
@@ -47,11 +45,6 @@ function personalizedAdvice(profile: PatientProfile): string {
   return parts.join("");
 }
 
-/**
- * Basit, kural tabanlı çevrimdışı asistan.
- * Hastanın kronik tansiyon geçmişini analiz ederek proaktif, tıbbi dilde
- * yanıt üretir. Gerçek dağıtımda SentryHealth'in klinik AI servisine bağlanır.
- */
 const RULES: Rule[] = [
   {
     keywords: [
@@ -121,8 +114,9 @@ const RULES: Rule[] = [
 ];
 
 const FALLBACK =
-  "Sizi anlıyorum. Şikâyetinizi biraz daha detaylandırır mısınız? " +
-  "Acil bir durum (şiddetli ağrı, nefes darlığı, bilinç kaybı) varsa lütfen 112'yi arayın.";
+  "Talebinizi biraz daha ayrıntılı belirtir misiniz? Şikâyetinizi netleştirdiğinizde " +
+  "size uygun yönlendirmeyi sunabilirim. Acil bir durumda (şiddetli ağrı, nefes darlığı, " +
+  "bilinç kaybı) lütfen vakit kaybetmeden 112'yi arayın.";
 
 export function generateAssistantReply(
   userText: string,
