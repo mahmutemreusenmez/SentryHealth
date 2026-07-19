@@ -202,8 +202,8 @@ export default function BabyScreen() {
             />
 
             <View
-              className="mb-3 justify-end overflow-hidden rounded-3xl bg-ink p-3"
-              style={{ height: active ? 240 : 130 }}
+              className="mb-3 justify-end overflow-hidden rounded-3xl bg-ink p-4"
+              style={{ height: active ? 380 : 150 }}
             >
               <LiveVideoPanel
                 key={attemptKey}
@@ -225,11 +225,11 @@ export default function BabyScreen() {
                   </Text>
                 </View>
               ) : (
-                <View className="rounded-2xl bg-black/50 px-3 py-2">
+                <View className="rounded-2xl border-l-4 border-brand bg-black/60 px-5 py-4">
                   <Text className="text-[11px] font-semibold text-brand">
                     Görüşme Bilgisi · Oda: {roomId}
                   </Text>
-                  <Text className="mt-1 text-[11px] text-white">
+                  <Text className="mt-1.5 text-xs leading-6 text-white">
                     Ateş {vitals.temperature.toFixed(1)}°C · Kilo{" "}
                     {vitals.weightKg} kg · Emzirme {vitals.feedingsPerDay}/gün
                   </Text>
