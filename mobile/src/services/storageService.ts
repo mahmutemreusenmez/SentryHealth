@@ -25,7 +25,7 @@ export const STORAGE_KEYS = {
   tasks: "sentry_tasks",
   vitals: "sentry_vitals",
   syncQueue: "sentry_sync_queue",
-  medicationStock: "sentry_med_stock",
+  medications: "sentry_medications",
   baby: "sentry_baby",
   vitalsHistory: "sentry_vitals_history",
   fhirBundle: "sentry_fhir_bundle",

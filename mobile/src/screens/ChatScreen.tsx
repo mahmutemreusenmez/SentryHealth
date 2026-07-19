@@ -128,7 +128,7 @@ export default function ChatScreen() {
           </Text>
           <View className="flex-row items-center">
             {online && apiEnabled ? (
-              <Cloud size={11} color="#006644" />
+              <Cloud size={11} color="#BE123C" />
             ) : (
               <CloudOff size={11} color="#6b7280" />
             )}
@@ -184,7 +184,7 @@ export default function ChatScreen() {
             {listening ? (
               <Square size={18} color="#ffffff" />
             ) : (
-              <Mic size={20} color="#006644" />
+              <Mic size={20} color="#BE123C" />
             )}
           </Pressable>
           <TextInput

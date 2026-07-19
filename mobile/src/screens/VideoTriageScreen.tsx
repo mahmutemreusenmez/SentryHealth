@@ -103,7 +103,7 @@ export default function VideoTriageScreen() {
       ? "#dc2626"
       : referral?.level === "clinic"
         ? "#d97706"
-        : "#00875A";
+        : "#E11D48";
 
   // Görüşme başına benzersiz, canlı bir çağrı odası (her denemede yenilenir).
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -165,7 +165,7 @@ export default function VideoTriageScreen() {
         {/* Başlık */}
         <View className="mb-4 flex-row items-center">
           <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-brand-light">
-            <Stethoscope size={20} color="#006644" />
+            <Stethoscope size={20} color="#BE123C" />
           </View>
           <View className="flex-1">
             <Text className="text-base font-bold text-ink">

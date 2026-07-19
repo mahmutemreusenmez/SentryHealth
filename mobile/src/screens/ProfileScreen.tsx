@@ -218,7 +218,7 @@ export default function ProfileScreen() {
                     }`}
                   >
                     {active ? (
-                      <CheckCircle2 size={15} color="#006644" />
+                      <CheckCircle2 size={15} color="#BE123C" />
                     ) : (
                       <PlusCircle size={15} color="#6b7280" />
                     )}
@@ -274,7 +274,7 @@ export default function ProfileScreen() {
             {hasNewborn ? (
               <View className="mb-3 flex-row items-center rounded-xl bg-brand-light px-3 py-2.5">
                 <View className="mr-3 h-9 w-9 items-center justify-center rounded-full bg-white">
-                  <Baby size={18} color="#006644" />
+                  <Baby size={18} color="#BE123C" />
                 </View>
                 <View className="flex-1">
                   <Text className="text-sm font-bold text-ink">
@@ -343,7 +343,7 @@ export default function ProfileScreen() {
                 onToggle={toggleHighContrast}
               />
               <View className="mt-2 flex-row items-start rounded-xl bg-brand-light/60 p-3">
-                <FileJson size={16} color="#006644" />
+                <FileJson size={16} color="#BE123C" />
                 <Text className="ml-2 flex-1 text-[11px] leading-4 text-brand-dark">
                   Verileriniz HL7 FHIR (R4) standardında saklanır:{" "}
                   {fhirBundle.entry.length} kaynak (Patient + Observation).
@@ -392,7 +392,7 @@ function ToggleRow({
       className="mb-2 flex-row items-center rounded-xl border border-line bg-surface px-3 py-3"
     >
       <View className="mr-3 h-9 w-9 items-center justify-center rounded-full bg-brand-light">
-        <Icon size={18} color="#006644" />
+        <Icon size={18} color="#BE123C" />
       </View>
       <View className="flex-1">
         <Text className="text-sm font-semibold text-ink">{label}</Text>

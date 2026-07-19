@@ -153,7 +153,7 @@ export default function BabyScreen() {
       ? "#dc2626"
       : referral?.level === "family-health"
         ? "#d97706"
-        : "#00875A";
+        : "#E11D48";
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={["top"]}>
@@ -169,7 +169,7 @@ export default function BabyScreen() {
           {/* Başlık */}
           <View className="mb-4 flex-row items-center">
             <View className="mr-3 h-11 w-11 items-center justify-center rounded-full bg-brand-light">
-              <Baby size={22} color="#006644" />
+              <Baby size={22} color="#BE123C" />
             </View>
             <View className="flex-1">
               <Text className="text-lg font-bold text-ink">
@@ -356,17 +356,17 @@ export default function BabyScreen() {
             {latest && percentile ? (
               <View
                 className={`mt-3 flex-row items-center rounded-xl px-3 py-2 ${
-                  percentile.tone === "normal" ? "bg-brand-light" : "bg-danger/10"
+                  percentile.tone === "normal" ? "bg-success-light" : "bg-danger/10"
                 }`}
               >
                 <Ruler
                   size={15}
-                  color={percentile.tone === "normal" ? "#006644" : "#dc2626"}
+                  color={percentile.tone === "normal" ? "#15803d" : "#dc2626"}
                 />
                 <Text
                   className={`ml-2 flex-1 text-[11px] font-semibold ${
                     percentile.tone === "normal"
-                      ? "text-brand-dark"
+                      ? "text-success-dark"
                       : "text-danger"
                   }`}
                 >
@@ -399,7 +399,7 @@ export default function BabyScreen() {
               }
               className="mt-1 flex-row items-center justify-center rounded-xl bg-brand-light py-2"
             >
-              <Thermometer size={14} color="#006644" />
+              <Thermometer size={14} color="#BE123C" />
               <Text className="ml-2 text-xs font-semibold text-brand-dark">
                 Yaklaşan Aşıları Sesli Oku
               </Text>
@@ -508,7 +508,7 @@ function AddGrowthForm({
         onPress={() => setOpen(true)}
         className="mt-3 flex-row items-center justify-center rounded-xl border border-brand bg-white py-2.5"
       >
-        <Plus size={15} color="#006644" />
+        <Plus size={15} color="#BE123C" />
         <Text className="ml-2 text-xs font-bold text-brand-dark">
           Yeni Ölçüm Ekle
         </Text>

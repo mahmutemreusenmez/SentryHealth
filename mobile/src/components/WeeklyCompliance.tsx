@@ -62,7 +62,7 @@ export default function WeeklyCompliance({
     <View className="rounded-2xl border border-line bg-white p-4 shadow-sm">
       <View className="mb-3 flex-row items-center justify-between">
         <View className="flex-row items-center">
-          <TrendingUp size={16} color="#006644" />
+          <TrendingUp size={16} color="#BE123C" />
           <Text className="ml-2 text-sm font-bold text-ink">
             Haftalık İlaç Uyum Skoru
           </Text>

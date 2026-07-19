@@ -90,12 +90,12 @@ export default function GrowthChart({
     <View>
       <Svg width={width} height={height}>
         {/* P3-P97 gölgeli bant */}
-        <Path d={bandPath} fill="#d1fae5" opacity={0.7} />
+        <Path d={bandPath} fill="#dcfce7" opacity={0.7} />
         {/* P50 medyan çizgisi */}
         <Polyline
           points={medianPoints}
           fill="none"
-          stroke="#006644"
+          stroke="#15803d"
           strokeWidth={1.5}
           strokeDasharray="4 3"
         />

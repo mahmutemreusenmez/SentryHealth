@@ -25,7 +25,7 @@ export default function GuardianPanel({
     <View className="rounded-2xl border border-line bg-white p-4 shadow-sm">
       <View className="mb-3 flex-row items-center">
         <View className="mr-2 h-9 w-9 items-center justify-center rounded-full bg-brand-light">
-          <ShieldCheck size={18} color="#006644" />
+          <ShieldCheck size={18} color="#BE123C" />
         </View>
         <View className="flex-1">
           <Text className="text-lg font-bold text-ink">

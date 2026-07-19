@@ -22,7 +22,7 @@ export default function App() {
             <AuthProvider>
               <PatientProvider>
                 <BabyProvider>
-                  <StatusBar style="light" backgroundColor="#00875A" />
+                  <StatusBar style="light" backgroundColor="#E11D48" />
                   <RootNavigator />
                   <OfflineBar />
                   <NotificationBanner />

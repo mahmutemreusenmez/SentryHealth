@@ -11,7 +11,7 @@ import React, {
 import {
   FEATURED_APPOINTMENT,
   INITIAL_GUARDIAN,
-  INITIAL_MEDICATION_STOCK,
+  INITIAL_MEDICATIONS,
   INITIAL_PROFILE,
   INITIAL_TASKS,
 } from "../data/mockData";
@@ -20,7 +20,7 @@ import type {
   Guardian,
   GuardianAlert,
   HealthTask,
-  MedicationStock,
+  Medication,
   MewsResult,
   PatientProfile,
   ScreeningRecommendation,
@@ -78,10 +78,16 @@ interface PatientContextValue {
   online: boolean;
   /** Çevrimdışı alınıp henüz senkronize edilmemiş onay sayısı. */
   pendingSyncCount: number;
-  /** SentryPharmacy: ilaç stok sayaçları. */
-  medicationStock: MedicationStock[];
-  /** SentryPharmacy: bitmesine 3 gün ve altı kalan ilaçlar. */
-  lowStockMedications: MedicationStock[];
+  /** İlaç Takip Sistemi: hastanın takip ettiği ilaçlar. */
+  medications: Medication[];
+  /** İlaç Takip Sistemi: doz saatine göre kronolojik "Yaklaşan İlaçlar". */
+  upcomingMedications: Medication[];
+  /** İlaç Takip Sistemi: bitmesine 3 gün ve altı kalan ilaçlar. */
+  lowStockMedications: Medication[];
+  /** İlaç Takip Sistemi: yeni ilaç ekler. */
+  addMedication: (med: Omit<Medication, "id">) => void;
+  /** İlaç Takip Sistemi: bir ilacı listeden kaldırır. */
+  removeMedication: (id: string) => void;
   /** Sesli komutla ilgili görevi onaylar; onaylanan görevi döndürür. */
   confirmByVoice: (command: VoiceCommand) => HealthTask | null;
   /** SentryPulse: kritik nabız bildirimi + refakatçi SMS taslağı üretir. */
@@ -106,8 +112,8 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
   const [guardianAlerts, setGuardianAlerts] = useState<GuardianAlert[]>([]);
   const [vitals, setVitals] = useState<VitalEntry | null>(null);
   const [vitalsHistory, setVitalsHistory] = useState<VitalEntry[]>([]);
-  const [medicationStock, setMedicationStock] = useState<MedicationStock[]>(
-    INITIAL_MEDICATION_STOCK,
+  const [medications, setMedications] = useState<Medication[]>(
+    INITIAL_MEDICATIONS,
   );
   const [hydrated, setHydrated] = useState(false);
   const [online, setOnline] = useState(true);
@@ -133,16 +139,16 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       loadJSON<PatientProfile>(STORAGE_KEYS.profile),
       loadJSON<PersistedTasks>(STORAGE_KEYS.tasks),
       loadJSON<VitalEntry>(STORAGE_KEYS.vitals),
-      loadJSON<MedicationStock[]>(STORAGE_KEYS.medicationStock),
+      loadJSON<Medication[]>(STORAGE_KEYS.medications),
       loadJSON<VitalEntry[]>(STORAGE_KEYS.vitalsHistory),
     ]).then(
-      ([storedProfile, storedTasks, storedVitals, storedStock, storedHistory]) => {
+      ([storedProfile, storedTasks, storedVitals, storedMeds, storedHistory]) => {
       if (cancelled) return;
       if (storedProfile) setProfile(storedProfile);
       if (storedVitals) setVitals(storedVitals);
       if (storedHistory && storedHistory.length > 0)
         setVitalsHistory(storedHistory);
-      if (storedStock && storedStock.length > 0) setMedicationStock(storedStock);
+      if (storedMeds && storedMeds.length > 0) setMedications(storedMeds);
       if (storedTasks && storedTasks.day === todayKey()) {
         setTasks((prev) =>
           prev.map((task) => {
@@ -202,11 +208,11 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
     void saveJSON(STORAGE_KEYS.profile, profile);
   }, [profile, hydrated]);
 
-  // İlaç stok sayaçları değiştikçe güvenli hafızaya yaz.
+  // İlaç listesi değiştikçe güvenli (şifreli) hafızaya yaz.
   useEffect(() => {
     if (!hydrated) return;
-    void saveJSON<MedicationStock[]>(STORAGE_KEYS.medicationStock, medicationStock);
-  }, [medicationStock, hydrated]);
+    void saveJSON<Medication[]>(STORAGE_KEYS.medications, medications);
+  }, [medications, hydrated]);
 
   // Görev onay durumları değiştikçe (o güne ait) kalıcı olarak sakla.
   useEffect(() => {
@@ -273,11 +279,11 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       ),
     );
 
-    // SentryPharmacy: ilaç onaylandığında stoktan günlük dozu düş.
+    // İlaç Takip: ilaç onaylandığında ilgili ilacın stokundan günlük dozu düş.
     if (target.category === "medication" && nextStatus === "done") {
-      setMedicationStock((stock) =>
-        stock.map((m) =>
-          m.taskId === id
+      setMedications((meds) =>
+        meds.map((m) =>
+          m.taskId === id && m.remaining != null && m.dailyDose != null
             ? { ...m, remaining: Math.max(0, m.remaining - m.dailyDose) }
             : m,
         ),
@@ -349,14 +355,35 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
     // profil adı değişebileceği için profile bağımlı; pendingMedId tetikler.
   }, [pendingMedId, guardianAlerts, profile]);
 
-  // SentryPharmacy: bitmesine 3 gün ve altı kalan ilaçlar.
+  // İlaç Takip: bitmesine 3 gün ve altı kalan ilaçlar (reçete yenileme uyarısı).
   const lowStockMedications = useMemo(
     () =>
-      medicationStock.filter(
-        (m) => m.dailyDose > 0 && m.remaining / m.dailyDose <= 3,
+      medications.filter(
+        (m) =>
+          m.remaining != null &&
+          m.dailyDose != null &&
+          m.dailyDose > 0 &&
+          m.remaining / m.dailyDose <= 3,
       ),
-    [medicationStock],
+    [medications],
   );
+
+  // İlaç Takip: doz saatine göre kronolojik "Yaklaşan İlaçlar".
+  const upcomingMedications = useMemo(
+    () => [...medications].sort((a, b) => a.nextTime.localeCompare(b.nextTime)),
+    [medications],
+  );
+
+  const addMedication = useCallback((med: Omit<Medication, "id">) => {
+    setMedications((prev) => [
+      ...prev,
+      { ...med, id: `med-${Date.now()}` },
+    ]);
+  }, []);
+
+  const removeMedication = useCallback((id: string) => {
+    setMedications((prev) => prev.filter((m) => m.id !== id));
+  }, []);
 
   const value = useMemo<PatientContextValue>(
     () => ({
@@ -377,8 +404,11 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       raiseCriticalAlert,
       online,
       pendingSyncCount,
-      medicationStock,
+      medications,
+      upcomingMedications,
       lowStockMedications,
+      addMedication,
+      removeMedication,
       confirmByVoice,
       notifyCriticalPulse,
     }),
@@ -400,8 +430,11 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       raiseCriticalAlert,
       online,
       pendingSyncCount,
-      medicationStock,
+      medications,
+      upcomingMedications,
       lowStockMedications,
+      addMedication,
+      removeMedication,
       confirmByVoice,
       notifyCriticalPulse,
     ],

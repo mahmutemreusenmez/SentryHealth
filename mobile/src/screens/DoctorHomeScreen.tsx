@@ -32,7 +32,7 @@ const REFERRAL_BUTTONS: {
 }[] = [
   { level: "emergency", label: "Acil Sevk", icon: Siren, bg: "#dc2626" },
   { level: "clinic", label: "Poliklinik Sevk", icon: Hospital, bg: "#d97706" },
-  { level: "home", label: "Evde Takip", icon: Home, bg: "#00875A" },
+  { level: "home", label: "Evde Takip", icon: Home, bg: "#16a34a" },
 ];
 
 /**

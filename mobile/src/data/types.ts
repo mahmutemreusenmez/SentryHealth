@@ -211,30 +211,31 @@ export interface SyncQueueItem {
 /* Sürüm 2.0 — Gelişmiş Klinik ve Donanımsal Entegrasyon               */
 /* ------------------------------------------------------------------ */
 
-/** SentryPharmacy: bir ilacın stok/dozaj takibi. */
-export interface MedicationStock {
-  /** İlgili sağlık görevi (HealthTask) kimliği. */
-  taskId: string;
+/** İlaç Takip Sistemi: bir ilacın açlık/tokluk durumu. */
+export type MedicationFoodTiming = "before" | "after" | "independent";
+
+/**
+ * İlaç Takip Sistemi (MedicationTracker) — hastanın takip ettiği bir ilaç.
+ * Eczane modülünün yerini alan yeni klinik ilaç takip modeli.
+ */
+export interface Medication {
+  id: string;
   /** İlaç adı (ör. "Metformin 1000 mg"). */
   name: string;
-  /** Kalan adet (tablet/doz). */
-  remaining: number;
-  /** Günlük tüketilen doz sayısı. */
-  dailyDose: number;
-}
-
-/** SentryPharmacy: nöbetçi eczane kaydı. */
-export interface PharmacyInfo {
-  id: string;
-  name: string;
-  phone: string;
-  address: string;
-  district: string;
-  /** Simüle edilmiş kullanıcı konumuna uzaklık (km). */
-  distanceKm: number;
-  /** Rota tarifi için enlem/boylam. */
-  lat: number;
-  lng: number;
+  /** Dozaj (ör. "1 Tablet", "2 Puf"). */
+  dosage: string;
+  /** Periyot (ör. "Günde 2 kez", "8 saatte bir"). */
+  period: string;
+  /** Açlık / tokluk / bağımsız. */
+  foodTiming: MedicationFoodTiming;
+  /** Bir sonraki doz saati "HH:MM" (Yaklaşan İlaçlar sıralaması için). */
+  nextTime: string;
+  /** İlgili sağlık görevi (HealthTask) kimliği — varsa. */
+  taskId?: string;
+  /** Kalan adet (tablet/doz) — reçete yenileme uyarısı için opsiyonel. */
+  remaining?: number;
+  /** Günlük tüketilen doz sayısı — reçete yenileme uyarısı için opsiyonel. */
+  dailyDose?: number;
 }
 
 /** SentryPulse: giyilebilir cihazdan gelen anlık vital örneği. */
@@ -372,7 +373,7 @@ export type RootTabParamList = {
   Dashboard: undefined;
   Triage: undefined;
   Chat: undefined;
-  Pharmacy: undefined;
+  Medication: undefined;
   Baby: undefined;
   Profile: undefined;
 };

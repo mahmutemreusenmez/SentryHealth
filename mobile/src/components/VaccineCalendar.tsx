@@ -61,7 +61,7 @@ export default function VaccineCalendar({
 const TONE_META = {
   done: {
     Icon: CheckCircle2,
-    iconColor: "#006644",
+    iconColor: "#15803d",
     iconBg: "bg-brand-light",
     container: "border-brand-light bg-white",
     badgeBg: "bg-brand-light",

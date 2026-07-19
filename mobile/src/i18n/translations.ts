@@ -50,7 +50,7 @@ const tr: Dictionary = {
   "tabs.dashboard": "Ana Sayfa",
   "tabs.triage": "Canlı Triyaj",
   "tabs.chat": "AI Sohbet",
-  "tabs.pharmacy": "Eczane",
+  "tabs.medication": "İlaç Takibi",
   "tabs.baby": "Yeni Doğan",
   "tabs.profile": "Profil",
 
@@ -126,7 +126,7 @@ const en: Dictionary = {
   "tabs.dashboard": "Home",
   "tabs.triage": "Live Triage",
   "tabs.chat": "AI Chat",
-  "tabs.pharmacy": "Pharmacy",
+  "tabs.medication": "Medications",
   "tabs.baby": "Newborn",
   "tabs.profile": "Profile",
 
@@ -201,7 +201,7 @@ const ar: Dictionary = {
   "tabs.dashboard": "الرئيسية",
   "tabs.triage": "الفرز المباشر",
   "tabs.chat": "المساعد الذكي",
-  "tabs.pharmacy": "الصيدلية",
+  "tabs.medication": "متابعة الأدوية",
   "tabs.baby": "حديثو الولادة",
   "tabs.profile": "الملف",
 

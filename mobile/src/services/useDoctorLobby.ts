@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { warningFeedback } from "./hapticsService";
 import { BABY_LOBBY_ROOM, LOBBY_ROOM, getSignalWsUrl } from "./rtcConfig";
@@ -46,11 +46,16 @@ export function useDoctorLobby(): {
 } {
   const [queue, setQueue] = useState<IncomingCall[]>([]);
   const [connected, setConnected] = useState(false);
-  const socketsRef = useRef<WebSocket[]>([]);
 
   useEffect(() => {
-    const sockets: WebSocket[] = [];
-    let openCount = 0;
+    // Aktif soketler ve bekleyen yeniden bağlanma zamanlayıcıları — unmount'ta
+    // hepsi güvenle temizlenir (bağlantı kopma senkronizasyon sızıntısını önler).
+    let cancelled = false;
+    const sockets = new Set<WebSocket>();
+    const timers = new Set<ReturnType<typeof setTimeout>>();
+    const openRooms = new Set<string>();
+
+    const syncConnected = () => setConnected(openRooms.size > 0);
 
     const addCall = (call: IncomingCall) => {
       setQueue((prev) => {
@@ -60,24 +65,38 @@ export function useDoctorLobby(): {
       });
     };
 
-    LOBBY_MAP.forEach(({ room, lobby }) => {
+    const connect = (room: string, lobby: CallLobby, attempt: number) => {
+      if (cancelled) return;
       let ws: WebSocket;
       try {
         ws = new WebSocket(getSignalWsUrl());
       } catch {
+        scheduleReconnect(room, lobby, attempt + 1);
         return;
       }
-      sockets.push(ws);
+      sockets.add(ws);
 
       ws.onopen = () => {
-        openCount += 1;
-        setConnected(true);
+        if (cancelled) return;
+        openRooms.add(room);
+        syncConnected();
         ws.send(JSON.stringify({ type: "join", roomId: room }));
       };
 
       ws.onclose = () => {
-        openCount = Math.max(0, openCount - 1);
-        if (openCount === 0) setConnected(false);
+        sockets.delete(ws);
+        openRooms.delete(room);
+        syncConnected();
+        // Beklenmedik kopmada üstel backoff ile aynı lobiye yeniden bağlan.
+        scheduleReconnect(room, lobby, attempt + 1);
+      };
+
+      ws.onerror = () => {
+        try {
+          ws.close();
+        } catch {
+          /* onclose zaten yeniden bağlanmayı planlar */
+        }
       };
 
       ws.onmessage = (ev) => {
@@ -108,19 +127,34 @@ export function useDoctorLobby(): {
           });
         }
       };
-    });
+    };
 
-    socketsRef.current = sockets;
+    function scheduleReconnect(room: string, lobby: CallLobby, attempt: number) {
+      if (cancelled) return;
+      // 1s'den başlayıp 15s'de tavan yapan üstel geri çekilme.
+      const delay = Math.min(15000, 1000 * 2 ** Math.min(attempt, 4));
+      const timer = setTimeout(() => {
+        timers.delete(timer);
+        connect(room, lobby, attempt);
+      }, delay);
+      timers.add(timer);
+    }
+
+    LOBBY_MAP.forEach(({ room, lobby }) => connect(room, lobby, 0));
 
     return () => {
+      cancelled = true;
+      timers.forEach((t) => clearTimeout(t));
+      timers.clear();
       sockets.forEach((ws) => {
         try {
+          ws.onclose = null;
           ws.close();
         } catch {
           /* yok say */
         }
       });
-      socketsRef.current = [];
+      sockets.clear();
     };
   }, []);
 
