@@ -5,11 +5,6 @@ import type {
   VaccineEntry,
 } from "./types";
 
-/**
- * Jüri sunumu için başlangıçta tanımlı yeni doğan bebek.
- * Doğum tarihi, "Yeni Doğan Takip" sekmesinin aşı/gelişim hesaplarını
- * canlı gösterebilmek için ~3 ay öncesine sabitlenmiştir.
- */
 function daysAgoISO(days: number): string {
   const d = new Date();
   d.setDate(d.getDate() - days);

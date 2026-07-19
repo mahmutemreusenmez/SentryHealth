@@ -27,7 +27,7 @@ export type NotificationListener = (
   notification: ScheduledNotification,
 ) => void;
 
-/** Jüri için canlı push simülatörü bildirimlerini dinleyen geri çağrım. */
+/** Canlı push bildirimlerini dinleyen geri çağrım. */
 export type SimNotificationListener = (notification: SimNotification) => void;
 
 /** Görev saatinden kaç dakika önce hatırlatılacağı */

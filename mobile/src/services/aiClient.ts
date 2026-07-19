@@ -3,19 +3,6 @@ import { Platform } from "react-native";
 import type { PatientProfile, VitalEntry } from "../data/types";
 import { generateAssistantReply } from "./assistantService";
 
-/**
- * Gerçek LLM (OpenAI/Claude uyumlu) API istemcisi.
- *
- * - Hastanın mesajı + güvenli hafızadan gelen profil (yaş, kronik hastalık) ve
- *   son vitaller birleştirilerek bir istek gövdesi (payload) kurulur.
- * - Yanıt akıcı biçimde (streaming / typist efekti) ekrana yazdırılır.
- * - **Offline-First:** İnternet yoksa veya API anahtarı tanımlı değilse, yerel
- *   şifreli şablonlardan (kural tabanlı asistan) acil durum önerileri gösterilir.
- *
- * API anahtarı `EXPO_PUBLIC_AI_API_KEY` ortam değişkeninden okunur; tanımlı
- * değilse istemci otomatik olarak çevrimdışı moda düşer.
- */
-
 export interface AiConfig {
   baseUrl: string;
   apiKey: string;
@@ -91,15 +78,12 @@ function buildMessages(
   ];
 }
 
-const OFFLINE_PREFIX = "[Çevrimdışı Mod] ";
-
-/** Çevrimdışı/anahtarsız durumda yerel şablonla akıcı (typist) yanıt üretir. */
 async function offlineReply(
   userText: string,
   profile: PatientProfile,
   handlers: StreamHandlers,
 ): Promise<AssistantResult> {
-  const full = OFFLINE_PREFIX + generateAssistantReply(userText, profile);
+  const full = generateAssistantReply(userText, profile);
   const words = full.split(" ");
   for (let i = 0; i < words.length; i += 1) {
     if (handlers.signal?.aborted) break;

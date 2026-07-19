@@ -127,7 +127,6 @@ export default function VideoTriageScreen() {
     setConfirmGate(true);
   };
 
-  // 2. aşama: onaydan sonra KVKK/GDPR "Privacy Shield" bilgilendirmesi.
   const confirmCallAndProceed = () => {
     setConfirmGate(false);
     setPrivacyGate(true);
@@ -236,11 +235,11 @@ export default function VideoTriageScreen() {
 
           {/* Akan klinik not altyazısı (video üzerinde) */}
           {active ? (
-            <View className="rounded-2xl bg-black/50 px-4 py-3">
+            <View className="rounded-2xl border-l-4 border-brand bg-black/60 px-5 py-4">
               <Text className="text-[11px] font-semibold text-brand">
                 Görüşme Notu · Oda: {roomId}
               </Text>
-              <Text className="mt-1 text-xs leading-5 text-white">
+              <Text className="mt-1.5 text-xs leading-6 text-white">
                 {CALL_NOTES[lineIndex]}
               </Text>
               {redCode ? (

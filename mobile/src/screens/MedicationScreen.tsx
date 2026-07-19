@@ -26,17 +26,10 @@ const FOOD_LABEL: Record<MedicationFoodTiming, string> = {
   independent: "Aç/tok fark etmez",
 };
 
-/** "HH:MM" biçim doğrulaması (00:00 - 23:59). */
 function isValidTime(value: string): boolean {
   return /^([01]\d|2[0-3]):([0-5]\d)$/.test(value.trim());
 }
 
-/**
- * İlaç Takip Sistemi (MedicationTracker) — Eczane modülünün yerini alan
- * kurumsal e-Nabız ilaç takip ekranı. Hasta ilaç adı, dozaj, periyot ve
- * açlık/tokluk durumunu girer; ilaçlar doz saatine göre kronolojik
- * "Yaklaşan İlaçlar" listesinde gösterilir.
- */
 export default function MedicationScreen() {
   const {
     upcomingMedications,
@@ -231,10 +224,10 @@ export default function MedicationScreen() {
           </PressableScale>
         </Card>
 
-        {/* Yaklaşan İlaçlar — kronolojik liste */}
+        {/* İlaçlarım — doz saatine göre kronolojik liste */}
         <SectionHeader
-          title="Yaklaşan İlaçlar"
-          subtitle="Doz saatine göre sıralı"
+          title="İlaçlarım"
+          subtitle="Doz saatine göre sıralı takip listesi"
           icon={Clock}
         />
 
@@ -255,7 +248,7 @@ export default function MedicationScreen() {
         )}
 
         <Text className="mt-3 text-center text-[10px] text-muted">
-          İlaç takibiniz KVKK uyumlu şifreli yerel hafızada saklanır.
+          İlaç bilgileriniz cihazınızda şifreli olarak saklanır.
         </Text>
       </ScrollView>
     </SafeAreaView>
@@ -285,26 +278,14 @@ const MedicationRow = React.memo(function MedicationRow({
   onRemove: () => void;
 }) {
   return (
-    <Card className="mb-3">
-      <View className="flex-row items-center">
-        <View className="mr-3 items-center rounded-xl bg-brand-light px-3 py-2">
-          <Clock size={14} color={COLORS.brand} />
-          <Text className="mt-0.5 text-xs font-bold text-brand-dark">
-            {med.nextTime}
-          </Text>
+    <View className="mb-3 overflow-hidden rounded-2xl border border-line bg-white shadow-sm">
+      <View className="flex-row items-center border-b border-line px-4 py-3">
+        <View className="mr-3 h-9 w-9 items-center justify-center rounded-full bg-brand-light">
+          <Pill size={17} color={COLORS.brand} />
         </View>
-        <View className="flex-1 pr-2">
-          <Text className="text-sm font-bold text-ink">{med.name}</Text>
-          <Text className="mt-0.5 text-[11px] text-muted">
-            {med.dosage} · {med.period}
-          </Text>
-          <View className="mt-1 flex-row items-center">
-            <Utensils size={11} color={COLORS.muted} />
-            <Text className="ml-1 text-[11px] text-muted">
-              {FOOD_LABEL[med.foodTiming]}
-            </Text>
-          </View>
-        </View>
+        <Text className="flex-1 pr-2 text-sm font-bold text-ink">
+          {med.name}
+        </Text>
         <PressableScale
           onPress={onRemove}
           accessibilityRole="button"
@@ -315,6 +296,47 @@ const MedicationRow = React.memo(function MedicationRow({
           <Trash2 size={16} color={COLORS.danger} />
         </PressableScale>
       </View>
-    </Card>
+
+      <View className="flex-row flex-wrap px-4 py-3">
+        <MedCell icon={Pill} label="Dozaj" value={med.dosage} />
+        <MedCell icon={Clock} label="Periyot" value={med.period} />
+        <MedCell
+          icon={Utensils}
+          label="Zamanlama"
+          value={FOOD_LABEL[med.foodTiming]}
+        />
+        <MedCell icon={Clock} label="Sonraki Doz" value={med.nextTime} accent />
+      </View>
+    </View>
   );
 });
+
+function MedCell({
+  icon: Icon,
+  label,
+  value,
+  accent,
+}: {
+  icon: typeof Pill;
+  label: string;
+  value: string;
+  accent?: boolean;
+}) {
+  return (
+    <View className="mb-1 w-1/2 pr-2">
+      <View className="flex-row items-center">
+        <Icon size={12} color={accent ? COLORS.brand : COLORS.muted} />
+        <Text className="ml-1 text-[10px] font-medium uppercase tracking-wide text-muted">
+          {label}
+        </Text>
+      </View>
+      <Text
+        className={`mt-0.5 text-[13px] font-semibold ${
+          accent ? "text-brand-dark" : "text-ink"
+        }`}
+      >
+        {value}
+      </Text>
+    </View>
+  );
+}

@@ -443,14 +443,15 @@ export default function LiveVideoPanel({
         muted
         style={{
           position: "absolute",
-          bottom: 12,
-          left: 12,
-          width: 96,
-          height: 72,
+          bottom: 16,
+          left: 16,
+          width: 120,
+          height: 160,
           objectFit: "cover",
-          borderRadius: 10,
-          border: "2px solid rgba(255,255,255,0.6)",
+          borderRadius: 16,
+          border: "2.5px solid rgba(255,255,255,0.85)",
           backgroundColor: "#111",
+          boxShadow: "0 6px 20px rgba(0,0,0,0.45)",
         }}
       />
       <div

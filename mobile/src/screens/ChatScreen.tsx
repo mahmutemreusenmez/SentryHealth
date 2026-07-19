@@ -1,4 +1,4 @@
-import { Cloud, CloudOff, Mic, Send, Sparkles, Square } from "lucide-react-native";
+import { Cloud, CloudOff, HeartPulse, Mic, Send, Square } from "lucide-react-native";
 import React, { useEffect, useRef, useState } from "react";
 import {
   FlatList,
@@ -29,9 +29,9 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     createMessage(
       "assistant",
-      `Merhaba ${profile.fullName.split(" ")[0]}, ben sağlık asistanınızım. ` +
-        "Kronik takip verilerinizi değerlendirerek yardımcı olurum. " +
-        "Sağlığınızla ilgili sorularınızı sesli veya yazılı sorabilirsiniz.",
+      `Sayın ${profile.fullName.split(" ")[0]}, Merkezi Sağlık Sistemi Asistanı'na hoş geldiniz. ` +
+        "Sağlık kayıtlarınıza ve kronik takip verilerinize göre size yönlendirme sunar; " +
+        "sorularınızı sesli veya yazılı iletebilirsiniz.",
     ),
   ]);
   const [input, setInput] = useState("");
@@ -96,7 +96,6 @@ export default function ChatScreen() {
     setBusy(false);
   };
 
-  // Sesli giriş: gerçek dağıtımda expo-speech / STT bağlanacak.
   const toggleVoice = () => {
     if (listening) {
       setListening(false);
@@ -110,21 +109,21 @@ export default function ChatScreen() {
   };
 
   const statusLabel = !online
-    ? "Çevrimdışı — yerel öneriler"
+    ? "Çevrimdışı · yerel yönlendirme"
     : apiEnabled
-      ? "Canlı bağlantı"
-      : "Çevrimdışı (bağlantı anahtarı yok)";
+      ? "Merkezi sisteme bağlı"
+      : "Yerel yönlendirme modu";
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={["top"]}>
       {/* Başlık */}
       <View className="flex-row items-center border-b border-line bg-white px-4 py-3">
         <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-brand">
-          <Sparkles size={20} color="#ffffff" />
+          <HeartPulse size={20} color="#ffffff" />
         </View>
         <View className="flex-1">
           <Text className="text-base font-bold text-ink">
-            Sağlık Sohbeti
+            Merkezi Sağlık Sistemi Asistanı
           </Text>
           <View className="flex-row items-center">
             {online && apiEnabled ? (
@@ -229,7 +228,7 @@ const Bubble = React.memo(function Bubble({
         }`}
       >
         <Text className={isUser ? "text-white" : "text-ink"}>
-          {isTyping ? "yazıyor…" : message.text}
+          {isTyping ? "yanıt hazırlanıyor…" : message.text}
         </Text>
       </View>
       <View

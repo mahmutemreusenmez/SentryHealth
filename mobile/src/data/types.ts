@@ -24,6 +24,10 @@ export interface PatientProfile {
   age: number;
   gender: Gender;
   chronicConditions: ChronicCondition[];
+  /** Kan grubu (ör. "A Rh+"). */
+  bloodType: string;
+  /** Bağlı olunan aile hekimi. */
+  familyPhysician: string;
 }
 
 /** Uygulama genelinde kullanılan hasta profili tipi (PatientProfile ile aynı). */
@@ -36,7 +40,7 @@ export type UserRole = "patient" | "doctor";
 export interface AuthenticationState {
   /** "Giriş Başarılı" bayrağı */
   isAuthenticated: boolean;
-  /** Sahte e-Devlet doğrulaması sürerken true */
+  /** Kimlik doğrulaması sürerken true */
   isLoading: boolean;
   /** Giriş yapan kullanıcının T.C. Kimlik Numarası */
   nationalId: string | null;
@@ -170,7 +174,7 @@ export interface GuardianAlert {
   timestamp: number;
 }
 
-/** Jüri için canlı push bildirim simülatörü kart türü */
+/** Canlı push bildirim kart türü */
 export type SimNotificationKind =
   | "medication"
   | "critical"

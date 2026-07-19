@@ -117,7 +117,6 @@ export default function RootNavigator() {
 
   if (isHydrating || privacyHydrating) return <HydrationSplash />;
 
-  // KVKK/GDPR "Güvenlik ve İzin Bilgilendirme" (Privacy Shield) — ilk açılış.
   if (!accepted) return <PrivacyShieldScreen onAccept={accept} />;
 
   return (

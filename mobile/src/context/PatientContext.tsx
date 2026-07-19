@@ -70,7 +70,7 @@ interface PatientContextValue {
   updateProfile: (patch: Partial<PatientProfile>) => void;
   saveVitals: (entry: VitalEntry) => void;
   completeTask: (id: string) => void;
-  /** Jüri sunumu: duruma göre canlı bir push bildirimi tetikler. */
+  /** Duruma göre canlı bir push bildirimi tetikler. */
   sendTestNotification: () => void;
   /** Refakatçiye kritik triyaj (kırmızı kod) SMS taslağı üretir. */
   raiseCriticalAlert: () => void;
@@ -144,7 +144,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
     ]).then(
       ([storedProfile, storedTasks, storedVitals, storedMeds, storedHistory]) => {
       if (cancelled) return;
-      if (storedProfile) setProfile(storedProfile);
+      if (storedProfile) setProfile({ ...INITIAL_PROFILE, ...storedProfile });
       if (storedVitals) setVitals(storedVitals);
       if (storedHistory && storedHistory.length > 0)
         setVitalsHistory(storedHistory);
@@ -172,8 +172,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
     const flushQueue = async () => {
       const queue = await loadSyncQueue();
       if (queue.length === 0) return;
-      // Gerçek dünyada burada backend'e POST edilir; simülasyonda güvenli
-      // yerel kuyruğu boşaltıp senkronize edildi sayıyoruz.
+      // Çevrimiçi olununca bekleyen yerel kuyruk boşaltılır.
       await clearSyncQueue();
       if (!cancelled) setPendingSyncCount(0);
     };

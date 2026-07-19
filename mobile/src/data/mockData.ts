@@ -14,6 +14,8 @@ export const INITIAL_PROFILE: PatientProfile = {
   age: 58,
   gender: "male",
   chronicConditions: ["Diyabet", "Hipertansiyon"],
+  bloodType: "A Rh+",
+  familyPhysician: "Dr. Ayşe Kaya · 12 No'lu ASM",
 };
 
 export const INITIAL_TASKS: HealthTask[] = [

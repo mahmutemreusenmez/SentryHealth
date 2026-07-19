@@ -1,4 +1,4 @@
-import { Send } from "lucide-react-native";
+import { MessageCircle, Send } from "lucide-react-native";
 import React, { useEffect, useRef, useState } from "react";
 import { FlatList, Text, TextInput, View } from "react-native";
 
@@ -54,12 +54,18 @@ export default function LiveChatPanel({
   };
 
   return (
-    <View className="rounded-2xl border border-line bg-white p-3">
-      <Text className="mb-2 text-sm font-bold text-ink">{title}</Text>
+    <View className="overflow-hidden rounded-3xl border border-line bg-white shadow-sm">
+      <View className="flex-row items-center border-b border-line bg-brand-light px-4 py-3">
+        <View className="mr-2.5 h-8 w-8 items-center justify-center rounded-full bg-brand">
+          <MessageCircle size={16} color="#ffffff" />
+        </View>
+        <Text className="text-sm font-bold text-brand-dark">{title}</Text>
+      </View>
 
+      <View className="p-4">
       <View
-        className="mb-2 rounded-xl border border-line bg-surface p-2"
-        style={{ height: 200 }}
+        className="mb-3 rounded-2xl border border-line bg-surface p-3"
+        style={{ height: 220 }}
       >
         {lines.length === 0 ? (
           <View className="flex-1 items-center justify-center">
@@ -122,6 +128,7 @@ export default function LiveChatPanel({
         >
           <Send size={18} color="#ffffff" />
         </PressableScale>
+      </View>
       </View>
     </View>
   );

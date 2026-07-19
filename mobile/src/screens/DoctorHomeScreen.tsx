@@ -330,8 +330,8 @@ function CallView({
   return (
     <View>
       <View
-        className="mb-4 justify-end overflow-hidden rounded-3xl bg-ink"
-        style={{ height: 300 }}
+        className="mb-4 justify-end overflow-hidden rounded-3xl bg-ink p-3"
+        style={{ height: 380 }}
       >
         <LiveVideoPanel
           active

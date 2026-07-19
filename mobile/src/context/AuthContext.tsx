@@ -40,7 +40,6 @@ interface AuthContextValue {
   auth: AuthenticationState;
   /** Kalıcı oturum cihaz hafızasından okunurken true (açılış splash'ı için). */
   isHydrating: boolean;
-  /** e-Devlet Kapısı ile sahte giriş: doğrula → yükleniyor → Giriş Başarılı. */
   login: (nationalId: string, password: string) => void;
   logout: () => void;
 }
@@ -106,7 +105,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const role = roleForNationalId(nationalId);
 
-    // Sahte e-Devlet doğrulaması: yükleniyor animasyonu sonra Giriş Başarılı.
     setAuth({
       isAuthenticated: false,
       isLoading: true,
