@@ -1,10 +1,7 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
-import { userStore, sessions, generateToken, hashPassword } from '../middleware/auth.js';
+import { userStore, sessions, generateToken, verifyPassword } from '../middleware/auth.js';
 
 const router = Router();
-
-const LOCKED_USERNAME = 'yönetici';
-const LOCKED_PASSWORD = 'yönetici123';
 
 async function parseBody(req: Request): Promise<Record<string, unknown>> {
   if (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) {
@@ -37,8 +34,7 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
     const username = String(body.username ?? '');
     const password = String(body.password ?? '');
     const user = userStore.findByUsername(username);
-    const validCredentials = username === LOCKED_USERNAME && password === LOCKED_PASSWORD;
-    if (!validCredentials || !user || user.passwordHash !== hashPassword(password)) {
+    if (!user || !verifyPassword(password, user.passwordHash)) {
       res.status(401).json({ error: 'Yetkisiz Erişim Algılandı: Kimlik bilgileri doğrulanamadı. Bu deneme güvenlik kayıtlarına işlenmiştir.' });
       return;
     }
@@ -71,13 +67,6 @@ router.get('/me', async (req: Request, res: Response, next: NextFunction) => {
       return;
     }
     const token = header.slice(7).trim();
-    if (token === 'sentryhealth-local-fallback-token') {
-      const admin = userStore.findByUsername(LOCKED_USERNAME);
-      if (admin) {
-        res.json({ user: userDto(admin) });
-        return;
-      }
-    }
     const user = sessions.get(token);
     if (!user) {
       res.status(401).json({ error: 'Oturum geçersiz' });

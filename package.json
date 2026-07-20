@@ -1,7 +1,7 @@
 {
   "name": "sentryhealth",
   "version": "0.1.0",
-  "description": "AI-destekli uzaktan hasta takip sistemi",
+  "description": "SentryHealth v2.0 — TÜSEB Uzaktan Kronik Hasta Takip ve Proaktif Sağlık Yönetim Sistemi Katmanı",
   "type": "module",
   "engines": {
     "node": ">=20"

@@ -173,6 +173,6 @@ export class RegisterPatient {
   }
 
   private maskNationalId(nationalId: string): string {
-    return `${nationalId.slice(0, 2)}*******${nationalId.slice(-2)}`;
+    return `${nationalId.slice(0, 3)}*****${nationalId.slice(-3)}`;
   }
 }

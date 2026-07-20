@@ -449,33 +449,10 @@ const { t } = window.SentryI18n;
     showLogin();
   }
 
-  const LOCKED_USERNAME = 'yönetici';
-  const LOCKED_PASSWORD = 'yönetici123';
-  const FALLBACK_TOKEN = 'sentryhealth-local-fallback-token';
-  const FALLBACK_USER = {
-    id: 'u-1',
-    username: 'yönetici',
-    displayName: 'Uzm. Dr. Yönetici',
-    role: 'admin',
-  };
-
-  function applyFallbackLogin() {
-    localStorage.setItem('token', FALLBACK_TOKEN);
-    setStoredUser(FALLBACK_USER);
-    addLog(t('log.login', { who: FALLBACK_USER.displayName, role: FALLBACK_USER.role }));
-    showApp();
-  }
-
   async function initAuth() {
     const token = getToken();
     if (!token) {
       showLogin();
-      return;
-    }
-    if (token === FALLBACK_TOKEN) {
-      const stored = getStoredUser();
-      setStoredUser(stored || FALLBACK_USER);
-      showApp();
       return;
     }
     try {
@@ -499,15 +476,28 @@ const { t } = window.SentryI18n;
     const fd = new FormData(els.loginForm);
     const username = String(fd.get('username') || '').trim();
     const password = String(fd.get('password') || '');
+    const payload = { username, password };
 
-    if (username === LOCKED_USERNAME && password === LOCKED_PASSWORD) {
-      applyFallbackLogin();
-      return;
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const body = await safeJson(res);
+      if (!res.ok || !body.token || !body.user) {
+        els.loginError.textContent = (body && body.error) || t('login.error');
+        els.loginError.classList.remove('hidden');
+        return;
+      }
+      localStorage.setItem('token', body.token);
+      setStoredUser(body.user);
+      addLog(t('log.login', { who: body.user.displayName, role: body.user.role }));
+      showApp();
+    } catch {
+      els.loginError.textContent = t('login.error');
+      els.loginError.classList.remove('hidden');
     }
-
-    addLog(t('log.unauthorizedAttempt', { who: username || '—' }));
-    els.loginError.textContent = t('login.unauthorized');
-    els.loginError.classList.remove('hidden');
   });
 
   els.logoutBtn.addEventListener('click', () => {
